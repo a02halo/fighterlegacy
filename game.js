@@ -3035,7 +3035,7 @@
 	        rehabLog: [],
 	        careerWarnings: 0,
 	      },
-	      flags: {},
+		      flags: { statsNudge: true },
       pendingConsequences: [],
       phase: "gym-offer",
       season: null,
@@ -5239,14 +5239,33 @@
     return EVENTS.find(event => event.campOnly && event.id === id);
   }
 
-  function currentCampOpportunity(career) {
-    const camp = career?.camp;
-    if (!camp?.opportunity || camp.opportunity.used || camp.opportunity.week !== camp.week) return null;
-    return campOpportunityById(camp.opportunity.id);
-  }
+	  function currentCampOpportunity(career) {
+	    const camp = career?.camp;
+	    if (!camp?.opportunity || camp.opportunity.used || camp.opportunity.week !== camp.week) return null;
+	    return campOpportunityById(camp.opportunity.id);
+	  }
 
-  function chooseCampOpportunityOption(index) {
-    const career = ui.career;
+	  function campOpportunityChoiceSummary(option = {}) {
+	    if (option.skipOpportunity) return "Gratuit. La semaine reste disponible pour un entrainement classique.";
+	    const load = option.load || 0;
+	    const fatigueText = `Fatigue ${load > 0 ? "+" : ""}${load}`;
+	    const effects = effectLine(option.effects) || "Aucun effet visible";
+	    return `${fatigueText}. ${effects}`;
+	  }
+
+	  function campOpportunityBinaryChoices(opportunity) {
+	    const entries = (opportunity?.options || []).map((option, index) => ({ option, index }));
+	    if (!entries.length) return [];
+	    const refuse = entries.find(entry => entry.option.skipOpportunity) || entries[1] || entries[0];
+	    const accept = entries.find(entry => !entry.option.skipOpportunity) || entries[0] || refuse;
+	    return [
+	      { ...refuse.option, index: refuse.index, binaryLabel: "Non", binarySummary: refuse.option.result, summary: campOpportunityChoiceSummary(refuse.option) },
+	      { ...accept.option, index: accept.index, binaryLabel: "Oui", binarySummary: accept.option.result, summary: campOpportunityChoiceSummary(accept.option) },
+	    ];
+	  }
+
+	  function chooseCampOpportunityOption(index) {
+	    const career = ui.career;
     if (!career.pendingFight) {
       startFightSelection();
       return;
@@ -7061,9 +7080,9 @@
 	    `;
 	  }
 
-  function statBoard(career) {
-    return `
-      <div class="stat-board" aria-label="Statistiques">
+	  function statBoard(career) {
+	    return `
+	      <div class="stat-board" aria-label="Statistiques">
 	        ${Object.entries(STAT_LABELS).map(([key, label]) => `
 	          <div class="stat-pill">
 	            <span>${iconOnly(statIcon(key), "#")} ${esc(label)}</span>
@@ -7073,12 +7092,31 @@
           </div>
         `).join("")}
       </div>
-    `;
-  }
+	    `;
+	  }
 
-  function renderTopbar() {
-    return `
-      <header class="topbar ${ui.mobileMenuOpen ? "menu-open" : ""}">
+	  function statsNudgeActive() {
+	    return Boolean(ui.career?.active && ui.career.flags?.statsNudge);
+	  }
+
+	  function renderStatsNudge() {
+	    if (!statsNudgeActive()) return "";
+	    return `
+	      <div class="stats-nudge" role="status">
+	        <span>${iconOnly("sparkles", "S")}</span>
+	        <div>
+	          <strong>Dossier complet disponible</strong>
+	          <small>Toutes les stats cachees ou semi-cachees sont regroupees dans l'onglet Stats.</small>
+	        </div>
+	        <button class="btn btn-primary" data-action="show-stats">${iconText("activity", "Voir stats", "S")}</button>
+	      </div>
+	    `;
+	  }
+
+	  function renderTopbar() {
+	    const statsNudge = statsNudgeActive();
+	    return `
+	      <header class="topbar ${ui.mobileMenuOpen ? "menu-open" : ""}">
         <div class="brand">
           <div class="brand-mark" aria-hidden="true">FL</div>
           <div>
@@ -7089,21 +7127,21 @@
         <button class="mobile-menu-toggle" data-action="toggle-mobile-menu" aria-expanded="${ui.mobileMenuOpen ? "true" : "false"}" aria-label="Menu">
           ${iconOnly(ui.mobileMenuOpen ? "x" : "menu", "M")}
         </button>
-	        <nav class="top-actions ${ui.mobileMenuOpen ? "is-open" : ""}" aria-label="Navigation">
-	          <button class="btn btn-ghost" data-action="menu">${iconText("home", "Accueil", "H")}</button>
-	          ${ui.career ? `<button class="btn btn-ghost" data-action="show-news">${iconText("newspaper", "Actu", "N")}</button>` : ""}
-	          <button class="btn btn-ghost" data-action="show-stats">${iconText("activity", "Stats", "S")}</button>
-	          <button class="btn btn-ghost" data-action="show-badges">${iconText("award", "Badges", "B")}</button>
-	          <button class="btn btn-ghost" data-action="show-hall">${iconText("trophy", "Pantheon", "P")}</button>
+		        <nav class="top-actions ${ui.mobileMenuOpen ? "is-open" : ""}" aria-label="Navigation">
+		          <button class="btn btn-ghost" data-action="menu">${iconText("home", "Accueil", "H")}</button>
+		          ${ui.career ? `<button class="btn btn-ghost" data-action="show-news">${iconText("newspaper", "Actu", "N")}</button>` : ""}
+		          <button class="btn btn-ghost ${statsNudge ? "stats-nav-nudge" : ""}" data-action="show-stats">${iconText("activity", "Stats", "S")}</button>
+		          <button class="btn btn-ghost" data-action="show-badges">${iconText("award", "Badges", "B")}</button>
+		          <button class="btn btn-ghost" data-action="show-hall">${iconText("trophy", "Pantheon", "P")}</button>
 	        </nav>
       </header>
     `;
   }
 
-	  function renderShell(content) {
-	    app.innerHTML = `<div class="app-shell">${renderTopbar()}${content}</div>`;
-	    hydrateIcons();
-	  }
+		  function renderShell(content) {
+		    app.innerHTML = `<div class="app-shell">${renderTopbar()}${renderStatsNudge()}${content}</div>`;
+		    hydrateIcons();
+		  }
 
   function renderMenu() {
     const hasCareer = ui.career && ui.career.active;
@@ -7680,9 +7718,9 @@
 		    `;
   }
 
-  function medicalImpactText(career, injury = null) {
-    const medical = ensureMedical(career);
-    const effects = (injury?.effects || [])
+	  function medicalImpactText(career, injury = null) {
+	    const medical = ensureMedical(career);
+	    const effects = (injury?.effects || [])
       .filter(effect => ["condition", "durability", "injuryRisk", "restWeeks"].includes(effect.key))
       .map(effect => {
         if (effect.key === "restWeeks") return `repos ${formatRestWeeks(effect.value)}`;
@@ -7692,11 +7730,30 @@
     if (effects.length) return `Impact: ${effects.join(", ")}.`;
     if (medical.restWeeks > 0) return `Impact: pas de camp ni signature avant ${formatRestWeeks(medical.restWeeks)}.`;
     if ((medical.injuryRisk || 0) >= 35) return `Impact: pression medicale ${medical.injuryRisk}/90, les camps durs deviennent plus dangereux.`;
-    return `Impact: surveillance medicale, risque ${medical.injuryRisk || 0}/90.`;
-  }
+	    return `Impact: surveillance medicale, risque ${medical.injuryRisk || 0}/90.`;
+	  }
 
-	  function medicalRiskExplanation(career) {
+	  function medicalAlertCause(career, injury = null) {
 	    const medical = ensureMedical(career);
+	    const risk = medical.injuryRisk || 0;
+	    const health = career.stats?.durability || 78;
+	    const form = career.condition ?? 70;
+	    if (medical.restWeeks > 0 || injury) {
+	      return {
+	        label: injury ? "Blessure active" : "Repos medical",
+	        detail: injury ? `${injury.label || "Blessure"} | repos ${formatRestWeeks(medical.restWeeks || 0)}` : `Repos ${formatRestWeeks(medical.restWeeks || 0)}`,
+	      };
+	    }
+	    const candidates = [
+	      { label: "Risque blessure", detail: `${risk}/90`, score: risk >= 75 ? 4 : risk >= 55 ? 3 : risk >= 35 ? 2 : 0 },
+	      { label: "Sante durable", detail: `${health}/99`, score: health <= 32 ? 4 : health <= 42 ? 3 : health <= 52 ? 2 : 0 },
+	      { label: "Forme basse", detail: `${form}/100`, score: form <= 38 ? 4 : form <= 48 ? 3 : form <= 58 ? 2 : 0 },
+	    ];
+	    return candidates.sort((a, b) => b.score - a.score)[0] || { label: "Surveillance", detail: "Aucune stat critique" };
+	  }
+
+		  function medicalRiskExplanation(career) {
+		    const medical = ensureMedical(career);
 	    const risk = medical.injuryRisk || 0;
 	    const health = career.stats?.durability || 78;
 	    const form = career.condition ?? 70;
@@ -7715,26 +7772,37 @@
 	    const last = active || (medical.restWeeks > 0 ? medical.injuries[0] : null);
 	    const hasIssue = Boolean(active || medical.restWeeks > 0 || risk >= 35);
 	    if (!hasIssue) return "";
-	    const title = last?.label || (risk >= 75 ? "Risque medical dangereux" : "Risque medical");
-	    const severity = last?.severity || (risk >= 75 ? "dangereux" : "alerte");
-    const details = [
-      last?.source ? `Source: ${last.source}` : "",
-      medical.restWeeks > 0 ? `Repos: ${formatRestWeeks(medical.restWeeks)}` : "",
+		    const title = last?.label || (risk >= 75 ? "Risque medical dangereux" : "Risque medical");
+		    const severity = last?.severity || (risk >= 75 ? "dangereux" : "alerte");
+		    const cause = medicalAlertCause(career, last);
+	    const details = [
+	      last?.source ? `Source: ${last.source}` : "",
+	      medical.restWeeks > 0 ? `Repos: ${formatRestWeeks(medical.restWeeks)}` : "",
       `Risque: ${risk}/90`,
       `Sante: ${career.stats.durability}/99`,
       ].filter(Boolean).join(" | ");
-    return `
-      <div class="medical-alert medical-context-alert ${risk >= 75 ? "critical" : risk >= 35 ? "warning" : ""}">
-        <strong>${iconOnly("triangle-alert", "M")} Alerte medicale | ${esc(title)}</strong>
-        <span>${esc(severity)} | ${esc(details)}</span>
-        <small>${esc(medicalRiskExplanation(career))} ${esc(medicalImpactText(career, last))}</small>
-      </div>
-    `;
+	    return `
+	      <div class="medical-alert medical-context-alert ${risk >= 75 ? "critical" : risk >= 35 ? "warning" : ""}">
+	        <strong>${iconOnly("triangle-alert", "M")} Alerte medicale | ${esc(cause.label)}</strong>
+	        <span><b>${esc(cause.detail)}</b> | ${esc(title)} | ${esc(severity)} | ${esc(details)}</span>
+	        <small>Stat declencheuse: ${esc(cause.label)}. ${esc(medicalRiskExplanation(career))} ${esc(medicalImpactText(career, last))}</small>
+	      </div>
+	    `;
+		  }
+
+	  function campRiskCause(fatigue, risk, health, form) {
+	    const candidates = [
+	      { label: "Fatigue du camp", detail: `${fatigue}/12`, score: fatigue >= 10 ? 4 : fatigue >= 8 ? 3 : fatigue >= 6 ? 2 : 0 },
+	      { label: "Risque blessure", detail: `${risk}/90`, score: risk >= 75 ? 4 : risk >= 55 ? 3 : risk >= 35 ? 2 : 0 },
+	      { label: "Sante durable", detail: `${health}/99`, score: health <= 32 ? 4 : health <= 42 ? 3 : health <= 52 ? 2 : 0 },
+	      { label: "Forme basse", detail: `${form}/100`, score: form <= 38 ? 4 : form <= 48 ? 3 : form <= 58 ? 2 : 0 },
+	    ];
+	    return candidates.sort((a, b) => b.score - a.score)[0] || { label: "Marge stable", detail: "Pas de stat critique", score: 0 };
 	  }
 
-	  function campRiskSnapshot(career, extraLoad = 0) {
-	    const medical = ensureMedical(career);
-	    const fatigue = clamp(Math.round((career.camp?.fatigue || 0) + (extraLoad || 0)), 0, 12);
+		  function campRiskSnapshot(career, extraLoad = 0) {
+		    const medical = ensureMedical(career);
+		    const fatigue = clamp(Math.round((career.camp?.fatigue || 0) + (extraLoad || 0)), 0, 12);
 	    const risk = medical.injuryRisk || 0;
 	    const health = career.stats?.durability || 78;
 	    const form = career.condition ?? 70;
@@ -7751,25 +7819,26 @@
 	          : "Stable";
 	    const text = level === "danger"
 	      ? "Un gros bloc supplementaire peut declencher blessure de camp ou combat degrade."
-	      : level === "warning"
-	        ? "Le corps tient encore, mais fatigue et dette medicale commencent a se cumuler."
-	        : level === "watch"
-	          ? "La marge existe, mais les choix tres charges vont vite la reduire."
-	          : "Marge correcte pour travailler.";
-	    return { fatigue, risk, health, form, level, title, text };
-	  }
+		      : level === "warning"
+		        ? "Le corps tient encore, mais fatigue et dette medicale commencent a se cumuler."
+		        : level === "watch"
+		          ? "La marge existe, mais les choix tres charges vont vite la reduire."
+		          : "Marge correcte pour travailler.";
+		    return { fatigue, risk, health, form, level, title, text, cause: campRiskCause(fatigue, risk, health, form) };
+		  }
 
 	  function renderCampRiskWarning(career) {
 	    const snapshot = campRiskSnapshot(career);
 	    if (snapshot.level === "stable") return "";
-	    return `
-	      <div class="camp-risk-alert ${esc(snapshot.level)}">
-	        <strong>${iconOnly(snapshot.level === "danger" ? "octagon-alert" : "triangle-alert", "R")} ${esc(snapshot.title)} | Fatigue ${snapshot.fatigue}/12</strong>
-	        <span>Risque blessure ${snapshot.risk}/90 | Forme ${snapshot.form}/100 | Sante ${snapshot.health}/99</span>
-	        <small>${esc(snapshot.text)} Option prudente: recuperation, technique legere ou refuser les stages trop lourds.</small>
-	      </div>
-	    `;
-	  }
+		    return `
+		      <div class="camp-risk-alert ${esc(snapshot.level)}">
+		        <strong>${iconOnly(snapshot.level === "danger" ? "octagon-alert" : "triangle-alert", "R")} ${esc(snapshot.title)} | ${esc(snapshot.cause.label)}</strong>
+		        <span class="alert-cause-pill">${esc(snapshot.cause.detail)}</span>
+		        <span>Risque blessure ${snapshot.risk}/90 | Forme ${snapshot.form}/100 | Sante ${snapshot.health}/99</span>
+		        <small>Cause principale: ${esc(snapshot.cause.label)}. ${esc(snapshot.text)} Option prudente: recuperation, technique legere ou refuser les stages trop lourds.</small>
+		      </div>
+		    `;
+		  }
 
 	  function renderSeasonPauseChoice() {
 	    const career = ui.career;
@@ -7977,11 +8046,12 @@
       return;
     }
     const fight = career.pendingFight;
-    const camp = career.camp || createCamp(career);
-    career.camp = camp;
-    const opportunity = currentCampOpportunity(career);
-	    renderShell(`
-	      <section class="game-screen training-screen">
+	    const camp = career.camp || createCamp(career);
+	    career.camp = camp;
+	    const opportunity = currentCampOpportunity(career);
+	    const opportunityChoices = opportunity ? campOpportunityBinaryChoices(opportunity) : [];
+		    renderShell(`
+		      <section class="game-screen training-screen">
 	        ${campPrepPanel(career)}
 	        ${renderCampStatus(career)}
 	        ${renderCampRiskWarning(career)}
@@ -7995,20 +8065,30 @@
             <strong>${formatMoney(career.money)}</strong>
           </div>
         ` : ""}
-        ${opportunity ? `
-          <div class="choice-grid two camp-opportunity-grid">
-            ${opportunity.options.map((option, index) => `
-	              <button class="choice-btn choice-card camp-opportunity-card" data-action="camp-opportunity-option" data-index="${index}">
-	                <span class="choice-head">
-	                  <span class="choice-icon">${iconOnly(campOpportunityIcon(opportunity.id, option.tag), "C")}</span>
-	                  <strong>${esc(option.label)}</strong>
-                </span>
-                <span class="choice-summary">${esc(option.result)}</span>
-                <small>${option.skipOpportunity ? "Gratuit. La semaine reste disponible." : `Fatigue ${option.load > 0 ? "+" : ""}${option.load || 0}. ${esc(effectLine(option.effects))}`}</small>
-              </button>
-            `).join("")}
-          </div>
-        ` : `
+	        ${opportunity ? `
+	          <div class="choice-grid two binary-choice-grid camp-opportunity-grid camp-opportunity-binary">
+	            ${opportunityChoices.map((option, index) => `
+		              <button class="choice-btn choice-card camp-opportunity-card ${index === 0 ? "camp-opportunity-no" : "camp-opportunity-yes"}" data-action="camp-opportunity-option" data-index="${option.index}">
+		                <span class="choice-head">
+		                  <span class="choice-icon">${iconOnly(campOpportunityIcon(opportunity.id, option.tag), "C")}</span>
+		                  <strong>${esc(option.binaryLabel)}</strong>
+	                </span>
+	                <span class="choice-summary">${esc(option.binarySummary || option.result)}</span>
+	                <small>${esc(option.summary)}</small>
+	              </button>
+	            `).join("")}
+	          </div>
+	          ${mobileSwipeDeck(opportunityChoices.map(option => ({
+	            label: option.binaryLabel,
+	            summary: `${option.binarySummary || option.result} | ${option.summary}`,
+	            action: "camp-opportunity-option",
+	            attrs: { index: option.index },
+	          })), {
+	            kicker: `Stage de camp | semaine ${camp.week}/${camp.maxWeeks}`,
+	            title: opportunity.title,
+	            summary: `${opportunity.text} Banque: ${formatMoney(career.money)}.`,
+	          })}
+	        ` : `
           <div class="training-board" role="list" aria-label="Choix d'entrainement">
 	          ${TRAINING_FOCI.map(focus => {
               const disabled = focus.id === "specialist" && campHasSpecialist(camp);
@@ -8328,15 +8408,45 @@
       return;
     }
     const needsRest = hasMedicalRest(career);
-    const nextLabel = career.flags.medicalRetirement
-      ? "Rapport medical"
-      : needsRest
-        ? "Repos medical"
-        : career.season && career.season.fightsDone < career.season.fightsTarget
-          ? "Suite de la saison"
-          : "Bilan de saison";
-    renderShell(`
-      <section class="game-screen special-screen">
+	    const nextLabel = career.flags.medicalRetirement
+	      ? "Rapport medical"
+	      : needsRest
+	        ? "Repos medical"
+	        : career.season && career.season.fightsDone < career.season.fightsTarget
+	          ? "Continuer la saison"
+	          : "Bilan de saison";
+	    const specialDetails = `
+	      ${result.press ? `
+	        <div class="fight-moment-recap press-recap">
+	          <span>${iconOnly("mic", "P")} Conference de presse</span>
+	          <strong>${esc(result.press.choice)}</strong>
+	          <p>${esc(result.press.result)}</p>
+	          <div class="effect-list compact">
+	            ${(result.press.effects || []).map(effect => {
+	              const good = effectIsGood(effect.key, effect.value);
+	              return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
+	            }).join("") || `<span class="effect">Aucun effet visible</span>`}
+	          </div>
+	        </div>
+	      ` : ""}
+	      <div class="fight-report">
+	        ${result.report.map(line => `
+	          <div class="round-line">
+	            <strong>${iconOnly(line.winner === "Vous" ? "circle-check" : "circle-dot", "R")} Round ${line.round} | ${esc(line.winner)}</strong>
+	            <span>${esc(line.text)}</span>
+	          </div>
+	        `).join("")}
+	      </div>
+	      <div class="analysis-panel">
+	        <div class="panel-title">
+	          <span>${iconOnly("scan-search", "A")} Lecture du gala</span>
+	          <strong>Pourquoi ca compte</strong>
+	        </div>
+	        ${(result.analysis || []).map(line => `<p>${esc(line)}</p>`).join("")}
+	      </div>
+	    `;
+	    renderShell(`
+	      <section class="game-screen special-screen">
         ${fighterHeader(career)}
         ${seasonPanel(career)}
         <div class="result-banner ${result.won ? "win" : "loss"}">
@@ -8349,46 +8459,25 @@
             <span>${esc(injurySentence(result.injury))}</span>
           </div>
 			        ` : ""}
-			        ${result.press ? `
-			          <div class="fight-moment-recap press-recap">
-			            <span>${iconOnly("mic", "P")} Conference de presse</span>
-			            <strong>${esc(result.press.choice)}</strong>
-			            <p>${esc(result.press.result)}</p>
-			            <div class="effect-list compact">
-			              ${(result.press.effects || []).map(effect => {
-			                const good = effectIsGood(effect.key, effect.value);
-			                return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
-			              }).join("") || `<span class="effect">Aucun effet visible</span>`}
-			            </div>
-			          </div>
-			        ` : ""}
-			        <div class="fight-report">
-          ${result.report.map(line => `
-            <div class="round-line">
-              <strong>${iconOnly(line.winner === "Vous" ? "circle-check" : "circle-dot", "R")} Round ${line.round} | ${esc(line.winner)}</strong>
-              <span>${esc(line.text)}</span>
-            </div>
-          `).join("")}
-        </div>
-        <div class="analysis-panel">
-          <div class="panel-title">
-            <span>${iconOnly("scan-search", "A")} Lecture du gala</span>
-            <strong>Pourquoi ca compte</strong>
-          </div>
-          ${(result.analysis || []).map(line => `<p>${esc(line)}</p>`).join("")}
-        </div>
-        <div class="effect-list">
-          ${(result.effects || []).map(effect => {
-            const good = effectIsGood(effect.key, effect.value);
+	        <div class="effect-list">
+	          ${(result.effects || []).map(effect => {
+	            const good = effectIsGood(effect.key, effect.value);
             return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
           }).join("")}
         </div>
-        <div class="menu-actions" style="margin-top: 22px">
-          <button class="btn btn-primary" data-action="after-special-fight">${iconText(needsRest ? "heart-pulse" : "arrow-right", nextLabel, ">")}</button>
-        </div>
-      </section>
-    `);
-  }
+	        <div class="menu-actions" style="margin-top: 22px">
+	          <button class="btn btn-primary" data-action="after-special-fight">${iconText(needsRest ? "heart-pulse" : "arrow-right", nextLabel, ">")}</button>
+	        </div>
+	        <details class="fight-detail-toggle">
+	          <summary>
+	            <span>${iconOnly("file-text", "R")} Resume detaille du gala</span>
+	            <span class="detail-chevron">${iconOnly("chevron-down", "v")}</span>
+	          </summary>
+	          <div class="fight-detail-content">${specialDetails}</div>
+	        </details>
+	      </section>
+	    `);
+	  }
 
 	  function renderFightOffer() {
 	    const career = ui.career;
@@ -8578,20 +8667,55 @@
 	    const career = ui.career;
     const result = career.lastResult;
     const needsRest = hasMedicalRest(career);
-    const afterFightLabel = career.flags.medicalRetirement
-      ? "Rapport medical"
-      : needsRest
-        ? "Repos medical"
-        : career.season && career.season.fightsDone < career.season.fightsTarget
-          ? "Suite de la saison"
-          : "Bilan de saison";
-    const afterFightIcon = career.flags.medicalRetirement || needsRest
-      ? "heart-pulse"
-      : career.season && career.season.fightsDone < career.season.fightsTarget
-        ? "arrow-right"
-        : "clipboard-list";
-    renderShell(`
-      <section class="game-screen">
+	    const afterFightLabel = career.flags.medicalRetirement
+	      ? "Rapport medical"
+	      : needsRest
+	        ? "Repos medical"
+	        : career.season && career.season.fightsDone < career.season.fightsTarget
+	          ? "Continuer la saison"
+	          : "Bilan de saison";
+	    const afterFightIcon = career.flags.medicalRetirement || needsRest
+	      ? "heart-pulse"
+	      : career.season && career.season.fightsDone < career.season.fightsTarget
+	        ? "arrow-right"
+	        : "clipboard-list";
+	    const moments = result.moments?.length ? result.moments : result.moment ? [result.moment] : [];
+	    const fightDetails = `
+	      ${moments.length ? `
+	        <div class="fight-moment-recap">
+	          <span>${iconOnly("target", "M")} Decisions de combat</span>
+	          ${moments.map(moment => `
+	            <div class="round-decision-recap">
+	              <strong>R${moment.round} | ${esc(moment.title)}: ${esc(moment.choice)}</strong>
+	              <p>${esc(moment.result)}</p>
+	              <div class="effect-list compact">
+	                ${(moment.effects || []).map(effect => {
+	                  const good = effectIsGood(effect.key, effect.value);
+	                  return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
+	                }).join("") || `<span class="effect">Aucun effet visible</span>`}
+	              </div>
+	            </div>
+	          `).join("")}
+	        </div>
+	      ` : ""}
+	      <div class="fight-report">
+	        ${result.report.map(line => `
+	          <div class="round-line">
+	            <strong>${iconOnly(line.winner === "Vous" ? "circle-check" : "circle-dot", "R")} Round ${line.round} | ${esc(line.winner)}</strong>
+	            <span>${esc(line.text)}</span>
+	          </div>
+	        `).join("")}
+	      </div>
+	      <div class="analysis-panel">
+	        <div class="panel-title">
+	          <span>${iconOnly("scan-search", "A")} Lecture du combat</span>
+	          <strong>Pourquoi ca a bascule</strong>
+	        </div>
+	        ${(result.analysis || []).map(line => `<p>${esc(line)}</p>`).join("")}
+	      </div>
+	    `;
+	    renderShell(`
+	      <section class="game-screen">
         ${fighterHeader(career)}
 	        ${seasonPanel(career)}
 	        <div class="result-banner ${result.won ? "win" : "loss"}">
@@ -8610,52 +8734,27 @@
 		            <span>${esc(injurySentence(result.injury))}</span>
 		          </div>
 		        ` : ""}
-		        ${(result.moments?.length ? result.moments : result.moment ? [result.moment] : []).length ? `
-		          <div class="fight-moment-recap">
-		            <span>${iconOnly("target", "M")} Decisions de combat</span>
-		            ${(result.moments?.length ? result.moments : [result.moment]).map(moment => `
-		              <div class="round-decision-recap">
-		                <strong>R${moment.round} | ${esc(moment.title)}: ${esc(moment.choice)}</strong>
-		                <p>${esc(moment.result)}</p>
-		                <div class="effect-list compact">
-		                  ${(moment.effects || []).map(effect => {
-		                    const good = effectIsGood(effect.key, effect.value);
-		                    return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
-		                  }).join("") || `<span class="effect">Aucun effet visible</span>`}
-		                </div>
-		              </div>
-		            `).join("")}
-		          </div>
-		        ` : ""}
-		        <div class="fight-report">
-	          ${result.report.map(line => `
-	            <div class="round-line">
-	              <strong>${iconOnly(line.winner === "Vous" ? "circle-check" : "circle-dot", "R")} Round ${line.round} | ${esc(line.winner)}</strong>
-	              <span>${esc(line.text)}</span>
-	            </div>
-	          `).join("")}
-	        </div>
-	        <div class="analysis-panel">
-	          <div class="panel-title">
-	            <span>${iconOnly("scan-search", "A")} Lecture du combat</span>
-	            <strong>Pourquoi ca a bascule</strong>
-	          </div>
-	          ${(result.analysis || []).map(line => `<p>${esc(line)}</p>`).join("")}
-	        </div>
-	        <div class="effect-list">
-	          <span class="effect ${result.won ? "good" : "bad"}">${iconOnly(result.won ? "trending-up" : "trending-down", result.won ? "+" : "-")}<span>${result.won ? "+ ranking" : "- moral"}</span></span>
+		        <div class="effect-list">
+		          <span class="effect ${result.won ? "good" : "bad"}">${iconOnly(result.won ? "trending-up" : "trending-down", result.won ? "+" : "-")}<span>${result.won ? "+ ranking" : "- moral"}</span></span>
 	          <span class="effect bad">${iconOnly("heart-crack", "-")}<span>Sante -${result.damage}</span></span>
 	          <span class="effect bad">${iconOnly("heart-pulse", "-")}<span>Forme -${result.conditionLoss ?? result.damage}</span></span>
 	          ${result.fatigueImpact ? `<span class="effect ${result.fatigueImpact.score >= 0 ? "good" : "bad"}">${iconOnly("activity", "F")}<span>Fatigue ${result.fatigueImpact.fatigue}/12 | ${esc(result.fatigueImpact.label)}</span></span>` : ""}
 	          <span class="effect">${iconOnly("gauge", "F")}<span>Forme actuelle ${career.condition}/100</span></span>
 	          <span class="effect good">${iconOnly("circle-dollar-sign", "$")}<span>Gains +${formatMoney(result.fight.money)}</span></span>
 	        </div>
-	        <div class="menu-actions" style="margin-top: 22px">
-	          <button class="btn btn-primary" data-action="after-fight">${iconText(afterFightIcon, afterFightLabel, ">")}</button>
-	        </div>
-      </section>
-    `);
-  }
+		        <div class="menu-actions" style="margin-top: 22px">
+		          <button class="btn btn-primary" data-action="after-fight">${iconText(afterFightIcon, afterFightLabel, ">")}</button>
+		        </div>
+		        <details class="fight-detail-toggle">
+		          <summary>
+		            <span>${iconOnly("file-text", "R")} Resume detaille du combat</span>
+		            <span class="detail-chevron">${iconOnly("chevron-down", "v")}</span>
+		          </summary>
+		          <div class="fight-detail-content">${fightDetails}</div>
+		        </details>
+	      </section>
+	    `);
+	  }
 
   function renderMedicalRest() {
     const career = ui.career;
@@ -9572,13 +9671,17 @@
     } else if (action === "show-hall") {
       ui.view = "hall";
       render();
-    } else if (action === "show-shop") {
-      ui.view = "shop";
-      render();
-	    } else if (action === "show-stats") {
-	      ui.view = "stats";
+	    } else if (action === "show-shop") {
+	      ui.view = "shop";
 	      render();
-	    } else if (action === "show-news") {
+		    } else if (action === "show-stats") {
+		      if (ui.career?.flags?.statsNudge) {
+		        ui.career.flags.statsNudge = false;
+		        saveCareer();
+		      }
+		      ui.view = "stats";
+		      render();
+		    } else if (action === "show-news") {
 	      ui.view = "news";
 	      render();
     } else if (action === "buy-perk") {

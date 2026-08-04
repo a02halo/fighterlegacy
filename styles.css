@@ -151,6 +151,66 @@ svg.icon {
   justify-content: flex-end;
 }
 
+.stats-nav-nudge {
+  border-color: rgba(214, 165, 59, 0.95);
+  box-shadow: 0 0 0 3px rgba(214, 165, 59, 0.16);
+  position: relative;
+}
+
+.stats-nav-nudge::after {
+  background: var(--gold);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  content: "";
+  height: 9px;
+  position: absolute;
+  right: -3px;
+  top: -3px;
+  width: 9px;
+}
+
+.stats-nudge {
+  align-items: center;
+  background:
+    linear-gradient(90deg, rgba(23, 19, 15, 0.96), rgba(48, 39, 30, 0.94));
+  border: 1px solid rgba(214, 165, 59, 0.58);
+  border-radius: var(--radius);
+  box-shadow: 0 14px 34px rgba(17, 16, 14, 0.18);
+  color: var(--paper);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  margin: 0 auto 14px;
+  max-width: var(--max);
+  padding: 12px 14px;
+}
+
+.stats-nudge > span {
+  align-items: center;
+  background: rgba(214, 165, 59, 0.18);
+  border: 1px solid rgba(214, 165, 59, 0.46);
+  display: inline-flex;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}
+
+.stats-nudge strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.stats-nudge small {
+  color: #d8cbb5;
+  display: block;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.3;
+  margin-top: 3px;
+}
+
 .mobile-menu-toggle {
   align-items: center;
   background: rgba(255, 250, 240, 0.1);
@@ -931,6 +991,18 @@ input:focus-visible {
 
 .camp-opportunity-card {
   border-color: rgba(214, 165, 59, 0.74);
+}
+
+.camp-opportunity-no {
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.98), rgba(247, 235, 232, 0.94));
+  border-color: rgba(215, 52, 56, 0.34);
+}
+
+.camp-opportunity-yes {
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.98), rgba(230, 244, 238, 0.94));
+  border-color: rgba(11, 157, 136, 0.42);
 }
 
 .camp-bank-strip {
@@ -2150,6 +2222,62 @@ input:focus-visible {
   padding-bottom: 0;
 }
 
+.fight-detail-toggle {
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.96), rgba(233, 223, 204, 0.88));
+  border: 1px solid rgba(17, 16, 14, 0.16);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 20px rgba(17, 16, 14, 0.08);
+  color: var(--ink);
+  margin-top: 14px;
+  overflow: hidden;
+}
+
+.fight-detail-toggle summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  list-style: none;
+  padding: 14px;
+  user-select: none;
+}
+
+.fight-detail-toggle summary::-webkit-details-marker {
+  display: none;
+}
+
+.fight-detail-toggle summary > span:first-child {
+  align-items: center;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 950;
+  gap: 7px;
+  text-transform: uppercase;
+}
+
+.detail-chevron {
+  display: inline-flex;
+  transition: transform 160ms ease;
+}
+
+.fight-detail-toggle[open] .detail-chevron {
+  transform: rotate(180deg);
+}
+
+.fight-detail-content {
+  border-top: 1px solid rgba(17, 16, 14, 0.12);
+  display: grid;
+  gap: 12px;
+  padding: 0 14px 14px;
+}
+
+.fight-detail-content .fight-moment-recap,
+.fight-detail-content .analysis-panel {
+  margin-top: 12px;
+}
+
 .result-banner {
   background:
     linear-gradient(135deg, rgba(215, 52, 56, 0.24), transparent 40%),
@@ -2233,6 +2361,11 @@ input:focus-visible {
   font-weight: 750;
 }
 
+.medical-alert b {
+  color: var(--red-dark);
+  font-weight: 950;
+}
+
 .medical-alert small {
   color: #241f1a;
   flex-basis: 100%;
@@ -2302,6 +2435,18 @@ input:focus-visible {
   font-size: 13px;
   font-weight: 820;
   line-height: 1.28;
+}
+
+.camp-risk-alert .alert-cause-pill {
+  align-items: center;
+  background: rgba(255, 250, 240, 0.72);
+  border: 1px solid rgba(17, 16, 14, 0.12);
+  color: var(--ink);
+  display: inline-flex;
+  font-size: 15px;
+  font-weight: 950;
+  justify-self: start;
+  padding: 7px 9px;
 }
 
 .medical-stop-card {
@@ -2951,12 +3096,24 @@ input:focus-visible {
     font-size: 17px;
   }
 
-  .menu-actions .btn {
-    width: 100%;
-  }
+	  .menu-actions .btn {
+	    width: 100%;
+	  }
 
-  .side-stack {
-    grid-template-columns: 1fr;
+	  .stats-nudge {
+	    align-items: stretch;
+	    grid-template-columns: auto minmax(0, 1fr);
+	    margin: 0 16px 12px;
+	    padding: 11px;
+	  }
+
+	  .stats-nudge .btn {
+	    grid-column: 1 / -1;
+	    width: 100%;
+	  }
+
+	  .side-stack {
+	    grid-template-columns: 1fr;
   }
 
   .hero-content,
