@@ -5253,16 +5253,16 @@
 	    return `${fatigueText}. ${effects}`;
 	  }
 
-	  function campOpportunityBinaryChoices(opportunity) {
-	    const entries = (opportunity?.options || []).map((option, index) => ({ option, index }));
-	    if (!entries.length) return [];
-	    const refuse = entries.find(entry => entry.option.skipOpportunity) || entries[1] || entries[0];
-	    const accept = entries.find(entry => !entry.option.skipOpportunity) || entries[0] || refuse;
-	    return [
-	      { ...refuse.option, index: refuse.index, binaryLabel: "Non", binarySummary: refuse.option.result, summary: campOpportunityChoiceSummary(refuse.option) },
-	      { ...accept.option, index: accept.index, binaryLabel: "Oui", binarySummary: accept.option.result, summary: campOpportunityChoiceSummary(accept.option) },
-	    ];
-	  }
+		  function campOpportunityBinaryChoices(opportunity) {
+		    const entries = (opportunity?.options || []).map((option, index) => ({ option, index }));
+		    if (!entries.length) return [];
+		    const refuse = entries.find(entry => entry.option.skipOpportunity) || entries[1] || entries[0];
+		    const accept = entries.find(entry => !entry.option.skipOpportunity) || entries[0] || refuse;
+		    return [
+		      { ...refuse.option, index: refuse.index, binaryLabel: "Je n'y vais pas", binaryIntent: "Refuser", binarySummary: refuse.option.result, summary: campOpportunityChoiceSummary(refuse.option) },
+		      { ...accept.option, index: accept.index, binaryLabel: "J'y vais", binaryIntent: "Accepter", binarySummary: accept.option.result, summary: campOpportunityChoiceSummary(accept.option) },
+		    ];
+		  }
 
 	  function chooseCampOpportunityOption(index) {
 	    const career = ui.career;
@@ -5975,9 +5975,9 @@
     );
   }
 
-  function fightOptionSafetyScore(option = {}) {
-    const fight = option.fight || {};
-    const effects = option.effects || {};
+	  function fightOptionSafetyScore(option = {}) {
+	    const fight = option.fight || {};
+	    const effects = option.effects || {};
     return (
       (effects.medicalCare || 0) * 2.2 +
       (effects.condition || 0) * 1.3 +
@@ -5987,34 +5987,39 @@
       Math.max(0, fight.damage || 0) * 1.8 -
       Math.max(0, effects.injuryRisk || 0) * 2.4 -
       Math.max(0, -(effects.condition || 0)) * 0.8
-    );
-  }
+	    );
+	  }
 
-  function fightMomentBinaryOptions(options = [], opponentName = "") {
-    const hydrated = options.map(option => ({
-      ...option,
+	  function fightMomentActionSummary(option = {}, intent = "prudent") {
+	    const prefix = intent === "risk" ? "Engager le danger" : "Gerer le risque";
+	    return `${prefix}: ${option.result || option.label || "Decision de combat."}`;
+	  }
+
+	  function fightMomentBinaryOptions(options = [], opponentName = "") {
+	    const hydrated = options.map(option => ({
+	      ...option,
       label: String(option.label || "").replaceAll("{opponent}", opponentName),
       result: String(option.result || "").replaceAll("{opponent}", opponentName),
       effects: option.effects || {},
       fight: option.fight || {},
     }));
-    if (hydrated.length <= 2) {
-      const left = hydrated[0] || { label: "Temporiser", result: "Tu choisis la gestion.", effects: {}, fight: {} };
-      const right = hydrated[1] || hydrated[0] || left;
-      return [
-        { ...left, label: `Non - ${left.label}`, binaryLabel: "Non", binarySummary: left.label },
-        { ...right, label: `Oui - ${right.label}`, binaryLabel: "Oui", binarySummary: right.label },
-      ];
-    }
-    const yes = [...hydrated].sort((a, b) => fightOptionEngagementScore(b) - fightOptionEngagementScore(a))[0];
-    const no = [...hydrated]
-      .sort((a, b) => fightOptionSafetyScore(b) - fightOptionSafetyScore(a))
-      .find(option => option !== yes) || hydrated.find(option => option !== yes) || yes;
-    return [
-      { ...no, label: `Non - ${no.label}`, binaryLabel: "Non", binarySummary: no.label },
-      { ...yes, label: `Oui - ${yes.label}`, binaryLabel: "Oui", binarySummary: yes.label },
-    ];
-  }
+	    if (hydrated.length <= 2) {
+	      const left = hydrated[0] || { label: "Temporiser", result: "Tu choisis la gestion.", effects: {}, fight: {} };
+	      const right = hydrated[1] || hydrated[0] || left;
+	      return [
+	        { ...left, label: left.label, binaryLabel: left.label, binaryIntent: "Prudent", binarySummary: fightMomentActionSummary(left, "safe") },
+	        { ...right, label: right.label, binaryLabel: right.label, binaryIntent: "Engager", binarySummary: fightMomentActionSummary(right, "risk") },
+	      ];
+	    }
+	    const yes = [...hydrated].sort((a, b) => fightOptionEngagementScore(b) - fightOptionEngagementScore(a))[0];
+	    const no = [...hydrated]
+	      .sort((a, b) => fightOptionSafetyScore(b) - fightOptionSafetyScore(a))
+	      .find(option => option !== yes) || hydrated.find(option => option !== yes) || yes;
+	    return [
+	      { ...no, label: no.label, binaryLabel: no.label, binaryIntent: "Prudent", binarySummary: fightMomentActionSummary(no, "safe") },
+	      { ...yes, label: yes.label, binaryLabel: yes.label, binaryIntent: "Engager", binarySummary: fightMomentActionSummary(yes, "risk") },
+	    ];
+	  }
 
   function buildFightMoment(career, fight, plan, targetRound = null, usedIds = []) {
     const rounds = fightRoundsFor(career, fight);
@@ -7358,28 +7363,30 @@
 	  function mobileSwipeDeck(choices = [], context = {}) {
 	    if (choices.length !== 2) return "";
 	    const left = choices[0];
-	    const right = choices[1];
-	    const title = context.title || "Decision";
-	    const kicker = context.kicker || "Choix rapide";
-	    const summary = context.summary || "Glisse la carte ou utilise les boutons.";
-	    return `
-	      <div class="swipe-choice-deck" data-swipe-deck>
-	        <div class="swipe-choice-card" data-swipe-card>
+		    const right = choices[1];
+		    const title = context.title || "Decision";
+		    const kicker = context.kicker || "Choix rapide";
+		    const summary = context.summary || "Glisse la carte ou utilise les boutons.";
+		    const leftIntent = left.intent || context.leftIntent || "Gauche";
+		    const rightIntent = right.intent || context.rightIntent || "Droite";
+		    return `
+		      <div class="swipe-choice-deck" data-swipe-deck>
+		        <div class="swipe-choice-card" data-swipe-card>
 	          <div class="swipe-card-top">
 	            <span>${iconOnly("move-horizontal", "S")} ${esc(kicker)}</span>
 	            <strong>${esc(title)}</strong>
 	            <p>${esc(summary)}</p>
 	          </div>
-	          <div class="swipe-card-options">
-	            <div>
-	              <em>${iconOnly("arrow-left", "<")} Gauche</em>
-	              <b>${esc(left.label)}</b>
-	              <small>${esc(left.summary || left.meta || "")}</small>
-	            </div>
-	            <div>
-	              <em>Droite ${iconOnly("arrow-right", ">")}</em>
-	              <b>${esc(right.label)}</b>
-	              <small>${esc(right.summary || right.meta || "")}</small>
+		          <div class="swipe-card-options">
+		            <div>
+		              <em>${iconOnly("arrow-left", "<")} ${esc(leftIntent)}</em>
+		              <b>${esc(left.label)}</b>
+		              <small>${esc(left.summary || left.meta || "")}</small>
+		            </div>
+		            <div>
+		              <em>${esc(rightIntent)} ${iconOnly("arrow-right", ">")}</em>
+		              <b>${esc(right.label)}</b>
+		              <small>${esc(right.summary || right.meta || "")}</small>
 	            </div>
 	          </div>
 	        </div>
@@ -8078,15 +8085,18 @@
 	              </button>
 	            `).join("")}
 	          </div>
-	          ${mobileSwipeDeck(opportunityChoices.map(option => ({
-	            label: option.binaryLabel,
-	            summary: `${option.binarySummary || option.result} | ${option.summary}`,
-	            action: "camp-opportunity-option",
-	            attrs: { index: option.index },
-	          })), {
-	            kicker: `Stage de camp | semaine ${camp.week}/${camp.maxWeeks}`,
-	            title: opportunity.title,
-	            summary: `${opportunity.text} Banque: ${formatMoney(career.money)}.`,
+		          ${mobileSwipeDeck(opportunityChoices.map(option => ({
+		            label: option.binaryLabel,
+		            intent: option.binaryIntent,
+		            summary: `${option.binarySummary || option.result} | ${option.summary}`,
+		            action: "camp-opportunity-option",
+		            attrs: { index: option.index },
+		          })), {
+		            leftIntent: "Je n'y vais pas",
+		            rightIntent: "J'y vais",
+		            kicker: `Stage de camp | semaine ${camp.week}/${camp.maxWeeks}`,
+		            title: opportunity.title,
+		            summary: `${opportunity.text} Banque: ${formatMoney(career.money)}.`,
 	          })}
 	        ` : `
           <div class="training-board" role="list" aria-label="Choix d'entrainement">
@@ -8625,11 +8635,12 @@
     const decisionIndex = clamp((career.liveFight?.round || 1) - 1, 0, Math.max(0, totalDecisions - 1));
     const moment = career.pendingFightMoment;
     const momentChoices = (moment.options || []).slice(0, 2);
-    const swipeChoices = momentChoices.map((option, index) => ({
-      label: option.binaryLabel || (index === 0 ? "Non" : "Oui"),
-      summary: `${option.binarySummary || option.label} | ${effectLine(option.effects) || "Aucun effet visible"}`,
-      action: "fight-moment-option",
-      attrs: { index },
+	    const swipeChoices = momentChoices.map((option, index) => ({
+	      label: option.binaryLabel || (index === 0 ? "Non" : "Oui"),
+	      intent: option.binaryIntent || (index === 0 ? "Prudent" : "Engager"),
+	      summary: `${option.binarySummary || option.label} | ${effectLine(option.effects) || "Aucun effet visible"}`,
+	      action: "fight-moment-option",
+	      attrs: { index },
     }));
     renderShell(`
       <section class="game-screen fight-moment-screen">
@@ -8653,10 +8664,12 @@
               </button>
             `).join("")}
           </div>
-          ${mobileSwipeDeck(swipeChoices, {
-            kicker: `Round ${moment.round} | ${decisionIndex + 1}/${totalDecisions || 1}`,
-            title: moment.title,
-            summary: moment.text,
+	          ${mobileSwipeDeck(swipeChoices, {
+	            leftIntent: "Prudent",
+	            rightIntent: "Engager",
+	            kicker: `Round ${moment.round} | ${decisionIndex + 1}/${totalDecisions || 1}`,
+	            title: moment.title,
+	            summary: moment.text,
           })}
         </div>
       </section>
