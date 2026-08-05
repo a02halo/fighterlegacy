@@ -3536,7 +3536,7 @@
 	    const career = ui.career;
 	    if (!career?.season) return;
 	    if (!career.season.settled) settleSeason(career);
-	    if ((!career.pendingContracts || career.pendingContracts.length === 0) && career.lastResult?.won) career.pendingContracts = buildContractOffers();
+	    if (ensureContractOffers(career)) saveCareer();
 	    career.phase = "season-summary";
 	    ui.view = "seasonSummary";
 	    saveCareer();
@@ -5690,6 +5690,7 @@
     const unbeatenRun = career.record.w >= 2 && career.record.l === 0;
     const internationalStep = career.tier === 2;
     const ufcStep = career.tier === 3 || career.tier === 4;
+    const activeContractBlock = (career.contract?.remainingFights || 0) > 0 && !clauseReady && !hasBelt;
     const winningRecord = career.record.w >= career.record.l || career.streak >= 3;
     const cageSuccess = winningRecord && (
       perfectSeason ||
@@ -5714,7 +5715,10 @@
       (career.money || 0) >= 65000 + career.tier * 28000 ||
       hasBelt
     );
-    const debtTrouble = (career.money || 0) < -5000 || (career.flags?.debtSeasons || 0) > 0 || missed > 0 || (career.flags?.lockedContract || 0) > 0;
+    const nationalPerfectOverride = internationalStep && perfectSeason;
+    const financialDrag = (career.money || 0) < -5000 || (career.flags?.debtSeasons || 0) > 0 || (career.flags?.lockedContract || 0) > 0;
+    const reliabilityBlock = missed > 0 || (activeContractBlock && !nationalPerfectOverride);
+    const debtTrouble = financialDrag || reliabilityBlock;
     const threshold = targets.length ? Math.min(...targets.map(org => org.threshold || 0)) : 0;
     const visibilityAccess = (
       targets.length &&
@@ -5736,8 +5740,10 @@
       (cageSuccess && businessSuccess && visibilityAccess)
     );
     const ufcEligible = ufcStep && hasBelt && !missed && career.lastResult?.won;
-    const promotionEligible = Boolean(targets.length) && !debtTrouble && (
-      ufcStep ? ufcEligible : localEligible
+    const cleanEnoughForPromotion = !reliabilityBlock && (!financialDrag || nationalPerfectOverride || clauseReady || hasBelt);
+    const promotionEligible = Boolean(targets.length) && (
+      (!debtTrouble && (ufcStep ? ufcEligible : localEligible)) ||
+      (cleanEnoughForPromotion && localEligible)
     );
     const targetLabel = targets.map(org => org.label).join(" / ");
     return {
@@ -5753,10 +5759,14 @@
       perfectSeason,
       strongSeason,
       unbeatenRun,
+      nationalPerfectOverride,
       internationalStep,
       ufcStep,
       hypeTarget,
       charismaTarget,
+      activeContractBlock,
+      financialDrag,
+      reliabilityBlock,
       cageSuccess,
       businessSuccess,
       debtTrouble,
@@ -6861,7 +6871,7 @@
 		  function buildContractOffers() {
 		    const career = ui.career;
 		    const status = promotionStatus(career);
-		    if (career.contract?.remainingFights > 0 && !status.clauseReady && !status.hasBelt) return [];
+		    if (status.activeContractBlock && !(status.internationalStep && status.perfectSeason)) return [];
 		    if (!career.lastResult?.won) return [];
 	    const debtTrouble = status.debtTrouble;
 	    const promotionEligible = status.promotionEligible;
@@ -6922,6 +6932,24 @@
 	    }
 	    return offers;
 	  }
+
+  function contractOffersNeedRefresh(career) {
+    if (!career?.lastResult?.won) return false;
+    const offers = Array.isArray(career.pendingContracts) ? career.pendingContracts : [];
+    if (!offers.length) return true;
+    const status = promotionStatus(career);
+    if (!status.promotionEligible) return false;
+    const expectedMoveIds = (status.targets || []).map(org => `move-${org.id}`);
+    return expectedMoveIds.some(id => !offers.some(offer => offer.id === id));
+  }
+
+  function ensureContractOffers(career) {
+    if (contractOffersNeedRefresh(career)) {
+      career.pendingContracts = buildContractOffers();
+      return true;
+    }
+    return false;
+  }
 
   function chooseContract(index) {
     const career = ui.career;
@@ -7815,9 +7843,15 @@
         value: status.perfectSeason ? "bonus saison invaincue" : `hype ${career.hype}/${status.hypeTarget}, charisme ${career.stats.charisma}/${status.charismaTarget}`,
       },
       {
-        ok: !status.debtTrouble,
+        ok: !status.reliabilityBlock && (!status.financialDrag || status.promotionEligible),
         label: "Fiabilite",
-        value: status.debtTrouble ? "dette, forfait ou contrat bloque" : "dossier propre",
+        value: status.reliabilityBlock
+          ? status.activeContractBlock ? "contrat encore actif" : "forfait au dossier"
+          : status.activeContractBlock && status.nationalPerfectOverride
+            ? "reliquat compense par la saison parfaite"
+          : status.financialDrag && status.promotionEligible
+            ? "signal negatif compense par la saison"
+            : status.financialDrag ? "finances ou image a reparer" : "dossier propre",
       },
       {
         ok: status.visibilityAccess || status.clauseReady,
@@ -9064,93 +9098,104 @@
       settleSeason(career);
       saveCareer();
     }
-    if ((!career.pendingContracts || career.pendingContracts.length === 0) && career.lastResult?.won) {
-      career.pendingContracts = buildContractOffers();
+    if (ensureContractOffers(career)) {
       saveCareer();
     }
     const scoreNow = scoreCareer(career);
+    const hasContractOffers = Boolean(career.pendingContracts?.length);
+    const seasonDetails = `
+      ${renderSeasonFocusPanel(career)}
+      <div class="story-panel">
+        <h3>Saison ${career.year}</h3>
+        <p>${formatCombats(season.fightsDone)}, ${season.trainingLog.length} camp${season.trainingLog.length > 1 ? "s" : ""}, ${season.lifeLog.length} choix de vie. Score provisoire: ${scoreNow.score} pts.</p>
+      </div>
+      <div class="notice season-next-step">
+        ${hasContractOffers
+          ? `${iconOnly("file-pen-line", "C")} Prochaine etape: signer une des offres au-dessus pour lancer la saison suivante.`
+          : `${iconOnly("calendar-plus", "S")} Aucun contrat prioritaire a signer: vous pouvez lancer la saison suivante avec le cadre actuel.`}
+      </div>
+      ${season.settlement ? `
+        <div class="season-verdict">
+          <strong>${iconOnly(season.settlement.title === "Saison compliquee" ? "triangle-alert" : "circle-check", "V")} ${esc(season.settlement.title)}</strong>
+          <span>${esc(season.settlement.text)}</span>
+          <div class="effect-list compact">
+            ${(season.settlement.effects || []).map(effect => {
+              const good = effectIsGood(effect.key, effect.value);
+              return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
+            }).join("") || `<span class="effect">Aucun effet visible</span>`}
+          </div>
+        </div>
+      ` : ""}
+      ${season.settlement?.delayed?.length ? `
+        <div class="season-verdict delayed-verdict">
+          <strong>${iconOnly("hourglass", "D")} Consequences de vie</strong>
+          ${(season.settlement.delayed || []).map(item => `
+            <span>${esc(item.title)} | ${esc(item.outcome)}: ${esc(item.text)}</span>
+            <div class="effect-list compact">
+              ${(item.effects || []).map(effect => {
+                const good = effectIsGood(effect.key, effect.value);
+                return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
+              }).join("")}
+            </div>
+          `).join("")}
+        </div>
+      ` : ""}
+      <div class="summary-grid">
+        <div class="summary-item"><span>${iconOnly("list-checks", "R")} Record</span><strong>${career.record.w}-${career.record.l}</strong></div>
+        <div class="summary-item"><span>${iconOnly("zap", "K")} Finitions</span><strong>${career.record.ko + career.record.sub}</strong></div>
+        <div class="summary-item"><span>${iconOnly("trophy", "T")} Ceintures</span><strong>${career.titles.length}</strong></div>
+        <div class="summary-item"><span>${iconOnly("heart", "S")} Sante</span><strong>${career.stats.durability}</strong></div>
+      </div>
+      <div class="context-grid">
+        ${renderNewsPanel(career, 5)}
+        ${renderRankingPanel(career)}
+        ${renderContractPanel(career)}
+        ${renderMedicalPanel(career)}
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-action="noop">Combats</button>
+      </div>
+      <div class="timeline">
+        ${season.fightLog.map(row => `
+          <div class="timeline-row">
+            <strong>${row.result}</strong>
+            <span>Combat ${row.number}: ${row.special ? `${esc(row.special)} | ` : ""}${esc(row.opponent)} (${esc(row.method)}, R${row.round})${row.title ? " | ceinture" : ""}.${row.press ? ` Conference: ${esc(row.press)}.` : ""}${row.moment ? ` Moment: ${esc(row.moment)}.` : ""}</span>
+          </div>
+        `).join("")}
+        ${season.trainingLog.slice(-2).map(row => `
+          <div class="timeline-row">
+            <strong>Camp</strong>
+            <span>${esc(row.label)} | ${esc(row.text)}</span>
+          </div>
+        `).join("")}
+        ${season.lifeLog.slice(-2).map(row => `
+          <div class="timeline-row">
+            <strong>Choix de vie</strong>
+            <span>${esc(row.title)}: ${esc(row.choice)}. ${esc(row.result)}</span>
+          </div>
+        `).join("")}
+      </div>
+      ${hasContractOffers ? "" : `
+        <div class="menu-actions">
+          <button class="btn btn-primary" data-action="advance-year">${iconText("calendar-plus", "Saison suivante", ">")}</button>
+          ${voluntaryRetirementAvailable(career) ? `<button class="btn" data-action="retire">${iconText("flag", "Raccrocher les gants", "F")}</button>` : ""}
+        </div>
+      `}
+    `;
     renderShell(`
       <section class="game-screen">
         ${fighterHeader(career)}
         ${seasonPanel(career)}
         ${renderContractOffersBlock(career)}
-        ${renderSeasonFocusPanel(career)}
-        <div class="story-panel">
-          <h3>Saison ${career.year}</h3>
-          <p>${formatCombats(season.fightsDone)}, ${season.trainingLog.length} camp${season.trainingLog.length > 1 ? "s" : ""}, ${season.lifeLog.length} choix de vie. Score provisoire: ${scoreNow.score} pts.</p>
-        </div>
-        <div class="notice season-next-step">
-          ${career.pendingContracts?.length
-            ? `${iconOnly("file-pen-line", "C")} Prochaine etape: signer une des offres au-dessus pour lancer la saison suivante.`
-            : `${iconOnly("calendar-plus", "S")} Aucun contrat prioritaire a signer: vous pouvez lancer la saison suivante avec le cadre actuel.`}
-        </div>
-        ${season.settlement ? `
-          <div class="season-verdict">
-            <strong>${iconOnly(season.settlement.title === "Saison compliquee" ? "triangle-alert" : "circle-check", "V")} ${esc(season.settlement.title)}</strong>
-            <span>${esc(season.settlement.text)}</span>
-            <div class="effect-list compact">
-              ${(season.settlement.effects || []).map(effect => {
-                const good = effectIsGood(effect.key, effect.value);
-                return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
-              }).join("") || `<span class="effect">Aucun effet visible</span>`}
-            </div>
-          </div>
-        ` : ""}
-        ${season.settlement?.delayed?.length ? `
-          <div class="season-verdict delayed-verdict">
-            <strong>${iconOnly("hourglass", "D")} Consequences de vie</strong>
-            ${(season.settlement.delayed || []).map(item => `
-              <span>${esc(item.title)} | ${esc(item.outcome)}: ${esc(item.text)}</span>
-              <div class="effect-list compact">
-                ${(item.effects || []).map(effect => {
-                  const good = effectIsGood(effect.key, effect.value);
-                  return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
-                }).join("")}
-              </div>
-            `).join("")}
-          </div>
-        ` : ""}
-	        <div class="summary-grid">
-	          <div class="summary-item"><span>${iconOnly("list-checks", "R")} Record</span><strong>${career.record.w}-${career.record.l}</strong></div>
-	          <div class="summary-item"><span>${iconOnly("zap", "K")} Finitions</span><strong>${career.record.ko + career.record.sub}</strong></div>
-	          <div class="summary-item"><span>${iconOnly("trophy", "T")} Ceintures</span><strong>${career.titles.length}</strong></div>
-	          <div class="summary-item"><span>${iconOnly("heart", "S")} Sante</span><strong>${career.stats.durability}</strong></div>
-	        </div>
-	        <div class="context-grid">
-	          ${renderNewsPanel(career, 5)}
-	          ${renderRankingPanel(career)}
-	          ${renderContractPanel(career)}
-	          ${renderMedicalPanel(career)}
-	        </div>
-	        <div class="tabs">
-	          <button class="tab active" data-action="noop">Combats</button>
-	        </div>
-        <div class="timeline">
-          ${season.fightLog.map(row => `
-            <div class="timeline-row">
-              <strong>${row.result}</strong>
-	              <span>Combat ${row.number}: ${row.special ? `${esc(row.special)} | ` : ""}${esc(row.opponent)} (${esc(row.method)}, R${row.round})${row.title ? " | ceinture" : ""}.${row.press ? ` Conference: ${esc(row.press)}.` : ""}${row.moment ? ` Moment: ${esc(row.moment)}.` : ""}</span>
-            </div>
-          `).join("")}
-          ${season.trainingLog.slice(-2).map(row => `
-            <div class="timeline-row">
-              <strong>Camp</strong>
-              <span>${esc(row.label)} | ${esc(row.text)}</span>
-            </div>
-          `).join("")}
-          ${season.lifeLog.slice(-2).map(row => `
-            <div class="timeline-row">
-              <strong>Choix de vie</strong>
-              <span>${esc(row.title)}: ${esc(row.choice)}. ${esc(row.result)}</span>
-            </div>
-          `).join("")}
-        </div>
-        ${career.pendingContracts?.length ? "" : `
-          <div class="menu-actions">
-            <button class="btn btn-primary" data-action="advance-year">${iconText("calendar-plus", "Saison suivante", ">")}</button>
-	            ${voluntaryRetirementAvailable(career) ? `<button class="btn" data-action="retire">${iconText("flag", "Raccrocher les gants", "F")}</button>` : ""}
-          </div>
-        `}
+        ${hasContractOffers ? `
+          <details class="fight-detail-toggle season-detail-toggle">
+            <summary>
+              <span>${iconOnly("clipboard-list", "R")} Resume de la saison passee</span>
+              <span class="detail-chevron">${iconOnly("chevron-down", "v")}</span>
+            </summary>
+            <div class="fight-detail-content season-detail-content">${seasonDetails}</div>
+          </details>
+        ` : seasonDetails}
       </section>
     `);
   }
