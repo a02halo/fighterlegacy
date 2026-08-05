@@ -7705,17 +7705,9 @@
 	              ${hasCreatorDraft ? `<button class="btn btn-dark" data-action="continue-creator">${iconText("rotate-ccw", "Reprendre la creation", "R")}</button>` : ""}
 	              ${hasCareer ? `<button class="btn btn-dark" data-action="continue-career">${iconText("play", "Continuer la carriere", ">")}</button>` : ""}
 	            </div>
-            <div class="fight-stage" aria-hidden="true">
-              <div class="fighter-figure">
-                <div class="fighter-body red"></div>
-                <div class="fighter-label">Prospect</div>
-              </div>
-              <div class="versus">VS</div>
-              <div class="fighter-figure">
-                <div class="fighter-body teal"></div>
-                <div class="fighter-label">Contender</div>
-              </div>
-            </div>
+            <figure class="fight-stage home-art">
+              <img src="./assets/home-fight-legacy.png" alt="Deux combattants de MMA dans la cage">
+            </figure>
           </div>
         </div>
 	        <aside class="side-stack">

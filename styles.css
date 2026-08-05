@@ -357,40 +357,49 @@ input:focus-visible {
 }
 
 .fight-stage {
-  align-items: end;
   align-self: stretch;
   background:
     linear-gradient(180deg, rgba(255, 250, 240, 0.08), rgba(17, 16, 14, 0.08)),
-    rgba(255, 250, 240, 0.72);
+    #0b1214;
   border: 1px solid rgba(17, 16, 14, 0.64);
-  color: var(--ink);
-  display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(90px, 1fr) minmax(58px, 0.3fr) minmax(90px, 1fr);
-  min-height: 230px;
+  box-shadow: 0 24px 44px rgba(0, 0, 0, 0.32);
+  display: block;
+  min-height: 330px;
   overflow: hidden;
-  padding: 18px 16px 10px;
+  padding: 0;
   position: relative;
 }
 
 .fight-stage::before {
   background:
-    repeating-linear-gradient(90deg, rgba(17, 16, 14, 0.18) 0 2px, transparent 2px 28px),
-    repeating-linear-gradient(0deg, rgba(17, 16, 14, 0.1) 0 2px, transparent 2px 28px);
+    linear-gradient(180deg, rgba(15, 13, 11, 0.04), rgba(15, 13, 11, 0.48)),
+    linear-gradient(135deg, rgba(215, 52, 56, 0.2), transparent 42%),
+    linear-gradient(315deg, rgba(11, 157, 136, 0.2), transparent 42%);
   content: "";
   inset: 0;
-  opacity: 0.5;
   pointer-events: none;
   position: absolute;
+  z-index: 1;
 }
 
 .fight-stage::after {
-  border: 2px solid rgba(214, 165, 59, 0.72);
-  clip-path: polygon(18% 0, 82% 0, 100% 26%, 100% 74%, 82% 100%, 18% 100%, 0 74%, 0 26%);
+  border: 1px solid rgba(214, 165, 59, 0.5);
   content: "";
-  inset: 18px 13%;
+  inset: 10px;
   pointer-events: none;
   position: absolute;
+  z-index: 2;
+}
+
+.fight-stage img {
+  display: block;
+  height: 100%;
+  inline-size: 100%;
+  min-height: 330px;
+  object-fit: cover;
+  object-position: center 42%;
+  position: relative;
+  transform: scale(1.02);
 }
 
 .fighter-figure {
@@ -3710,8 +3719,13 @@ input:focus-visible {
   }
 
   .fight-stage {
-    min-height: 190px;
-    padding: 14px 8px 10px;
+    min-height: 250px;
+    padding: 0;
+  }
+
+  .fight-stage img {
+    min-height: 250px;
+    object-position: center 40%;
   }
 
   .fighter-label {
