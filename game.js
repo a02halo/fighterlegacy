@@ -2138,6 +2138,13 @@
 	      leaderboard: [],
 	      leaderboardLoaded: false,
 	      selectedFighterId: null,
+	      myFighters: [],
+	      selectedOwnFighterId: null,
+	      notifications: [],
+	      challenges: [],
+	      accountTab: "fighters",
+	      challengeFight: null,
+	      challengeResult: null,
 	      lastPublish: null,
 	      authOpen: false,
 	    },
@@ -5945,6 +5952,48 @@
     return stats;
   }
 
+  function styleFromOnline(value = "") {
+    const clean = normalizeFighterName(value);
+    return STYLES.find(style => style.id === clean || normalizeFighterName(style.label) === clean) || STYLES[0];
+  }
+
+  function weightIndexFromLabel(value = "") {
+    const clean = normalizeFighterName(value);
+    const index = WEIGHTS.findIndex(weight => weight.id === clean || normalizeFighterName(weight.label) === clean);
+    return index >= 0 ? index : -1;
+  }
+
+  function onlineFighterSnapshot(row = {}) {
+    const snapshot = row.snapshot && typeof row.snapshot === "object" ? row.snapshot : {};
+    const stats = row.stats && typeof row.stats === "object" ? row.stats : snapshot.stats || {};
+    const styleId = snapshot.styleId || snapshot.style?.id || row.style;
+    const weightLabel = row.weight_class || snapshot.weightClass || snapshot.weight?.label || "";
+    const record = snapshot.record || { w: row.record_w || 0, l: row.record_l || 0, ko: row.finishes_ko || 0, sub: row.finishes_sub || 0 };
+    return {
+      id: row.fighter_id || row.id || "",
+      userId: row.user_id || row.userId || "",
+      source: row.source || snapshot.source || "beta_import",
+      manager: row.manager_name || row.managerName || "",
+      name: row.fighter_name || row.name || "Combattant",
+      weightClass: weightLabel,
+      weightIndex: weightIndexFromLabel(weightLabel),
+      style: styleFromOnline(styleId),
+      stats: { ...BASE_STATS, ...stats },
+      overall: row.overall || snapshot.overall || 50,
+      score: row.score || 0,
+      record,
+      org: row.org || snapshot.org || "Organisation",
+      retired: Boolean(row.retired || snapshot.retired),
+    };
+  }
+
+  function challengeWeightCompatible(a, b) {
+    const left = typeof a === "number" ? a : onlineFighterSnapshot(a).weightIndex;
+    const right = typeof b === "number" ? b : onlineFighterSnapshot(b).weightIndex;
+    if (left < 0 || right < 0) return false;
+    return Math.abs(left - right) <= 1;
+  }
+
   function styleEdge(aStyle, bStyle) {
 	    const table = {
 	      wrestling: { boxing: 5, kickboxing: 5, karate: 4, bjj: -2 },
@@ -9489,7 +9538,7 @@
 	  }
 
 	  function renderOnlineIfVisible() {
-	    if (["online", "account", "menu"].includes(ui.view)) render();
+	    if (["online", "account", "onlineChallenge", "onlineChallengeResult", "menu"].includes(ui.view)) render();
 	  }
 
 	  async function initOnline() {
@@ -9503,14 +9552,25 @@
 	    try {
 	      const { data } = await client.auth.getSession();
 	      ui.online.session = data?.session || null;
-	      if (ui.online.session) await loadOnlineProfile({ rerender: false });
+	      if (ui.online.session) {
+	        await loadOnlineProfile({ rerender: false });
+	        await loadOnlineFighters({ rerender: false });
+	        await loadOnlineChallenges({ rerender: false });
+	      }
 	      await loadOnlineLeaderboard({ rerender: false });
 	      client.auth.onAuthStateChange((_event, session) => {
 	        ui.online.session = session || null;
 	        ui.online.profile = null;
 	        if (session) {
-	          loadOnlineProfile({ rerender: true });
+	          Promise.all([
+	            loadOnlineProfile({ rerender: false }),
+	            loadOnlineFighters({ rerender: false }),
+	            loadOnlineChallenges({ rerender: false }),
+	          ]).finally(() => renderOnlineIfVisible());
 	        } else {
+	          ui.online.myFighters = [];
+	          ui.online.notifications = [];
+	          ui.online.challenges = [];
 	          renderOnlineIfVisible();
 	        }
 	      });
@@ -9538,6 +9598,65 @@
 	    }
 	    if (options.rerender !== false) renderOnlineIfVisible();
 	    return data || null;
+	  }
+
+	  async function loadOnlineFighters(options = {}) {
+	    const client = onlineClient();
+	    const session = ui.online.session;
+	    if (!client || !session?.user) {
+	      ui.online.myFighters = [];
+	      return [];
+	    }
+	    const { data, error } = await client
+	      .from("official_fighters")
+	      .select("id,user_id,source,fighter_name,weight_class,country,style,org,org_tier,record_w,record_l,finishes_ko,finishes_sub,titles_count,overall,hype,reputation,money,condition,score,rank_label,retired,published_at,updated_at,stats,snapshot")
+	      .eq("user_id", session.user.id)
+	      .order("score", { ascending: false })
+	      .limit(5);
+	    if (error) {
+	      ui.online.error = `Combattants indisponibles: ${error.message}`;
+	      if (options.rerender !== false) renderOnlineIfVisible();
+	      return [];
+	    }
+	    ui.online.myFighters = Array.isArray(data) ? data : [];
+	    if (!ui.online.selectedOwnFighterId && ui.online.myFighters[0]) {
+	      ui.online.selectedOwnFighterId = ui.online.myFighters[0].id;
+	    }
+	    if (options.rerender !== false) renderOnlineIfVisible();
+	    return ui.online.myFighters;
+	  }
+
+	  async function loadOnlineChallenges(options = {}) {
+	    const client = onlineClient();
+	    const session = ui.online.session;
+	    if (!client || !session?.user) {
+	      ui.online.notifications = [];
+	      ui.online.challenges = [];
+	      return { notifications: [], challenges: [] };
+	    }
+	    const [{ data: notifications, error: notificationError }, { data: challenges, error: challengeError }] = await Promise.all([
+	      client
+	        .from("player_notifications")
+	        .select("*")
+	        .order("created_at", { ascending: false })
+	        .limit(30),
+	      client
+	        .from("player_challenges")
+	        .select("*")
+	        .order("created_at", { ascending: false })
+	        .limit(30),
+	    ]);
+	    if (notificationError || challengeError) {
+	      ui.online.error = `Defis indisponibles: ${(notificationError || challengeError).message}`;
+	    } else {
+	      ui.online.notifications = Array.isArray(notifications) ? notifications : [];
+	      ui.online.challenges = Array.isArray(challenges) ? challenges : [];
+	    }
+	    if (options.rerender !== false) renderOnlineIfVisible();
+	    return {
+	      notifications: ui.online.notifications,
+	      challenges: ui.online.challenges,
+	    };
 	  }
 
 	  async function saveOnlineProfileFromForm() {
@@ -9637,6 +9756,8 @@
 			        await importCurrentCareerOnline({ fromAuth: true });
 			        return;
 			      }
+			      await loadOnlineFighters({ rerender: false });
+			      await loadOnlineChallenges({ rerender: false });
 			      await loadOnlineLeaderboard({ rerender: false });
 			      ui.online.success = mode === "signup"
 			        ? "Compte joueur cree."
@@ -9652,6 +9773,9 @@
 		    ui.online.session = null;
 		    ui.online.profile = null;
 		    ui.online.lastPublish = null;
+		    ui.online.myFighters = [];
+		    ui.online.notifications = [];
+		    ui.online.challenges = [];
 		    ui.online.authOpen = false;
 		    ui.online.success = "Deconnexion reussie. Vous pouvez continuer a jouer en local.";
 		    renderOnlineCurrentScreen();
@@ -9750,11 +9874,11 @@
 			      ui.online.authOpen = true;
 			      renderOnlineCurrentScreen();
 			      showToast("Connectez-vous pour importer.");
-			      return;
+			      return false;
 			    }
 		    if (!career) {
 		      showToast("Aucune carriere en cours a importer.");
-		      return;
+		      return false;
 		    }
 		    const formManagerName = (document.querySelector("#onlineManager")?.value || "").trim();
 		    if (formManagerName) {
@@ -9765,7 +9889,7 @@
 			      ui.online.authOpen = true;
 				      renderOnlineCurrentScreen();
 			      showToast("Ajoutez votre nom de manager avant l'import.");
-			      return;
+			      return false;
 			    }
 			    ui.online.loading = true;
 			    ui.online.error = "";
@@ -9778,7 +9902,7 @@
 		    if (error || data?.error) {
 		      ui.online.error = data?.details || data?.error || error?.message || "Import refuse.";
 		      renderOnlineCurrentScreen();
-		      return;
+		      return false;
 		    }
 			    ui.online.lastPublish = data;
 			    ui.online.success = data?.fighter?.verified
@@ -9786,9 +9910,21 @@
 			      : "Votre carriere en cours a bien ete importee dans le classement.";
 			    if (data?.fighter?.id) ui.online.selectedFighterId = data.fighter.id;
 			    showToast(data?.fighter?.verified ? "Carriere publiee." : "Carriere importee.");
+			    await loadOnlineFighters({ rerender: false });
+			    await loadOnlineChallenges({ rerender: false });
 			    await loadOnlineLeaderboard({ rerender: false });
 				    renderOnlineCurrentScreen();
+				    return true;
 			  }
+
+		  async function saveCurrentAndStartNewCareer() {
+		    const career = currentPublishableCareer();
+		    if (ui.online.session && career) {
+		      const imported = await importCurrentCareerOnline({ fromAuth: true });
+		      if (!imported) return;
+		    }
+		    startNewCareerCreation();
+		  }
 
 		  function renderOnlineAuthBlock(career) {
 		    const session = ui.online.session;
@@ -9862,6 +9998,158 @@
 	    `;
 	  }
 
+	  function onlineFighterSourceLabel(row = {}) {
+	    return row.source === "official" ? "Officiel" : "Carriere en cours";
+	  }
+
+	  function currentCareerAlreadyPublished(career) {
+	    if (!career) return false;
+	    return (ui.online.myFighters || []).some(row => (
+	      row.source === "beta_import" &&
+	      sameFighterName(row.fighter_name, career.name)
+	    ));
+	  }
+
+	  function renderOnlineFighterCard(row, index = 0) {
+	    const snapshot = onlineFighterSnapshot(row);
+	    return `
+	      <div class="online-fighter-card">
+	        <span class="leaderboard-rank">#${index + 1}</span>
+	        <div class="online-fighter-main">
+	          <strong>${esc(snapshot.name)}</strong>
+	          <small>${esc(snapshot.weightClass || "Categorie")} | ${esc(snapshot.style?.label || row.style || "MMA")} | ${esc(snapshot.org || "Organisation")}</small>
+	        </div>
+	        <div class="online-fighter-meta">
+	          <b>${snapshot.score || 0} pts</b>
+	          <small>${snapshot.record?.w || 0}-${snapshot.record?.l || 0} | OVR ${snapshot.overall || "-"}</small>
+	        </div>
+	      </div>
+	    `;
+	  }
+
+	  function renderOnlineFightersPanel(career) {
+	    const fighters = ui.online.myFighters || [];
+	    const alreadyPublished = currentCareerAlreadyPublished(career);
+	    const atLimit = fighters.length >= 5 && !alreadyPublished;
+	    const importLabel = alreadyPublished ? "Mettre a jour la carriere en cours" : "Importer la carriere en cours";
+	    return `
+	      <div class="online-panel online-stable-panel">
+	        <div class="panel-title">
+	          <span>${iconOnly("users", "C")} Combattants</span>
+	          <strong>${fighters.length}/5</strong>
+	        </div>
+	        <p class="online-help">Votre compte peut garder jusqu'a 5 combattants publies. Une nouvelle carriere locale ne supprime pas les combattants deja importes.</p>
+	        ${career ? `
+	          <div class="online-current-career">
+	            <span>${iconOnly("database", "L")} Carriere locale</span>
+	            <strong>${esc(career.name)} (${career.record.w}-${career.record.l})</strong>
+	            <small>${esc(career.weight?.label || "Categorie")} | ${esc(career.style?.label || "Style")} | OVR ${overall(career)}</small>
+	          </div>
+	          ${atLimit ? `<div class="notice online-error">${iconOnly("triangle-alert", "L")} Limite atteinte: vous avez deja 5 combattants. Cette carriere ne peut pas etre importee comme nouveau combattant.</div>` : ""}
+	          <div class="menu-actions online-actions">
+	            <button class="btn btn-primary" data-action="import-current-career" ${atLimit ? "disabled" : ""}>${iconText("upload-cloud", importLabel, "I")}</button>
+	            ${atLimit
+	              ? `<button class="btn" data-action="new-career">${iconText("plus-circle", "Nouvelle carriere locale", "+")}</button>`
+	              : `<button class="btn" data-action="save-and-new-career">${iconText("plus-circle", "Publier puis nouvelle carriere", "+")}</button>`}
+	          </div>
+	        ` : `
+	          <div class="notice online-neutral">${iconOnly("plus-circle", "N")} Aucune carriere locale active. Vous pouvez lancer une nouvelle carriere sans toucher a votre ecurie en ligne.</div>
+	          <div class="menu-actions online-actions">
+	            <button class="btn btn-primary" data-action="new-career">${iconText("plus-circle", "Nouvelle carriere", "+")}</button>
+	          </div>
+	        `}
+	      </div>
+	      <div class="online-panel">
+	        <div class="panel-title">
+	          <span>${iconOnly("dumbbell", "E")} Ecurie en ligne</span>
+	          <strong>${fighters.length}</strong>
+	        </div>
+	        ${fighters.length ? `
+	          <div class="online-fighter-list">
+	            ${fighters.map((row, index) => renderOnlineFighterCard(row, index)).join("")}
+	          </div>
+	        ` : `<div class="notice">Aucun combattant publie pour ce compte. Importez votre carriere en cours pour entrer dans le classement.</div>`}
+	      </div>
+	    `;
+	  }
+
+	  function renderOnlineChallengesPanel() {
+	    const notifications = ui.online.notifications || [];
+	    const challenges = ui.online.challenges || [];
+	    const unread = notifications.filter(item => !item.read_at).length;
+	    return `
+	      <div class="online-panel">
+	        <div class="panel-title">
+	          <span>${iconOnly("bell", "N")} Notifications</span>
+	          <strong>${unread}</strong>
+	        </div>
+	        ${notifications.length ? `
+	          <div class="notification-list">
+	            ${notifications.map(item => `
+	              <div class="notification-row ${item.read_at ? "" : "unread"}">
+	                <strong>${esc(item.title || "Notification")}</strong>
+	                <span>${esc(item.body || "")}</span>
+	                <small>${esc(new Date(item.created_at).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }))}</small>
+	              </div>
+	            `).join("")}
+	          </div>
+	        ` : `<div class="notice">Aucune notification pour le moment. Les defis envoyes par vos potes arriveront ici.</div>`}
+	      </div>
+	      <div class="online-panel">
+	        <div class="panel-title">
+	          <span>${iconOnly("swords", "D")} Defis</span>
+	          <strong>${challenges.length}</strong>
+	        </div>
+	        ${challenges.length ? `
+	          <div class="challenge-list">
+	            ${challenges.map(challenge => {
+	              const sent = challenge.challenger_user_id === ui.online.session?.user?.id;
+	              const you = sent ? challenge.challenger_snapshot : challenge.target_snapshot;
+	              const them = sent ? challenge.target_snapshot : challenge.challenger_snapshot;
+	              const result = challenge.result || {};
+	              return `
+	                <div class="challenge-row">
+	                  <div>
+	                    <strong>${sent ? "Vous defiez" : "Defi recu"} ${esc(them?.name || "Combattant")}</strong>
+	                    <small>${esc(you?.name || "Votre combattant")} vs ${esc(them?.name || "Adversaire")} | ${esc(challenge.status || "pending")}</small>
+	                    ${challenge.status === "completed" ? `<span>${esc(result.winnerName || "Vainqueur")} par ${esc(result.scoreText || "decision")}</span>` : ""}
+	                  </div>
+	                  ${sent && challenge.status === "pending" ? `<button class="btn btn-primary" data-action="start-online-challenge" data-id="${esc(challenge.id)}">${iconText("play", "Combattre", ">")}</button>` : ""}
+	                </div>
+	              `;
+	            }).join("")}
+	          </div>
+	        ` : `<div class="notice">Aucun defi actif. Allez dans Joueurs, selectionnez un combattant compatible, puis lancez le defi.</div>`}
+	      </div>
+	    `;
+	  }
+
+	  function renderOnlineAccountTabs(career) {
+	    const tab = ui.online.accountTab || "fighters";
+	    const items = [
+	      { id: "fighters", label: "Combattants", icon: "users" },
+	      { id: "challenges", label: "Defis", icon: "swords" },
+	      { id: "profile", label: "Profil", icon: "user-round-cog" },
+	    ];
+	    const panel = tab === "challenges"
+	      ? renderOnlineChallengesPanel()
+	      : tab === "profile"
+	        ? renderOnlineAuthBlock(career)
+	        : renderOnlineFightersPanel(career);
+	    return `
+	      <div class="tabs online-tabs">
+	        ${items.map(item => `
+	          <button class="tab ${tab === item.id ? "active" : ""}" data-action="online-account-tab" data-tab="${item.id}">
+	            ${iconOnly(item.icon, "T")} ${item.label}
+	          </button>
+	        `).join("")}
+	      </div>
+	      <div class="online-account-layout online-account-wide">
+	        ${panel}
+	      </div>
+	    `;
+	  }
+
 	  function renderLeaderboardRows(rows) {
 	    if (!rows.length) {
 	      return `<div class="notice">Aucun combattant publie pour le moment. Le premier testeur va prendre toute la lumiere.</div>`;
@@ -9885,6 +10173,58 @@
 	            </button>
 	          `;
 	        }).join("")}
+	      </div>
+	    `;
+	  }
+
+	  function renderOnlineChallengeBox(row) {
+	    if (!row) return "";
+	    if (!ui.online.session) {
+	      return `
+	        <div class="online-challenge-box">
+	          <p>Connectez-vous pour envoyer un defi a ${esc(row.manager_name || "ce manager")}.</p>
+	          <button class="btn btn-primary" data-action="show-account">${iconText("log-in", "Se connecter", "C")}</button>
+	        </div>
+	      `;
+	    }
+	    const ownFighters = ui.online.myFighters || [];
+	    const isOwn = ownFighters.some(fighter => fighter.id === row.fighter_id);
+	    if (isOwn) {
+	      return `<div class="notice online-neutral">${iconOnly("shield", "S")} C'est votre combattant. Le sparring interne viendra plus tard, ici on defie les autres managers.</div>`;
+	    }
+	    if (!ownFighters.length) {
+	      return `
+	        <div class="online-challenge-box">
+	          <p>Importez une carriere dans votre compte pour pouvoir lancer des defis.</p>
+	          <button class="btn" data-action="show-account">${iconText("upload-cloud", "Importer ma carriere", "I")}</button>
+	        </div>
+	      `;
+	    }
+	    const compatible = ownFighters.filter(fighter => challengeWeightCompatible(fighter, row));
+	    if (!compatible.length) {
+	      return `
+	        <div class="notice online-neutral">
+	          ${iconOnly("scale", "P")} Aucun de vos combattants n'est compatible avec ${esc(row.fighter_name)}. Il faut la meme categorie, une au-dessus ou une en-dessous.
+	        </div>
+	      `;
+	    }
+	    return `
+	      <div class="online-challenge-box">
+	        <div class="panel-title">
+	          <span>${iconOnly("swords", "D")} Defier ${esc(row.manager_name || "ce manager")}</span>
+	          <strong>${compatible.length}</strong>
+	        </div>
+	        <p>Choisissez le combattant qui lance le defi. Le combat se joue ensuite tout de suite avec vos decisions de round.</p>
+	        <div class="challenge-launch-list">
+	          ${compatible.map(fighter => {
+	            const snapshot = onlineFighterSnapshot(fighter);
+	            return `
+	              <button class="btn btn-primary" data-action="send-challenge" data-target="${esc(row.fighter_id)}" data-challenger="${esc(fighter.id)}">
+	                ${iconText("swords", `${snapshot.name} (${snapshot.weightClass})`, "D")}
+	              </button>
+	            `;
+	          }).join("")}
+	        </div>
 	      </div>
 	    `;
 	  }
@@ -9918,6 +10258,7 @@
 	          <div class="summary-item"><span>${iconOnly("circle-dollar-sign", "$")} Gains</span><strong>${formatMoney(row.money || 0)}</strong></div>
 	        </div>
 	        <p>${esc(row.country || "Pays inconnu")} | ${esc(row.style || "Style inconnu")} | ${esc(row.org || "Organisation")} | ${row.titles_count || 0} ceinture(s)</p>
+	        ${renderOnlineChallengeBox(row)}
 	      </div>
 	    `;
 	  }
@@ -9987,9 +10328,260 @@
 		            ${iconOnly("gamepad-2", "J")} Sans compte, vos sauvegardes locales restent intactes. Connectez-vous seulement pour publier votre carriere.
 		          </div>
 		        ` : ""}
-		        <div class="online-account-layout">
-		          ${renderOnlineAuthBlock(career)}
+		        ${ui.online.session ? renderOnlineAccountTabs(career) : `
+		          <div class="online-account-layout">
+		            ${renderOnlineAuthBlock(career)}
+		          </div>
+		        `}
+		      </section>
+		    `);
+		  }
+
+		  function onlineChallengeRandom(key) {
+		    return (hashSeed(String(key)) % 10000) / 10000;
+		  }
+
+		  function buildOnlineChallengeMoment(fight) {
+		    const used = (fight.decisions || []).map(item => item.momentId);
+		    const roundPool = FIGHT_MOMENTS.filter(moment => (
+		      !used.includes(moment.id) &&
+		      (!moment.round || Math.abs((moment.round || fight.round) - fight.round) <= 1)
+		    ));
+		    const pool = roundPool.length ? roundPool : FIGHT_MOMENTS.filter(moment => !used.includes(moment.id));
+		    const sourcePool = pool.length ? pool : FIGHT_MOMENTS;
+		    const index = Math.floor(onlineChallengeRandom(`${fight.id}-${fight.round}-${fight.target?.id}`) * sourcePool.length);
+		    const source = sourcePool[index] || FIGHT_MOMENTS[0];
+		    return {
+		      id: source.id,
+		      category: source.category,
+		      icon: source.icon,
+		      round: fight.round,
+		      title: source.title,
+		      text: source.text.replaceAll("{opponent}", fight.target?.name || "l'adversaire"),
+		      opponent: fight.target?.name || "Adversaire",
+		      options: fightMomentBinaryOptions(source.options, fight.target?.name || "l'adversaire"),
+		    };
+		  }
+
+		  function hydrateOnlineChallenge(challenge) {
+		    const decisions = Array.isArray(challenge.decisions) ? challenge.decisions : [];
+		    const rounds = clamp(challenge.rounds || 3, 3, 5);
+		    return {
+		      id: challenge.id,
+		      rounds,
+		      round: clamp(decisions.length + 1, 1, rounds),
+		      challenger: challenge.challenger_snapshot || {},
+		      target: challenge.target_snapshot || {},
+		      decisions: decisions.slice(0, rounds),
+		      currentMoment: null,
+		      status: challenge.status || "pending",
+		    };
+		  }
+
+		  function startOnlineChallengeFight(challenge) {
+		    if (!challenge) {
+		      showToast("Defi introuvable.");
+		      return;
+		    }
+		    if (challenge.status === "completed") {
+		      ui.online.challengeResult = challenge.result || {};
+		      ui.online.challengeFight = hydrateOnlineChallenge(challenge);
+		      ui.view = "onlineChallengeResult";
+		      render();
+		      return;
+		    }
+		    ui.online.challengeFight = hydrateOnlineChallenge(challenge);
+		    ui.online.challengeResult = null;
+		    ui.view = "onlineChallenge";
+		    render();
+		  }
+
+		  async function startOnlineChallengeById(id) {
+		    let challenge = (ui.online.challenges || []).find(item => item.id === id);
+		    if (!challenge) {
+		      await loadOnlineChallenges({ rerender: false });
+		      challenge = (ui.online.challenges || []).find(item => item.id === id);
+		    }
+		    startOnlineChallengeFight(challenge);
+		  }
+
+		  async function sendOnlineChallenge(targetFighterId, challengerFighterId) {
+		    const client = onlineClient();
+		    if (!client || !ui.online.session) {
+		      ui.view = "account";
+		      ui.online.authOpen = true;
+		      renderOnlineAccountScreen();
+		      return;
+		    }
+		    if (!targetFighterId || !challengerFighterId) {
+		      showToast("Choisissez un combattant compatible.");
+		      return;
+		    }
+		    ui.online.loading = true;
+		    ui.online.error = "";
+		    ui.online.success = "";
+		    renderOnlineScreen();
+		    const { data, error } = await client.functions.invoke("challenge-service", {
+		      body: {
+		        action: "create",
+		        targetFighterId,
+		        challengerFighterId,
+		        rounds: 3,
+		      },
+		    });
+		    ui.online.loading = false;
+		    if (error || data?.error) {
+		      ui.online.error = data?.details || data?.error || error?.message || "Defi refuse.";
+		      renderOnlineScreen();
+		      return;
+		    }
+		    ui.online.success = data?.alreadyPending ? "Defi deja envoye. Vous pouvez lancer le combat." : "Defi envoye. Le manager adverse a recu une notification.";
+		    showToast(data?.alreadyPending ? "Defi deja en attente." : "Defi envoye.");
+		    await loadOnlineChallenges({ rerender: false });
+		    startOnlineChallengeFight(data.challenge);
+		  }
+
+		  function renderOnlineChallengeFight() {
+		    const fight = ui.online.challengeFight;
+		    if (!fight) {
+		      ui.view = "account";
+		      renderOnlineAccountScreen();
+		      return;
+		    }
+		    if (!fight.currentMoment) fight.currentMoment = buildOnlineChallengeMoment(fight);
+		    const moment = fight.currentMoment;
+		    const momentChoices = (moment.options || []).slice(0, 2);
+		    const swipeChoices = momentChoices.map((option, index) => ({
+		      label: option.binaryLabel || option.label,
+		      intent: option.binaryIntent || (index === 0 ? "Prudent" : "Engager"),
+		      summary: option.binarySummary || option.result || option.label,
+		      action: "online-challenge-option",
+		      attrs: { index },
+		    }));
+		    renderShell(`
+		      <section class="game-screen fight-moment-screen online-challenge-screen">
+		        <div class="online-fight-strip">
+		          <div>
+		            <span>${iconOnly("swords", "D")} Defi joueur</span>
+		            <strong>${esc(fight.challenger?.name || "Votre combattant")}</strong>
+		            <small>${esc(fight.challenger?.manager || "Vous")} | ${esc(fight.challenger?.weightClass || "Categorie")}</small>
+		          </div>
+		          <div>
+		            <span>${iconOnly("shield", "A")} Adversaire</span>
+		            <strong>${esc(fight.target?.name || "Adversaire")}</strong>
+		            <small>${esc(fight.target?.manager || "Manager adverse")} | OVR ${fight.target?.overall || "-"}</small>
+		          </div>
 		        </div>
+		        <div class="fight-moment-card">
+		          <span class="moment-kicker">${iconOnly(moment.icon || "target", "M")} Round ${fight.round} | Decision ${fight.round}/${fight.rounds}</span>
+		          <div class="moment-timer" data-fight-timer>
+		            <span>Decision</span>
+		            <strong data-fight-timer-value>10</strong>
+		            <i data-fight-timer-bar></i>
+		          </div>
+		          <h3>${esc(moment.title)}</h3>
+		          <p>${esc(moment.text)}</p>
+		          <div class="choice-grid two binary-choice-grid fight-moment-binary">
+		            ${momentChoices.map((option, index) => `
+		              <button class="choice-btn moment-choice ${index === 0 ? "moment-choice-no" : "moment-choice-yes"}" data-action="online-challenge-option" data-index="${index}">
+		                <span class="choice-icon">${iconOnly(index === 0 ? "arrow-left" : "arrow-right", index === 0 ? "P" : "E")}</span>
+		                <strong>${esc(option.binaryLabel || option.label)}</strong>
+		                <span class="choice-summary">${esc(option.binarySummary || option.label)}</span>
+		              </button>
+		            `).join("")}
+		          </div>
+		          ${mobileSwipeDeck(swipeChoices, {
+		            leftIntent: "Prudent",
+		            rightIntent: "Engager",
+		            kicker: `Round ${fight.round} | ${fight.round}/${fight.rounds}`,
+		            title: moment.title,
+		            summary: moment.text,
+		          })}
+		        </div>
+		      </section>
+		    `);
+		  }
+
+		  async function chooseOnlineChallengeOption(index) {
+		    const fight = ui.online.challengeFight;
+		    const moment = fight?.currentMoment;
+		    const option = moment?.options?.[index] || moment?.options?.[0];
+		    if (!fight || !moment || !option) return;
+		    fight.decisions = Array.isArray(fight.decisions) ? fight.decisions : [];
+		    fight.decisions.push({
+		      round: fight.round,
+		      momentId: moment.id,
+		      title: moment.title,
+		      optionIndex: index,
+		      optionLabel: option.binaryLabel || option.label,
+		      intent: option.binaryIntent || (index === 0 ? "Prudent" : "Engager"),
+		    });
+		    if (fight.round >= fight.rounds) {
+		      await completeOnlineChallengeFight();
+		      return;
+		    }
+		    fight.round += 1;
+		    fight.currentMoment = buildOnlineChallengeMoment(fight);
+		    render();
+		  }
+
+		  async function completeOnlineChallengeFight() {
+		    const client = onlineClient();
+		    const fight = ui.online.challengeFight;
+		    if (!client || !ui.online.session || !fight) return;
+		    ui.online.loading = true;
+		    ui.online.error = "";
+		    renderOnlineChallengeFight();
+		    const { data, error } = await client.functions.invoke("challenge-service", {
+		      body: {
+		        action: "complete",
+		        challengeId: fight.id,
+		        decisions: fight.decisions || [],
+		      },
+		    });
+		    ui.online.loading = false;
+		    if (error || data?.error) {
+		      ui.online.error = data?.details || data?.error || error?.message || "Resultat du defi indisponible.";
+		      ui.view = "account";
+		      ui.online.accountTab = "challenges";
+		      renderOnlineAccountScreen();
+		      return;
+		    }
+		    ui.online.challengeResult = data.result || data.challenge?.result || {};
+		    ui.online.challengeFight = hydrateOnlineChallenge(data.challenge || { ...fight, status: "completed", result: ui.online.challengeResult });
+		    await loadOnlineChallenges({ rerender: false });
+		    ui.view = "onlineChallengeResult";
+		    render();
+		  }
+
+		  function renderOnlineChallengeResult() {
+		    const fight = ui.online.challengeFight;
+		    const result = ui.online.challengeResult || {};
+		    const won = result.winnerName && fight?.challenger?.name
+		      ? normalizeFighterName(result.winnerName) === normalizeFighterName(fight.challenger.name)
+		      : Boolean(result.won);
+		    renderShell(`
+		      <section class="game-screen online-challenge-result-screen">
+		        <div class="result-banner ${won ? "win" : "loss"}">
+		          <span>${iconOnly(won ? "trophy" : "shield-alert", "R")} Defi joueur</span>
+		          <h2>${won ? "Defi gagne" : "Defi perdu"}</h2>
+		          <p>${esc(result.winnerName || "Vainqueur")} bat ${esc(result.loserName || "adversaire")} par ${esc(result.scoreText || "decision")}.</p>
+		        </div>
+		        <div class="menu-actions">
+		          <button class="btn btn-primary" data-action="online-challenge-continue">${iconText("swords", "Voir mes defis", "D")}</button>
+		          <button class="btn" data-action="show-online">${iconText("users", "Retour joueurs", "J")}</button>
+		        </div>
+		        <details class="fight-detail-toggle" open>
+		          <summary>${iconOnly("list-checks", "R")} Deroule du combat</summary>
+		          <div class="timeline fight-detail-content">
+		            ${(result.report || []).map(line => `
+		              <div class="timeline-item">
+		                <strong>Round ${line.round} - ${esc(line.winner || "")}</strong>
+		                <p>${esc(line.text || "")}</p>
+		              </div>
+		            `).join("") || `<div class="notice">Le serveur a valide le resultat, mais aucun round detaille n'a ete renvoye.</div>`}
+		          </div>
+		        </details>
 		      </section>
 		    `);
 		  }
@@ -10088,7 +10680,7 @@
 
   function render() {
     let view = ui.view;
-	    if (ui.career && hasMedicalRest(ui.career) && !["medicalRest", "careerSaveChoice", "fightResult", "specialResult", "decisionResult", "menu", "badges", "hall", "shop", "stats", "news", "online", "account", "final"].includes(view)) {
+	    if (ui.career && hasMedicalRest(ui.career) && !["medicalRest", "careerSaveChoice", "fightResult", "specialResult", "decisionResult", "menu", "badges", "hall", "shop", "stats", "news", "online", "account", "onlineChallenge", "onlineChallengeResult", "final"].includes(view)) {
       ui.career.phase = "medical-rest";
       ui.view = "medicalRest";
       view = "medicalRest";
@@ -10126,9 +10718,11 @@
 	    else if (view === "news") renderNewsScreen();
 		    else if (view === "online") renderOnlineScreen();
 		    else if (view === "account") renderOnlineAccountScreen();
+		    else if (view === "onlineChallenge") renderOnlineChallengeFight();
+		    else if (view === "onlineChallengeResult") renderOnlineChallengeResult();
 	    else renderMenu();
 	    syncMobileNavState();
-	    if (view === "fightMoment") startFightMomentCountdown();
+	    if (view === "fightMoment" || view === "onlineChallenge") startFightMomentCountdown();
 	    else clearFightMomentCountdown();
 	  }
 
@@ -10239,7 +10833,9 @@
 
 		  function startFightMomentCountdown() {
 		    clearFightMomentCountdown();
-		    if (ui.view !== "fightMoment" || !ui.career?.pendingFightMoment) return;
+		    const careerMomentActive = ui.view === "fightMoment" && ui.career?.pendingFightMoment;
+		    const onlineChallengeActive = ui.view === "onlineChallenge" && ui.online?.challengeFight?.currentMoment;
+		    if (!careerMomentActive && !onlineChallengeActive) return;
 		    let remaining = 10;
 		    const valueNode = document.querySelector("[data-fight-timer-value]");
 		    const barNode = document.querySelector("[data-fight-timer-bar]");
@@ -10256,6 +10852,9 @@
 		      if (ui.view === "fightMoment" && ui.career?.pendingFightMoment) {
 		        showToast("Temps ecoule: choix prudent.");
 		        chooseFightMoment(0);
+		      } else if (ui.view === "onlineChallenge" && ui.online?.challengeFight?.currentMoment) {
+		        showToast("Temps ecoule: choix prudent.");
+		        chooseOnlineChallengeOption(0);
 		      }
 		    }, 1000);
 		  }
@@ -10507,10 +11106,15 @@
 			      ui.view = "online";
 			      ui.online.authOpen = false;
 			      render();
+			      if (ui.online.session) loadOnlineFighters({ rerender: false });
 			      loadOnlineLeaderboard({ rerender: true });
 			    } else if (action === "show-account") {
 			      ui.view = "account";
 			      ui.online.authOpen = true;
+			      if (ui.online.session) {
+			        loadOnlineFighters({ rerender: false });
+			        loadOnlineChallenges({ rerender: false });
+			      }
 			      renderOnlineAccountScreen();
 			    } else if (action === "open-online-auth") {
 			      ui.view = "account";
@@ -10528,14 +11132,36 @@
 	      signOutOnline();
 	    } else if (action === "save-online-profile") {
 	      saveOnlineProfileFromForm();
+		    } else if (action === "online-account-tab") {
+		      ui.online.accountTab = target.dataset.tab || "fighters";
+		      if (ui.online.accountTab === "fighters") loadOnlineFighters({ rerender: false });
+		      if (ui.online.accountTab === "challenges") loadOnlineChallenges({ rerender: false });
+		      renderOnlineAccountScreen();
 		    } else if (action === "refresh-online") {
 		      ui.online.success = "";
+		      if (ui.online.session) {
+		        loadOnlineFighters({ rerender: false });
+		        loadOnlineChallenges({ rerender: false });
+		      }
 		      loadOnlineLeaderboard({ rerender: true });
 		    } else if (action === "import-current-career" || action === "import-beta-career") {
 		      importCurrentCareerOnline();
+		    } else if (action === "save-and-new-career") {
+		      saveCurrentAndStartNewCareer();
 	    } else if (action === "select-online-fighter") {
 	      ui.online.selectedFighterId = target.dataset.id;
 	      renderOnlineScreen();
+	    } else if (action === "send-challenge") {
+	      sendOnlineChallenge(target.dataset.target, target.dataset.challenger);
+	    } else if (action === "start-online-challenge") {
+	      startOnlineChallengeById(target.dataset.id);
+	    } else if (action === "online-challenge-option") {
+	      clearFightMomentCountdown();
+	      chooseOnlineChallengeOption(Number(target.dataset.index));
+	    } else if (action === "online-challenge-continue") {
+	      ui.view = "account";
+	      ui.online.accountTab = "challenges";
+	      renderOnlineAccountScreen();
     } else if (action === "buy-perk") {
       const item = SHOP.find(perk => perk.id === target.dataset.id);
       if (!item || ui.meta.tokens < item.cost) return;

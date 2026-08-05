@@ -3011,6 +3011,16 @@ input:focus-visible {
   max-width: 760px;
 }
 
+.online-account-wide {
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.82fr);
+  max-width: none;
+}
+
+.online-tabs {
+  margin-top: 12px;
+}
+
 .online-help {
   color: var(--muted);
   font-size: 13px;
@@ -3046,6 +3056,180 @@ input:focus-visible {
   border-color: rgba(132, 36, 42, 0.36);
   color: #84242a;
   margin-top: 10px;
+}
+
+.online-current-career,
+.online-fighter-card,
+.notification-row,
+.challenge-row,
+.online-challenge-box,
+.online-fight-strip > div {
+  background:
+    linear-gradient(180deg, rgba(255, 253, 247, 0.98), rgba(246, 238, 223, 0.96));
+  border: 1px solid rgba(17, 16, 14, 0.14);
+  border-radius: var(--radius);
+  color: var(--ink);
+}
+
+.online-current-career {
+  display: grid;
+  gap: 5px;
+  margin-top: 10px;
+  padding: 12px;
+}
+
+.online-current-career span,
+.online-current-career small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.online-current-career strong {
+  font-size: 20px;
+  font-weight: 950;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.online-fighter-list,
+.notification-list,
+.challenge-list,
+.challenge-launch-list {
+  display: grid;
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.online-fighter-card {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  padding: 9px;
+}
+
+.online-fighter-main,
+.online-fighter-meta {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.online-fighter-main strong,
+.online-fighter-meta b,
+.notification-row strong,
+.challenge-row strong {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 950;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.online-fighter-main small,
+.online-fighter-meta small,
+.notification-row small,
+.challenge-row small,
+.challenge-row span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.online-fighter-meta {
+  justify-items: end;
+  text-align: right;
+}
+
+.notification-row,
+.challenge-row {
+  display: grid;
+  gap: 5px;
+  padding: 11px;
+}
+
+.notification-row.unread {
+  border-color: rgba(214, 165, 59, 0.74);
+  box-shadow: inset 4px 0 0 var(--gold);
+}
+
+.notification-row span {
+  color: #453d32;
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 1.3;
+}
+
+.challenge-row {
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.challenge-row > div {
+  display: grid;
+  gap: 4px;
+}
+
+.online-challenge-box {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px;
+}
+
+.online-challenge-box p {
+  color: #453d32;
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 1.32;
+  margin: 0;
+}
+
+.challenge-launch-list .btn {
+  justify-content: center;
+}
+
+.online-fight-strip {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.online-fight-strip > div {
+  background:
+    linear-gradient(135deg, rgba(17, 16, 14, 0.96), rgba(32, 27, 22, 0.94));
+  border-color: rgba(214, 165, 59, 0.38);
+  display: grid;
+  gap: 5px;
+  padding: 13px;
+}
+
+.online-fight-strip span,
+.online-fight-strip small {
+  color: #d7d3c7;
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.online-fight-strip strong {
+  color: #fffaf0;
+  font-size: clamp(20px, 4vw, 32px);
+  font-weight: 950;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.online-challenge-screen .fight-moment-card {
+  margin-top: 12px;
+}
+
+.online-challenge-result-screen .fight-detail-toggle {
+  margin-top: 14px;
 }
 
 .leaderboard-list {
@@ -4064,7 +4248,9 @@ input:focus-visible {
 
 	  .online-layout,
 	  .online-board-grid,
-	  .online-account-grid {
+	  .online-account-grid,
+	  .online-account-wide,
+	  .online-fight-strip {
 	    grid-template-columns: 1fr;
 	  }
 
@@ -4098,6 +4284,28 @@ input:focus-visible {
     grid-column: 2;
     justify-items: start;
     text-align: left;
+  }
+
+  .online-fighter-card {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .online-fighter-meta {
+    grid-column: 2;
+    justify-self: start;
+    text-align: left;
+  }
+
+  .challenge-row {
+    grid-template-columns: 1fr;
+  }
+
+  .challenge-row .btn {
+    justify-self: stretch;
+  }
+
+  .online-account-wide {
+    gap: 10px;
   }
 
   .season-panel {
