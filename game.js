@@ -10263,9 +10263,18 @@
 	    `;
 	  }
 
-		  function renderOnlineCurrentScreen() {
+	  function renderOnlineCurrentScreen() {
 		    if (ui.view === "account") renderOnlineAccountScreen();
 		    else renderOnlineScreen();
+		  }
+
+		  function safeOnlineRefresh(task) {
+		    Promise.resolve()
+		      .then(task)
+		      .catch(error => {
+		        ui.online.error = error?.message || "Chargement multijoueur interrompu.";
+		        renderOnlineIfVisible();
+		      });
 		  }
 
 		  function renderOnlineScreen() {
@@ -10934,6 +10943,7 @@
 	  });
 
 	  app.addEventListener("click", event => {
+	    try {
 	    const target = event.target.closest("[data-action]");
 	    if (!target) return;
 	    const action = target.dataset.action;
@@ -11105,17 +11115,23 @@
 			    } else if (action === "show-online") {
 			      ui.view = "online";
 			      ui.online.authOpen = false;
+			      ui.online.error = "";
 			      render();
-			      if (ui.online.session) loadOnlineFighters({ rerender: false });
-			      loadOnlineLeaderboard({ rerender: true });
+			      safeOnlineRefresh(async () => {
+			        if (ui.online.session) await loadOnlineFighters({ rerender: false });
+			        await loadOnlineLeaderboard({ rerender: true });
+			      });
 			    } else if (action === "show-account") {
 			      ui.view = "account";
 			      ui.online.authOpen = true;
+			      ui.online.error = "";
+			      render();
 			      if (ui.online.session) {
-			        loadOnlineFighters({ rerender: false });
-			        loadOnlineChallenges({ rerender: false });
+			        safeOnlineRefresh(async () => {
+			          await loadOnlineFighters({ rerender: false });
+			          await loadOnlineChallenges({ rerender: true });
+			        });
 			      }
-			      renderOnlineAccountScreen();
 			    } else if (action === "open-online-auth") {
 			      ui.view = "account";
 			      ui.online.authOpen = true;
@@ -11185,6 +11201,10 @@
     } else if (action === "download-card") {
       downloadCard();
     }
+	    } catch (error) {
+	      console.error("Fight Legacy action failed", error);
+	      showToast(error?.message || "Action impossible.");
+	    }
   });
 
   render();
