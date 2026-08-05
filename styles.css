@@ -290,6 +290,12 @@ input:focus-visible {
   color: #fffaf0;
 }
 
+.btn-light {
+  background: #fffaf0;
+  border-color: rgba(17, 16, 14, 0.84);
+  color: var(--ink);
+}
+
 .btn-dark {
   background: #23201b;
   border-color: rgba(214, 165, 59, 0.42);
@@ -2902,6 +2908,16 @@ input:focus-visible {
   padding: 13px;
 }
 
+.online-head {
+  align-items: end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.online-head .screen-title {
+  max-width: 760px;
+}
+
 .online-detail h3 {
   color: var(--ink);
   font-size: clamp(26px, 5vw, 46px);
@@ -2959,6 +2975,16 @@ input:focus-visible {
   flex-wrap: wrap;
   gap: 10px;
   justify-content: flex-end;
+  max-width: 470px;
+}
+
+.online-head-actions .btn {
+  min-width: 168px;
+  white-space: nowrap;
+}
+
+.online-head-actions .btn-light {
+  box-shadow: 0 4px 0 rgba(23, 19, 15, 0.24);
 }
 
 .online-board-primary {
@@ -2977,6 +3003,12 @@ input:focus-visible {
 
 .online-account-section {
   margin-top: 14px;
+}
+
+.online-account-layout {
+  display: grid;
+  margin-top: 14px;
+  max-width: 760px;
 }
 
 .online-help {
@@ -4037,12 +4069,14 @@ input:focus-visible {
 	  }
 
 	  .online-head-actions {
+	    max-width: none;
 	    justify-content: stretch;
 	  }
 
 	  .online-head-actions .btn {
 	    flex: 1 1 100%;
 	    justify-content: center;
+	    min-width: 0;
 	  }
 
 	  .online-panel,

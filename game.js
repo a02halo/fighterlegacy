@@ -7391,9 +7391,10 @@
         </button>
 		        <nav class="top-actions ${ui.mobileMenuOpen ? "is-open" : ""}" aria-label="Navigation">
 		          <button class="btn btn-ghost" data-action="menu">${iconText("home", "Accueil", "H")}</button>
-		          ${ui.career ? `<button class="btn btn-ghost" data-action="show-news">${iconText("newspaper", "Actu", "N")}</button>` : ""}
-		          <button class="btn btn-ghost" data-action="show-online">${iconText("users", "Joueurs", "J")}</button>
-		          <button class="btn btn-ghost ${statsNudge ? "stats-nav-nudge" : ""}" data-action="show-stats">${iconText("activity", "Stats", "S")}</button>
+			          ${ui.career ? `<button class="btn btn-ghost" data-action="show-news">${iconText("newspaper", "Actu", "N")}</button>` : ""}
+			          <button class="btn btn-ghost" data-action="show-online">${iconText("users", "Joueurs", "J")}</button>
+			          <button class="btn btn-ghost" data-action="show-account">${iconText(ui.online?.session ? "user-round-cog" : "log-in", ui.online?.session ? "Compte" : "Se connecter", "C")}</button>
+			          <button class="btn btn-ghost ${statsNudge ? "stats-nav-nudge" : ""}" data-action="show-stats">${iconText("activity", "Stats", "S")}</button>
 		          <button class="btn btn-ghost" data-action="show-badges">${iconText("award", "Badges", "B")}</button>
 		          <button class="btn btn-ghost" data-action="show-hall">${iconText("trophy", "Pantheon", "P")}</button>
 	        </nav>
@@ -9488,7 +9489,7 @@
 	  }
 
 	  function renderOnlineIfVisible() {
-	    if (ui.view === "online" || ui.view === "menu") render();
+	    if (["online", "account", "menu"].includes(ui.view)) render();
 	  }
 
 	  async function initOnline() {
@@ -9545,19 +9546,19 @@
 		    if (!client || !session?.user) {
 		      showToast("Connectez-vous d'abord.");
 		      ui.online.authOpen = true;
-		      renderOnlineScreen();
+		      renderOnlineCurrentScreen();
 		      return false;
 		    }
 		    const managerName = (document.querySelector("#onlineManager")?.value || ui.online.managerName || "").trim();
 		    if (managerName.length < 2) {
 		      showToast("Nom de manager trop court.");
 		      ui.online.authOpen = true;
-		      renderOnlineScreen();
+		      renderOnlineCurrentScreen();
 		      return false;
 		    }
 		    ui.online.loading = true;
 		    ui.online.success = "";
-		    renderOnlineScreen();
+		    renderOnlineCurrentScreen();
 	    const { error } = await client.from("profiles").upsert({
 	      user_id: session.user.id,
 	      manager_name: managerName,
@@ -9565,7 +9566,7 @@
 	    ui.online.loading = false;
 	    if (error) {
 	      showToast(error.message.includes("duplicate") ? "Ce nom de manager est deja pris." : "Profil manager refuse.");
-	      renderOnlineScreen();
+	      renderOnlineCurrentScreen();
 	      return false;
 		    }
 		    ui.online.managerName = managerName;
@@ -9573,7 +9574,7 @@
 		    saveOnlinePrefs();
 		    ui.online.success = "Profil manager enregistre.";
 		    showToast("Manager enregistre.");
-		    renderOnlineScreen();
+		    renderOnlineCurrentScreen();
 		    return true;
 		  }
 
@@ -9597,7 +9598,7 @@
 		    ui.online.loading = true;
 		    ui.online.error = "";
 		    ui.online.success = "";
-		    renderOnlineScreen();
+		    renderOnlineCurrentScreen();
 	    const response = mode === "signup"
 	      ? await client.auth.signUp({ email, password })
 	      : await client.auth.signInWithPassword({ email, password });
@@ -9605,7 +9606,7 @@
 		    if (response.error) {
 		      ui.online.error = response.error.message;
 		      ui.online.authOpen = true;
-		      renderOnlineScreen();
+		      renderOnlineCurrentScreen();
 		      return;
 		    }
 		    ui.online.email = email;
@@ -9620,7 +9621,7 @@
 			      if (profileError) {
 			        ui.online.error = profileError.message.includes("duplicate") ? "Ce nom de manager est deja pris." : "Profil manager refuse.";
 			        ui.online.authOpen = true;
-			        renderOnlineScreen();
+			        renderOnlineCurrentScreen();
 			        return;
 			      }
 			      ui.online.profile = { manager_name: managerName };
@@ -9641,7 +9642,7 @@
 			        ? "Compte joueur cree."
 			        : "Connexion reussie.";
 			    }
-			    renderOnlineScreen();
+			    renderOnlineCurrentScreen();
 			  }
 
 	  async function signOutOnline() {
@@ -9653,7 +9654,7 @@
 		    ui.online.lastPublish = null;
 		    ui.online.authOpen = false;
 		    ui.online.success = "Deconnexion reussie. Vous pouvez continuer a jouer en local.";
-		    renderOnlineScreen();
+		    renderOnlineCurrentScreen();
 		  }
 
 	  async function loadOnlineLeaderboard(options = {}) {
@@ -9661,7 +9662,7 @@
 	    if (!client) return;
 		    ui.online.loading = true;
 		    ui.online.error = "";
-		    if (options.rerender) renderOnlineScreen();
+		    if (options.rerender) renderOnlineCurrentScreen();
 	    let { data, error } = await client
 	      .from("leaderboard_all_public")
 	      .select("*")
@@ -9686,7 +9687,7 @@
 	        ui.online.selectedFighterId = ui.online.leaderboard[0].fighter_id;
 	      }
 	    }
-	    if (options.rerender !== false) renderOnlineScreen();
+	    if (options.rerender !== false) renderOnlineCurrentScreen();
 	  }
 
 	  function onlineFighterPayload(career, source = "beta_import") {
@@ -9747,7 +9748,7 @@
 			    const career = currentPublishableCareer();
 			    if (!client || !ui.online.session) {
 			      ui.online.authOpen = true;
-			      renderOnlineScreen();
+			      renderOnlineCurrentScreen();
 			      showToast("Connectez-vous pour importer.");
 			      return;
 			    }
@@ -9762,21 +9763,21 @@
 		    }
 			    if (!ui.online.managerName || ui.online.managerName.trim().length < 2) {
 			      ui.online.authOpen = true;
-			      renderOnlineScreen();
+				      renderOnlineCurrentScreen();
 			      showToast("Ajoutez votre nom de manager avant l'import.");
 			      return;
 			    }
 			    ui.online.loading = true;
 			    ui.online.error = "";
 			    ui.online.success = "";
-			    if (!options.fromAuth) renderOnlineScreen();
+				    if (!options.fromAuth) renderOnlineCurrentScreen();
 		    const { data, error } = await client.functions.invoke("publish-fighter", {
 		      body: onlineFighterPayload(career, "beta_import"),
 		    });
 		    ui.online.loading = false;
 		    if (error || data?.error) {
 		      ui.online.error = data?.details || data?.error || error?.message || "Import refuse.";
-		      renderOnlineScreen();
+		      renderOnlineCurrentScreen();
 		      return;
 		    }
 			    ui.online.lastPublish = data;
@@ -9786,7 +9787,7 @@
 			    if (data?.fighter?.id) ui.online.selectedFighterId = data.fighter.id;
 			    showToast(data?.fighter?.verified ? "Carriere publiee." : "Carriere importee.");
 			    await loadOnlineLeaderboard({ rerender: false });
-			    renderOnlineScreen();
+				    renderOnlineCurrentScreen();
 			  }
 
 		  function renderOnlineAuthBlock(career) {
@@ -9812,7 +9813,7 @@
 		          <div class="menu-actions online-actions">
 		            <button class="btn btn-primary" data-action="save-online-profile">${iconText("save", "Sauver manager", "S")}</button>
 			            ${career ? `<button class="btn" data-action="import-current-career">${iconText("upload-cloud", "Importer la carriere en cours", "I")}</button>` : ""}
-		            <button class="btn btn-ghost" data-action="online-signout">${iconText("log-out", "Deconnexion", "D")}</button>
+			            <button class="btn btn-light" data-action="online-signout">${iconText("log-out", "Deconnexion", "D")}</button>
 		          </div>
 		          <div class="notice online-local-save">
 		            ${iconOnly("database", "B")} ${career ? `Carriere locale detectee: ${esc(career.name)} (${career.record.w}-${career.record.l}).` : "Aucune carriere locale active a importer sur cet appareil."}
@@ -9921,6 +9922,11 @@
 	    `;
 	  }
 
+		  function renderOnlineCurrentScreen() {
+		    if (ui.view === "account") renderOnlineAccountScreen();
+		    else renderOnlineScreen();
+		  }
+
 		  function renderOnlineScreen() {
 		    const career = currentPublishableCareer();
 		    const rows = ui.online.leaderboard || [];
@@ -9934,23 +9940,14 @@
 		          <div>
 		            <p class="eyebrow">Leaderboard joueurs</p>
 		            <h2 class="screen-title">Managers et combattants</h2>
-		            <p class="screen-lead">Classement public des testeurs. La connexion sert uniquement a publier une carriere et debloquer les fonctions multi.</p>
-		          </div>
-		          <div class="online-head-actions">
-		            <button class="btn" data-action="refresh-online">${iconText("refresh-cw", "Actualiser", "R")}</button>
-		            ${ui.online.session && career ? `<button class="btn btn-primary" data-action="import-current-career">${iconText("upload-cloud", "Importer ma carriere", "I")}</button>` : ""}
-		            <button class="btn ${ui.online.session ? "btn-ghost" : "btn-primary"}" data-action="open-online-auth">
-		              ${iconText(ui.online.session ? "user-round-cog" : "log-in", ui.online.session ? "Compte" : "Se connecter", "C")}
-		            </button>
-		          </div>
-		        </div>
-		        ${!ui.online.session ? `
-		          <div class="notice online-neutral">
-		            ${iconOnly("gamepad-2", "J")} Vous pouvez jouer sans compte. Connectez-vous seulement pour apparaitre dans le classement et tester les options multi.
-		          </div>
-		        ` : ""}
-		        ${ui.online.success ? `<div class="notice online-success">${iconOnly("circle-check", "S")} ${esc(ui.online.success)}</div>` : ""}
-		        ${ui.online.error ? `<div class="notice online-error">${iconOnly("triangle-alert", "E")} ${esc(ui.online.error)}</div>` : ""}
+			            <p class="screen-lead">Classement public des testeurs. Les comptes et imports de carriere se gerent dans l'onglet Compte.</p>
+			          </div>
+			          <div class="online-head-actions">
+			            <button class="btn" data-action="refresh-online">${iconText("refresh-cw", "Actualiser", "R")}</button>
+			          </div>
+			        </div>
+			        ${ui.online.success ? `<div class="notice online-success">${iconOnly("circle-check", "S")} ${esc(ui.online.success)}</div>` : ""}
+			        ${ui.online.error ? `<div class="notice online-error">${iconOnly("triangle-alert", "E")} ${esc(ui.online.error)}</div>` : ""}
 		        <div class="online-board-grid online-board-primary">
 		          <div class="online-panel online-ranking-panel">
 		            <div class="panel-title">
@@ -9964,7 +9961,35 @@
 		            ${renderOnlineFighterDetail(selected)}
 		          </div>
 		        </div>
-		        ${ui.online.authOpen ? `<div class="online-account-section">${renderOnlineAuthBlock(career)}</div>` : ""}
+			      </section>
+			    `);
+		  }
+
+		  function renderOnlineAccountScreen() {
+		    const career = currentPublishableCareer();
+		    renderShell(`
+		      <section class="game-screen online-screen online-account-screen">
+		        ${ui.career ? fighterHeader(ui.career) : ""}
+		        <div class="screen-head online-head">
+		          <div>
+		            <p class="eyebrow">Compte joueur</p>
+		            <h2 class="screen-title">${ui.online.session ? "Espace manager" : "Se connecter"}</h2>
+		            <p class="screen-lead">Le jeu reste jouable sans compte. Cette zone sert au classement, a l'import de la carriere en cours et aux futures fonctions multi.</p>
+		          </div>
+		          <div class="online-head-actions">
+		            <button class="btn" data-action="show-online">${iconText("users", "Voir joueurs", "J")}</button>
+		          </div>
+		        </div>
+		        ${ui.online.success ? `<div class="notice online-success">${iconOnly("circle-check", "S")} ${esc(ui.online.success)}</div>` : ""}
+		        ${ui.online.error ? `<div class="notice online-error">${iconOnly("triangle-alert", "E")} ${esc(ui.online.error)}</div>` : ""}
+		        ${!ui.online.session ? `
+		          <div class="notice online-neutral">
+		            ${iconOnly("gamepad-2", "J")} Sans compte, vos sauvegardes locales restent intactes. Connectez-vous seulement pour publier votre carriere.
+		          </div>
+		        ` : ""}
+		        <div class="online-account-layout">
+		          ${renderOnlineAuthBlock(career)}
+		        </div>
 		      </section>
 		    `);
 		  }
@@ -10063,7 +10088,7 @@
 
   function render() {
     let view = ui.view;
-    if (ui.career && hasMedicalRest(ui.career) && !["medicalRest", "careerSaveChoice", "fightResult", "specialResult", "decisionResult", "menu", "badges", "hall", "shop", "stats", "news", "online", "final"].includes(view)) {
+	    if (ui.career && hasMedicalRest(ui.career) && !["medicalRest", "careerSaveChoice", "fightResult", "specialResult", "decisionResult", "menu", "badges", "hall", "shop", "stats", "news", "online", "account", "final"].includes(view)) {
       ui.career.phase = "medical-rest";
       ui.view = "medicalRest";
       view = "medicalRest";
@@ -10099,7 +10124,8 @@
 	    else if (view === "shop") renderShop();
 	    else if (view === "stats") renderStatsHelp();
 	    else if (view === "news") renderNewsScreen();
-	    else if (view === "online") renderOnlineScreen();
+		    else if (view === "online") renderOnlineScreen();
+		    else if (view === "account") renderOnlineAccountScreen();
 	    else renderMenu();
 	    syncMobileNavState();
 	    if (view === "fightMoment") startFightMomentCountdown();
@@ -10477,18 +10503,23 @@
 		    } else if (action === "show-news") {
 	      ui.view = "news";
 	      render();
-		    } else if (action === "show-online") {
-		      ui.view = "online";
-		      ui.online.authOpen = false;
-		      render();
-		      loadOnlineLeaderboard({ rerender: true });
-		    } else if (action === "open-online-auth") {
-		      ui.online.authOpen = true;
-		      renderOnlineScreen();
-		    } else if (action === "online-auth-mode") {
-		      ui.online.authOpen = true;
-		      ui.online.authMode = target.dataset.mode === "signup" ? "signup" : "signin";
-		      renderOnlineScreen();
+			    } else if (action === "show-online") {
+			      ui.view = "online";
+			      ui.online.authOpen = false;
+			      render();
+			      loadOnlineLeaderboard({ rerender: true });
+			    } else if (action === "show-account") {
+			      ui.view = "account";
+			      ui.online.authOpen = true;
+			      renderOnlineAccountScreen();
+			    } else if (action === "open-online-auth") {
+			      ui.view = "account";
+			      ui.online.authOpen = true;
+			      renderOnlineAccountScreen();
+			    } else if (action === "online-auth-mode") {
+			      ui.online.authOpen = true;
+			      ui.online.authMode = target.dataset.mode === "signup" ? "signup" : "signin";
+			      renderOnlineCurrentScreen();
 	    } else if (action === "online-signin") {
 	      submitOnlineAuth("signin");
 	    } else if (action === "online-signup") {
