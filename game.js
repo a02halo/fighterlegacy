@@ -8810,25 +8810,38 @@
       ? `${renderCampStatus(career)}${renderCampRiskWarning(career)}`
       : "";
     const isPressResult = result.visual === "press";
+    const effectsMarkup = (result.effects || []).map(effect => {
+      const good = effectIsGood(effect.key, effect.value);
+      return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
+    }).join("") || `<span class="effect">Aucun effet visible</span>`;
+    const nextButton = `<button class="btn btn-primary" data-action="${esc(result.nextAction)}">${iconText(result.nextAction === "to-life-event" ? "calendar-clock" : result.nextAction === "to-medical-rest" ? "heart-pulse" : "arrow-right", result.nextLabel, ">")}</button>`;
     renderShell(`
       <section class="game-screen decision-result-screen ${isPressResult ? "press-result-screen" : ""}">
         ${fighterHeader(career)}
         ${seasonPanel(career)}
         ${renderSeasonFocusPanel(career)}
         ${campContext}
-        <div class="story-panel result-story ${isPressResult ? "press-result-story" : ""}">
-          <h3>${esc(result.title)}</h3>
-          <p>${esc(result.text)}</p>
-        </div>
-	        <div class="effect-list">
-	          ${(result.effects || []).map(effect => {
-	            const good = effectIsGood(effect.key, effect.value);
-	            return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
-	          }).join("") || `<span class="effect">Aucun effet visible</span>`}
-        </div>
-        <div class="menu-actions" style="margin-top: 22px">
-	          <button class="btn btn-primary" data-action="${esc(result.nextAction)}">${iconText(result.nextAction === "to-life-event" ? "calendar-clock" : result.nextAction === "to-medical-rest" ? "heart-pulse" : "arrow-right", result.nextLabel, ">")}</button>
-        </div>
+        ${isPressResult ? `
+          <div class="press-result-card">
+            <img src="./assets/press-conference-fight-legacy.png" alt="Conference de presse MMA stylisee">
+            <div class="press-result-content">
+              <span class="press-result-kicker">${iconOnly("mic", "P")} Conference de presse</span>
+              <div class="press-result-copy">
+                <h3>${esc(result.title)}</h3>
+                <p>${esc(result.text)}</p>
+              </div>
+              <div class="effect-list press-result-effects">${effectsMarkup}</div>
+              <div class="menu-actions press-result-actions">${nextButton}</div>
+            </div>
+          </div>
+        ` : `
+          <div class="story-panel result-story">
+            <h3>${esc(result.title)}</h3>
+            <p>${esc(result.text)}</p>
+          </div>
+          <div class="effect-list">${effectsMarkup}</div>
+          <div class="menu-actions" style="margin-top: 22px">${nextButton}</div>
+        `}
       </section>
     `);
   }
