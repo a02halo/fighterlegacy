@@ -5978,7 +5978,7 @@
       weightClass: weightLabel,
       weightIndex: weightIndexFromLabel(weightLabel),
       style: styleFromOnline(styleId),
-      stats: { ...BASE_STATS, ...stats },
+      stats: { ...newEmptyStats(), ...stats },
       overall: row.overall || snapshot.overall || 50,
       score: row.score || 0,
       record,
