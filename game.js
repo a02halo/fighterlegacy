@@ -2,6 +2,9 @@
   const STORAGE_META = "fightLegacy.meta.v1";
   const STORAGE_CAREER = "fightLegacy.currentCareer.v1";
   const STORAGE_CREATOR = "fightLegacy.creatorDraft.v1";
+  const STORAGE_ONLINE = "fightLegacy.online.v1";
+  const SUPABASE_URL = "https://cytsfvhwbsesbywwythu.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_c7QqKxM8m7jn3n41zPp8dQ_CHKF35Vk";
   const CURRENT_YEAR = 2026;
   const SAVE_VERSION = 2;
 
@@ -2109,6 +2112,7 @@
 
   const savedCareer = loadCareer();
   const savedCreatorDraft = savedCareer ? null : loadCreatorDraft();
+  const savedOnlinePrefs = loadOnlinePrefs();
 
   let ui = {
     view: savedCareer ? viewForPhase(savedCareer.phase) : savedCreatorDraft ? "creator" : "menu",
@@ -2120,6 +2124,21 @@
     activeTab: "badges",
     mobileMenuOpen: false,
     meta: loadMeta(),
+    online: {
+      client: null,
+      session: null,
+      profile: null,
+      managerName: savedOnlinePrefs.managerName,
+      email: savedOnlinePrefs.email,
+      authMode: "signin",
+      loading: false,
+      ready: false,
+      error: "",
+      leaderboard: [],
+      leaderboardLoaded: false,
+      selectedFighterId: null,
+      lastPublish: null,
+    },
   };
 
 	  if (savedCareer) {
@@ -2402,8 +2421,27 @@
     }
   }
 
+  function loadOnlinePrefs() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_ONLINE)) || {};
+      return {
+        managerName: parsed.managerName || "",
+        email: parsed.email || "",
+      };
+    } catch {
+      return { managerName: "", email: "" };
+    }
+  }
+
 	  function saveMeta() {
 	    localStorage.setItem(STORAGE_META, JSON.stringify(ui.meta));
+	  }
+
+	  function saveOnlinePrefs() {
+	    localStorage.setItem(STORAGE_ONLINE, JSON.stringify({
+	      managerName: ui.online?.managerName || "",
+	      email: ui.online?.email || "",
+	    }));
 	  }
 
 	  function syncBadges(career, options = {}) {
@@ -7352,6 +7390,7 @@
 		        <nav class="top-actions ${ui.mobileMenuOpen ? "is-open" : ""}" aria-label="Navigation">
 		          <button class="btn btn-ghost" data-action="menu">${iconText("home", "Accueil", "H")}</button>
 		          ${ui.career ? `<button class="btn btn-ghost" data-action="show-news">${iconText("newspaper", "Actu", "N")}</button>` : ""}
+		          <button class="btn btn-ghost" data-action="show-online">${iconText("users", "Joueurs", "J")}</button>
 		          <button class="btn btn-ghost ${statsNudge ? "stats-nav-nudge" : ""}" data-action="show-stats">${iconText("activity", "Stats", "S")}</button>
 		          <button class="btn btn-ghost" data-action="show-badges">${iconText("award", "Badges", "B")}</button>
 		          <button class="btn btn-ghost" data-action="show-hall">${iconText("trophy", "Pantheon", "P")}</button>
@@ -7412,6 +7451,11 @@
 	            <strong>${iconText("calendar-days", "Defi du soir", "D")}</strong>
 	            <span>Meme combattant, meme seed. Parfait pour se comparer.</span>
 	            <span class="metric">Seed ${dailySeed().toString().slice(0, 5)}</span>
+	          </button>
+	          <button class="panel-action" data-action="show-online">
+	            <strong>${iconText("users", "Classement joueurs", "J")}</strong>
+	            <span>Manager, combattant, import beta et tableau commun entre testeurs.</span>
+	            <span class="metric">${ui.online?.session ? "Connecte" : "Online"}</span>
 	          </button>
 	          <button class="panel-action" data-action="show-badges">
 	            <strong>${iconText("award", "Badges", "B")}</strong>
@@ -9428,6 +9472,437 @@
     `);
   }
 
+	  function onlineClient() {
+	    if (ui.online.client) return ui.online.client;
+	    if (!window.supabase?.createClient) return null;
+	    ui.online.client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+	      auth: {
+	        persistSession: true,
+	        autoRefreshToken: true,
+	        detectSessionInUrl: true,
+	      },
+	    });
+	    return ui.online.client;
+	  }
+
+	  function renderOnlineIfVisible() {
+	    if (ui.view === "online" || ui.view === "menu") render();
+	  }
+
+	  async function initOnline() {
+	    const client = onlineClient();
+	    if (!client) {
+	      ui.online.error = "Client Supabase indisponible. Verifiez que le script CDN est bien charge.";
+	      ui.online.ready = true;
+	      renderOnlineIfVisible();
+	      return;
+	    }
+	    try {
+	      const { data } = await client.auth.getSession();
+	      ui.online.session = data?.session || null;
+	      if (ui.online.session) await loadOnlineProfile({ rerender: false });
+	      await loadOnlineLeaderboard({ rerender: false });
+	      client.auth.onAuthStateChange((_event, session) => {
+	        ui.online.session = session || null;
+	        ui.online.profile = null;
+	        if (session) {
+	          loadOnlineProfile({ rerender: true });
+	        } else {
+	          renderOnlineIfVisible();
+	        }
+	      });
+	    } catch (error) {
+	      ui.online.error = error?.message || "Connexion online impossible.";
+	    } finally {
+	      ui.online.ready = true;
+	      renderOnlineIfVisible();
+	    }
+	  }
+
+	  async function loadOnlineProfile(options = {}) {
+	    const client = onlineClient();
+	    const session = ui.online.session;
+	    if (!client || !session?.user) return null;
+	    const { data, error } = await client
+	      .from("profiles")
+	      .select("manager_name, updated_at")
+	      .eq("user_id", session.user.id)
+	      .maybeSingle();
+	    if (!error && data) {
+	      ui.online.profile = data;
+	      ui.online.managerName = data.manager_name || ui.online.managerName;
+	      saveOnlinePrefs();
+	    }
+	    if (options.rerender !== false) renderOnlineIfVisible();
+	    return data || null;
+	  }
+
+	  async function saveOnlineProfileFromForm() {
+	    const client = onlineClient();
+	    const session = ui.online.session;
+	    if (!client || !session?.user) {
+	      showToast("Connectez-vous d'abord.");
+	      return false;
+	    }
+	    const managerName = (document.querySelector("#onlineManager")?.value || ui.online.managerName || "").trim();
+	    if (managerName.length < 2) {
+	      showToast("Nom de manager trop court.");
+	      return false;
+	    }
+	    ui.online.loading = true;
+	    renderOnlineScreen();
+	    const { error } = await client.from("profiles").upsert({
+	      user_id: session.user.id,
+	      manager_name: managerName,
+	    });
+	    ui.online.loading = false;
+	    if (error) {
+	      showToast(error.message.includes("duplicate") ? "Ce nom de manager est deja pris." : "Profil manager refuse.");
+	      renderOnlineScreen();
+	      return false;
+	    }
+	    ui.online.managerName = managerName;
+	    ui.online.profile = { manager_name: managerName };
+	    saveOnlinePrefs();
+	    showToast("Manager enregistre.");
+	    renderOnlineScreen();
+	    return true;
+	  }
+
+	  async function submitOnlineAuth(mode) {
+	    const client = onlineClient();
+	    if (!client) {
+	      showToast("Supabase n'est pas charge.");
+	      return;
+	    }
+	    const email = (document.querySelector("#onlineEmail")?.value || "").trim();
+	    const password = document.querySelector("#onlinePassword")?.value || "";
+	    const managerName = (document.querySelector("#onlineManager")?.value || "").trim();
+	    if (!email || password.length < 6) {
+	      showToast("Email requis et mot de passe 6 caracteres min.");
+	      return;
+	    }
+	    if (mode === "signup" && managerName.length < 2) {
+	      showToast("Choisissez un nom de manager.");
+	      return;
+	    }
+	    ui.online.loading = true;
+	    ui.online.error = "";
+	    renderOnlineScreen();
+	    const response = mode === "signup"
+	      ? await client.auth.signUp({ email, password })
+	      : await client.auth.signInWithPassword({ email, password });
+	    ui.online.loading = false;
+	    if (response.error) {
+	      ui.online.error = response.error.message;
+	      renderOnlineScreen();
+	      return;
+	    }
+	    ui.online.email = email;
+	    ui.online.session = response.data?.session || (await client.auth.getSession()).data?.session || null;
+	    saveOnlinePrefs();
+	    if (ui.online.session && managerName) {
+	      ui.online.managerName = managerName;
+	      await saveOnlineProfileFromForm();
+	    } else if (!ui.online.session) {
+	      showToast("Compte cree. Verifiez l'email si Supabase demande confirmation.");
+	    }
+	    await loadOnlineProfile({ rerender: false });
+	    await loadOnlineLeaderboard({ rerender: false });
+	    renderOnlineScreen();
+	  }
+
+	  async function signOutOnline() {
+	    const client = onlineClient();
+	    if (!client) return;
+	    await client.auth.signOut();
+	    ui.online.session = null;
+	    ui.online.profile = null;
+	    ui.online.lastPublish = null;
+	    renderOnlineScreen();
+	  }
+
+	  async function loadOnlineLeaderboard(options = {}) {
+	    const client = onlineClient();
+	    if (!client) return;
+	    ui.online.loading = true;
+	    ui.online.error = "";
+	    if (options.rerender) renderOnlineScreen();
+	    let { data, error } = await client
+	      .from("leaderboard_all_public")
+	      .select("*")
+	      .order("score", { ascending: false })
+	      .limit(80);
+	    if (error) {
+	      const fallback = await client
+	        .from("leaderboard_public")
+	        .select("*")
+	        .order("score", { ascending: false })
+	        .limit(50);
+	      data = (fallback.data || []).map(row => ({ ...row, source: "official", public_status: "Officiel" }));
+	      error = fallback.error;
+	    }
+	    ui.online.loading = false;
+	    if (error) {
+	      ui.online.error = `Classement indisponible: ${error.message}`;
+	    } else {
+	      ui.online.leaderboard = Array.isArray(data) ? data : [];
+	      ui.online.leaderboardLoaded = true;
+	      if (!ui.online.selectedFighterId && ui.online.leaderboard[0]) {
+	        ui.online.selectedFighterId = ui.online.leaderboard[0].fighter_id;
+	      }
+	    }
+	    if (options.rerender !== false) renderOnlineScreen();
+	  }
+
+	  function onlineFighterPayload(career, source = "beta_import") {
+	    const titles = (career.titles || []).map(title => ({
+	      label: title.label || title.org || "Ceinture",
+	      tier: clamp(title.tier ?? career.tier ?? 0, 0, 5),
+	    }));
+	    return {
+	      source,
+	      importType: source,
+	      managerName: ui.online.managerName,
+	      fighter: {
+	        source,
+	        name: career.name,
+	        weightClass: career.weight?.label || "Unknown",
+	        country: career.country?.label || "",
+	        style: career.style?.label || "",
+	        org: ORGS[career.tier]?.label || career.org?.label || "Souterrain",
+	        orgTier: career.tier || 0,
+	        record: career.record || { w: 0, l: 0, ko: 0, sub: 0 },
+	        titles,
+	        overall: overall(career),
+	        hype: career.hype || 0,
+	        reputation: career.rep || 0,
+	        money: career.money || 0,
+	        condition: career.condition ?? 70,
+	        age: career.age || 18,
+	        seasonYear: career.season?.year || career.year || CURRENT_YEAR,
+	        stats: career.stats || {},
+	        retired: !career.active,
+	        runId: career.officialRunId || "",
+	        snapshot: {
+	          saveVersion: career.saveVersion || SAVE_VERSION,
+	          source,
+	          importedAt: new Date().toISOString(),
+	          phase: career.phase || "",
+	          year: career.year || CURRENT_YEAR,
+	          season: career.season ? {
+	            year: career.season.year,
+	            fightsDone: career.season.fightsDone || 0,
+	            fightsTarget: career.season.fightsTarget || 0,
+	          } : null,
+	          rank: career.rank,
+	          seed: career.seed,
+	        },
+	      },
+	    };
+	  }
+
+	  function currentPublishableCareer() {
+	    if (ui.career?.active) return ui.career;
+	    if (ui.finalCareer) return ui.finalCareer;
+	    return null;
+	  }
+
+	  async function importBetaCareerOnline() {
+	    const client = onlineClient();
+	    const career = currentPublishableCareer();
+	    if (!client || !ui.online.session) {
+	      showToast("Connectez-vous pour importer.");
+	      return;
+	    }
+	    if (!career) {
+	      showToast("Aucune carriere locale a importer.");
+	      return;
+	    }
+	    if (!ui.online.managerName || ui.online.managerName.trim().length < 2) {
+	      const saved = await saveOnlineProfileFromForm();
+	      if (!saved) return;
+	    }
+	    ui.online.loading = true;
+	    ui.online.error = "";
+	    renderOnlineScreen();
+	    const { data, error } = await client.functions.invoke("publish-fighter", {
+	      body: onlineFighterPayload(career, "beta_import"),
+	    });
+	    ui.online.loading = false;
+	    if (error || data?.error) {
+	      ui.online.error = data?.details || data?.error || error?.message || "Import refuse.";
+	      renderOnlineScreen();
+	      return;
+	    }
+	    ui.online.lastPublish = data;
+	    showToast(data?.fighter?.verified ? "Carriere officielle publiee." : "Carriere beta importee.");
+	    await loadOnlineLeaderboard({ rerender: false });
+	    renderOnlineScreen();
+	  }
+
+	  function renderOnlineAuthBlock() {
+	    const session = ui.online.session;
+	    const email = session?.user?.email || ui.online.email || "";
+	    if (session) {
+	      return `
+	        <div class="online-panel">
+	          <div class="panel-title">
+	            <span>${iconOnly("shield-check", "C")} Compte joueur</span>
+	            <strong>Connecte</strong>
+	          </div>
+	          <div class="online-account-grid">
+	            <label>
+	              <span>Email</span>
+	              <input id="onlineEmail" type="email" value="${esc(email)}" disabled>
+	            </label>
+	            <label>
+	              <span>Manager public</span>
+	              <input id="onlineManager" maxlength="32" value="${esc(ui.online.managerName || ui.online.profile?.manager_name || "")}" placeholder="Ex: Arnaud">
+	            </label>
+	          </div>
+	          <div class="menu-actions online-actions">
+	            <button class="btn btn-primary" data-action="save-online-profile">${iconText("save", "Sauver manager", "S")}</button>
+	            <button class="btn" data-action="import-beta-career">${iconText("upload-cloud", "Importer carriere beta", "I")}</button>
+	            <button class="btn btn-ghost" data-action="online-signout">${iconText("log-out", "Deconnexion", "D")}</button>
+	          </div>
+	        </div>
+	      `;
+	    }
+	    const signup = ui.online.authMode === "signup";
+	    return `
+	      <div class="online-panel">
+	        <div class="panel-title">
+	          <span>${iconOnly("user-round", "C")} Compte joueur</span>
+	          <strong>${signup ? "Creation" : "Connexion"}</strong>
+	        </div>
+	        <div class="tabs">
+	          <button class="tab ${!signup ? "active" : ""}" data-action="online-auth-mode" data-mode="signin">Connexion</button>
+	          <button class="tab ${signup ? "active" : ""}" data-action="online-auth-mode" data-mode="signup">Creation</button>
+	        </div>
+	        <div class="online-account-grid">
+	          <label>
+	            <span>Email</span>
+	            <input id="onlineEmail" type="email" autocomplete="email" value="${esc(ui.online.email || "")}" placeholder="joueur@mail.com">
+	          </label>
+	          <label>
+	            <span>Mot de passe</span>
+	            <input id="onlinePassword" type="password" autocomplete="${signup ? "new-password" : "current-password"}" placeholder="6 caracteres minimum">
+	          </label>
+	          <label>
+	            <span>Manager public</span>
+	            <input id="onlineManager" maxlength="32" value="${esc(ui.online.managerName || "")}" placeholder="Ex: Arnaud">
+	          </label>
+	        </div>
+	        <div class="menu-actions online-actions">
+	          <button class="btn btn-primary" data-action="${signup ? "online-signup" : "online-signin"}">${iconText(signup ? "user-plus" : "log-in", signup ? "Creer le compte" : "Se connecter", "C")}</button>
+	        </div>
+	      </div>
+	    `;
+	  }
+
+	  function renderLeaderboardRows(rows) {
+	    if (!rows.length) {
+	      return `<div class="notice">Aucun combattant publie pour le moment. Le premier testeur va prendre toute la lumiere.</div>`;
+	    }
+	    return `
+	      <div class="leaderboard-list">
+	        ${rows.map((row, index) => {
+	          const selected = ui.online.selectedFighterId === row.fighter_id;
+	          const source = row.source === "beta_import" ? "Beta importee" : "Officiel";
+	          return `
+	            <button class="leaderboard-row ${selected ? "selected" : ""}" data-action="select-online-fighter" data-id="${esc(row.fighter_id)}">
+	              <span class="leaderboard-rank">#${row.leaderboard_rank || index + 1}</span>
+	              <span class="leaderboard-main">
+	                <strong>${esc(row.fighter_name)}</strong>
+	                <small>Manager: ${esc(row.manager_name || "Inconnu")} | ${esc(row.org || "Org")} | ${esc(row.weight_class || "Categorie")}</small>
+	              </span>
+	              <span class="leaderboard-score">
+	                <strong>${row.score || 0}</strong>
+	                <small>${esc(source)}</small>
+	              </span>
+	            </button>
+	          `;
+	        }).join("")}
+	      </div>
+	    `;
+	  }
+
+	  function renderOnlineFighterDetail(row) {
+	    if (!row) return "";
+	    const source = row.source === "beta_import" ? "Carriere beta importee" : "Carriere officielle";
+	    return `
+	      <div class="online-detail">
+	        <div class="panel-title">
+	          <span>${iconOnly(row.source === "beta_import" ? "flask-conical" : "shield-check", "F")} ${esc(source)}</span>
+	          <strong>${row.score || 0} pts</strong>
+	        </div>
+	        <h3>${esc(row.fighter_name)}</h3>
+	        <p>Manager: ${esc(row.manager_name || "Inconnu")}</p>
+	        <div class="summary-grid">
+	          <div class="summary-item"><span>${iconOnly("list-checks", "R")} Record</span><strong>${row.record_w || 0}-${row.record_l || 0}</strong></div>
+	          <div class="summary-item"><span>${iconOnly("gauge", "O")} OVR</span><strong>${row.overall || "-"}</strong></div>
+	          <div class="summary-item"><span>${iconOnly("flame", "H")} Hype</span><strong>${row.hype || 0}</strong></div>
+	          <div class="summary-item"><span>${iconOnly("circle-dollar-sign", "$")} Gains</span><strong>${formatMoney(row.money || 0)}</strong></div>
+	        </div>
+	        <p>${esc(row.country || "Pays inconnu")} | ${esc(row.style || "Style inconnu")} | ${esc(row.org || "Organisation")} | ${row.titles_count || 0} ceinture(s)</p>
+	      </div>
+	    `;
+	  }
+
+	  function renderOnlineScreen() {
+	    const career = currentPublishableCareer();
+	    const rows = ui.online.leaderboard || [];
+	    const officialRows = rows.filter(row => row.source !== "beta_import");
+	    const betaRows = rows.filter(row => row.source === "beta_import");
+	    const selected = rows.find(row => row.fighter_id === ui.online.selectedFighterId) || rows[0];
+	    renderShell(`
+	      <section class="game-screen online-screen">
+	        ${ui.career ? fighterHeader(ui.career) : ""}
+	        <div class="screen-head">
+	          <div>
+	            <p class="eyebrow">Leaderboard joueurs</p>
+	            <h2 class="screen-title">Managers et combattants</h2>
+	            <p class="screen-lead">Compte joueur, manager public, classement officiel et reprise des carrieres beta sans effacer les sauvegardes locales.</p>
+	          </div>
+	          <button class="btn" data-action="refresh-online">${iconText("refresh-cw", "Actualiser", "R")}</button>
+	        </div>
+	        <div class="notice online-status ${ui.online.session ? "good" : ""}">
+	          ${ui.online.session
+	            ? `${iconOnly("shield-check", "S")} Connecte. Les publications passent par Supabase et la fonction serveur.`
+	            : `${iconOnly("lock", "L")} Connectez-vous pour publier. Le classement reste lisible publiquement.`}
+	        </div>
+	        ${ui.online.error ? `<div class="notice online-error">${iconOnly("triangle-alert", "E")} ${esc(ui.online.error)}</div>` : ""}
+	        ${ui.online.lastPublish?.warning ? `<div class="notice">${iconOnly("info", "I")} ${esc(ui.online.lastPublish.warning)}</div>` : ""}
+	        <div class="online-layout">
+	          <div>
+	            ${renderOnlineAuthBlock()}
+	            <div class="notice">
+	              ${iconOnly("database", "B")} ${career ? `Carriere locale detectee: ${esc(career.name)} (${career.record.w}-${career.record.l}).` : "Aucune carriere locale active a importer sur cet appareil."}
+	            </div>
+	          </div>
+	          <div>
+	            ${renderOnlineFighterDetail(selected)}
+	          </div>
+	        </div>
+	        <div class="tabs">
+	          <button class="tab active" data-action="noop">Officiel ${officialRows.length}</button>
+	          <button class="tab active" data-action="noop">Beta importee ${betaRows.length}</button>
+	        </div>
+	        <div class="online-board-grid">
+	          <div>
+	            <div class="panel-title"><span>${iconOnly("shield-check", "O")} Classement officiel</span><strong>${officialRows.length}</strong></div>
+	            ${renderLeaderboardRows(officialRows)}
+	          </div>
+	          <div>
+	            <div class="panel-title"><span>${iconOnly("flask-conical", "B")} Imports beta</span><strong>${betaRows.length}</strong></div>
+	            ${renderLeaderboardRows(betaRows)}
+	          </div>
+	        </div>
+	      </section>
+	    `);
+	  }
+
 	  function renderStatsHelp() {
 	    const career = ui.career;
 	    const medical = career ? ensureMedical(career) : null;
@@ -9522,7 +9997,7 @@
 
   function render() {
     let view = ui.view;
-    if (ui.career && hasMedicalRest(ui.career) && !["medicalRest", "careerSaveChoice", "fightResult", "specialResult", "decisionResult", "menu", "badges", "hall", "shop", "stats", "news", "final"].includes(view)) {
+    if (ui.career && hasMedicalRest(ui.career) && !["medicalRest", "careerSaveChoice", "fightResult", "specialResult", "decisionResult", "menu", "badges", "hall", "shop", "stats", "news", "online", "final"].includes(view)) {
       ui.career.phase = "medical-rest";
       ui.view = "medicalRest";
       view = "medicalRest";
@@ -9558,6 +10033,7 @@
 	    else if (view === "shop") renderShop();
 	    else if (view === "stats") renderStatsHelp();
 	    else if (view === "news") renderNewsScreen();
+	    else if (view === "online") renderOnlineScreen();
 	    else renderMenu();
 	    syncMobileNavState();
 	    if (view === "fightMoment") startFightMomentCountdown();
@@ -9935,6 +10411,28 @@
 		    } else if (action === "show-news") {
 	      ui.view = "news";
 	      render();
+	    } else if (action === "show-online") {
+	      ui.view = "online";
+	      render();
+	      loadOnlineLeaderboard({ rerender: true });
+	    } else if (action === "online-auth-mode") {
+	      ui.online.authMode = target.dataset.mode === "signup" ? "signup" : "signin";
+	      renderOnlineScreen();
+	    } else if (action === "online-signin") {
+	      submitOnlineAuth("signin");
+	    } else if (action === "online-signup") {
+	      submitOnlineAuth("signup");
+	    } else if (action === "online-signout") {
+	      signOutOnline();
+	    } else if (action === "save-online-profile") {
+	      saveOnlineProfileFromForm();
+	    } else if (action === "refresh-online") {
+	      loadOnlineLeaderboard({ rerender: true });
+	    } else if (action === "import-beta-career") {
+	      importBetaCareerOnline();
+	    } else if (action === "select-online-fighter") {
+	      ui.online.selectedFighterId = target.dataset.id;
+	      renderOnlineScreen();
     } else if (action === "buy-perk") {
       const item = SHOP.find(perk => perk.id === target.dataset.id);
       if (!item || ui.meta.tokens < item.cost) return;
@@ -9961,4 +10459,5 @@
   });
 
   render();
+  initOnline();
 })();
