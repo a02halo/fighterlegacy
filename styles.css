@@ -2278,6 +2278,23 @@ input:focus-visible {
   margin-top: 12px;
 }
 
+.season-detail-toggle {
+  margin-top: 16px;
+}
+
+.season-detail-content {
+  gap: 14px;
+}
+
+.season-detail-content > .focus-panel,
+.season-detail-content > .story-panel,
+.season-detail-content > .summary-grid,
+.season-detail-content > .context-grid,
+.season-detail-content > .tabs,
+.season-detail-content > .timeline {
+  margin-top: 0;
+}
+
 .result-banner {
   background:
     linear-gradient(135deg, rgba(215, 52, 56, 0.24), transparent 40%),
@@ -3346,6 +3363,36 @@ input:focus-visible {
 	    order: 0;
 	  }
 
+	  .life-choice-screen .swipe-choice-deck {
+	    margin-top: 18px;
+	  }
+
+	  .life-choice-screen .swipe-choice-card {
+	    min-height: clamp(260px, 42svh, 360px);
+	    padding: 14px;
+	  }
+
+	  .life-choice-screen .swipe-card-top {
+	    padding-top: 6px;
+	  }
+
+	  .life-choice-screen .swipe-card-top strong {
+	    font-size: clamp(26px, 8vw, 38px);
+	  }
+
+	  .life-choice-screen .swipe-card-top p {
+	    font-size: 13px;
+	    line-height: 1.34;
+	  }
+
+	  .life-choice-screen .swipe-card-options {
+	    margin-top: 16px;
+	  }
+
+	  .life-choice-screen .swipe-card-options div {
+	    min-height: 92px;
+	  }
+
 	  .camp-stage-choice-screen .camp-prep,
 	  .camp-stage-choice-screen .camp-status,
 	  .camp-stage-choice-screen .camp-risk-alert,
@@ -3363,8 +3410,8 @@ input:focus-visible {
 	  }
 
   .fight-moment-card {
-    margin-top: clamp(52px, 14vh, 132px);
-    padding: 18px;
+    margin-top: clamp(28px, 8vh, 74px);
+    padding: 14px;
   }
 
   .moment-kicker,
@@ -3382,12 +3429,17 @@ input:focus-visible {
     line-height: 1.38;
   }
 
+  .fight-moment-card > h3,
+  .fight-moment-card > p {
+    display: none;
+  }
+
   .fight-moment-card .swipe-choice-deck {
-    margin-top: 14px;
+    margin-top: 10px;
   }
 
   .fight-moment-card .swipe-choice-card {
-    min-height: 266px;
+    min-height: 250px;
   }
 
   .moment-timer {
