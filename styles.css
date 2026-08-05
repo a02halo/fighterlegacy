@@ -3293,16 +3293,74 @@ input:focus-visible {
     inline-size: 10px;
   }
 
-  .training-screen .training-action {
-    font-size: 10px;
-    justify-self: start;
-    min-width: 0;
-    padding: 7px 8px;
-  }
+	  .training-screen .training-action {
+	    font-size: 10px;
+	    justify-self: start;
+	    min-width: 0;
+	    padding: 7px 8px;
+	  }
 
-  .fight-moment-screen {
-    min-height: calc(100svh - 24px);
-  }
+	  .quick-choice-screen {
+	    display: flex;
+	    flex-direction: column;
+	  }
+
+	  .quick-choice-screen .swipe-choice-deck {
+	    margin: 0 0 12px;
+	    order: 1;
+	  }
+
+	  .quick-choice-screen .swipe-choice-card {
+	    min-height: clamp(330px, 55svh, 470px);
+	    padding: 16px;
+	  }
+
+	  .quick-choice-screen .swipe-card-top {
+	    padding-top: 16px;
+	  }
+
+	  .quick-choice-screen .swipe-card-top strong {
+	    font-size: clamp(28px, 9vw, 44px);
+	  }
+
+	  .quick-choice-screen .swipe-card-top p {
+	    font-size: 14px;
+	  }
+
+	  .quick-choice-screen .swipe-card-options div {
+	    min-height: 104px;
+	  }
+
+	  .quick-choice-screen .swipe-choice-actions {
+	    order: 2;
+	  }
+
+	  .life-choice-screen .story-panel,
+	  .life-choice-screen .season-panel,
+	  .life-choice-screen .focus-panel {
+	    display: none;
+	  }
+
+	  .life-choice-screen .fighter-strip {
+	    margin: 12px -16px 0;
+	    order: 0;
+	  }
+
+	  .camp-stage-choice-screen .camp-prep,
+	  .camp-stage-choice-screen .camp-status,
+	  .camp-stage-choice-screen .camp-risk-alert,
+	  .camp-stage-choice-screen .story-panel {
+	    display: none;
+	  }
+
+	  .camp-stage-choice-screen .camp-bank-strip {
+	    margin: 0 0 12px;
+	    order: 3;
+	  }
+
+	  .fight-moment-screen {
+	    min-height: calc(100svh - 24px);
+	  }
 
   .fight-moment-card {
     margin-top: clamp(52px, 14vh, 132px);

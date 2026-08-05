@@ -240,13 +240,52 @@
   ];
 
   const ORGS = [
-    { tier: 0, label: "Souterrain", belt: "Roi des hangars", threshold: 0 },
-    { tier: 1, label: "Regional", belt: "Ceinture regionale", threshold: 16 },
-    { tier: 2, label: "National", belt: "Titre national", threshold: 34 },
-    { tier: 3, label: "International", belt: "Ceinture internationale", threshold: 54 },
-    { tier: 4, label: "Major League", belt: "Titre majeur", threshold: 76 },
-    { tier: 5, label: "Apex Global", belt: "Champion du monde", threshold: 98 },
+    { tier: 0, id: "underground", label: "Souterrain", belt: "Roi des hangars", threshold: 0, summary: "Cartes discretes, petites bourses, progression rapide si vous gagnez.", purseScale: 0.82, hypeScale: 0.9 },
+    { tier: 1, id: "regional", label: "Regional", belt: "Ceinture regionale", threshold: 12, summary: "Circuit local structure. Les victoires propres ouvrent vite le National.", purseScale: 0.95, hypeScale: 0.96 },
+    { tier: 2, id: "national", label: "National", belt: "Titre national", threshold: 26, summary: "Dernier palier domestique avant une vraie signature internationale.", purseScale: 1.08, hypeScale: 1 },
+    { tier: 3, id: "ksw", label: "KSW", belt: "Ceinture KSW", threshold: 38, summary: "Organisation internationale tres europeenne. Opposition au-dessus du National, hype plus lente, bonnes bourses pour les champions.", purseScale: 1.15, hypeScale: 0.82 },
+    { tier: 4, id: "pfl", label: "PFL", belt: "Ceinture PFL", threshold: 42, summary: "Organisation internationale plus riche et un peu plus dure que KSW. Grosses bourses, image moins explosive que l'UFC.", purseScale: 1.45, hypeScale: 0.9 },
+    { tier: 5, id: "ufc", label: "UFC", belt: "Ceinture UFC", threshold: 58, summary: "Sommet mondial. Opposition elite, bourses de base plus petites, chaque victoire fait exploser hype et charisme.", purseScale: 0.92, hypeScale: 1.34, charismaWin: 1 },
   ];
+
+  const LEGACY_ORG_LABELS = {
+    International: "KSW",
+    "Major League": "PFL",
+    "Apex Global": "UFC",
+  };
+
+  const LEGACY_BELT_LABELS = new Set([
+    "Ceinture internationale",
+    "Titre majeur",
+    "Champion du monde",
+  ]);
+
+  function orgForTier(tier = 0) {
+    return ORGS[clamp(Number(tier) || 0, 0, ORGS.length - 1)] || ORGS[0];
+  }
+
+  function migrateOrgLabel(label, tier = 0) {
+    return LEGACY_ORG_LABELS[label] || label || orgForTier(tier).label;
+  }
+
+  function promotionTargets(career) {
+    const tier = clamp(Number(career?.tier || 0), 0, ORGS.length - 1);
+    if (tier < 2) return [orgForTier(tier + 1)];
+    if (tier === 2) return [orgForTier(3), orgForTier(4)];
+    if (tier === 3 || tier === 4) return [orgForTier(5)];
+    return [];
+  }
+
+  function nextPromotionThreshold(career) {
+    const targets = promotionTargets(career);
+    if (!targets.length) return null;
+    return Math.min(...targets.map(org => org.threshold || 0));
+  }
+
+  function opponentBaseForTier(tier = 0) {
+    const baseByTier = [48, 55, 62, 68, 71, 82];
+    return baseByTier[clamp(Number(tier) || 0, 0, baseByTier.length - 1)] || 48;
+  }
 
   const OPPONENT_BLUEPRINTS = [
     { id: "eliot-vasseur", name: "Eliot Vasseur", country: "fr", style: "boxing", age: 24, tier: 0, base: 46, record: "3-1", trait: "contreur patient" },
@@ -1993,7 +2032,7 @@
     { id: "finisher", title: "Finisseur", text: "Signer au moins 6 fins avant la limite.", check: c => c.record.ko + c.record.sub >= 6 },
     { id: "perfect-ten", title: "10-0", text: "Atteindre dix victoires sans defaite.", check: c => c.record.w >= 10 && c.record.l === 0 },
     { id: "regional-belt", title: "Ceinture locale", text: "Remporter une ceinture regionale.", check: c => c.titles.some(t => t.tier >= 1) },
-    { id: "world-champ", title: "Champion mondial", text: "Remporter le titre Apex Global.", check: c => c.titles.some(t => t.tier >= 5) },
+    { id: "world-champ", title: "Champion mondial", text: "Remporter la ceinture UFC.", check: c => c.titles.some(t => t.tier >= 5) },
     { id: "double-champ", title: "Double champion", text: "Gagner deux titres majeurs.", check: c => c.titles.filter(t => t.tier >= 4).length >= 2 || c.flags.doubleChamp },
     { id: "money-fight", title: "Money fight", text: "Depasser 1 M de gains.", check: c => c.money >= 1000000 },
 	    { id: "iron-chin", title: "Menton d'acier", text: "Finir avec 75+ en menton.", finalOnly: true, check: c => c.stats.chin >= 75 },
@@ -2430,6 +2469,16 @@
     career.morale = career.morale ?? 60;
     career.org = career.org || GYMS[0];
     career.tier = clamp(Number(career.tier ?? career.org.org ?? 0), 0, ORGS.length - 1);
+    {
+      const org = orgForTier(career.tier);
+      career.org = {
+        ...(career.org || {}),
+        id: org.id,
+        label: org.label,
+        org: org.tier,
+        summary: org.summary,
+      };
+    }
 	    career.rank = career.rank || 26;
 	    career.flags = career.flags || {};
 		    career.flags.dopingRisk = clamp(Number(career.flags.dopingRisk || 0), 0, 100);
@@ -2446,12 +2495,17 @@
 			    career.flags.recentDelayedLifeEventIds = Array.isArray(career.flags.recentDelayedLifeEventIds) ? career.flags.recentDelayedLifeEventIds.slice(-6) : [];
 			    career.flags.recentFightMomentIds = Array.isArray(career.flags.recentFightMomentIds) ? career.flags.recentFightMomentIds.slice(-8) : [];
 	    career.record = career.record || { w: 0, l: 0, d: 0, ko: 0, sub: 0, dec: 0 };
-    career.titles = (career.titles || []).map(title => ({
-      ...title,
-      tier: Number(title.tier || 0),
-      defenses: Math.max(0, Math.round(title.defenses || 0)),
-      lost: Boolean(title.lost),
-    }));
+    career.titles = (career.titles || []).map(title => {
+      const tier = clamp(Number(title.tier || 0), 0, ORGS.length - 1);
+      const org = orgForTier(tier);
+      return {
+        ...title,
+        tier,
+        label: !title.label || LEGACY_BELT_LABELS.has(title.label) ? org.belt : title.label,
+        defenses: Math.max(0, Math.round(title.defenses || 0)),
+        lost: Boolean(title.lost),
+      };
+    });
     career.fights = career.fights || [];
     career.exhibitions = Array.isArray(career.exhibitions) ? career.exhibitions : [];
     career.history = career.history || [];
@@ -2461,6 +2515,9 @@
 	    career.pendingConsequences = Array.isArray(career.pendingConsequences) ? career.pendingConsequences : [];
 	    career.contract = career.contract || null;
 	    if (career.contract) {
+	      career.contract.org = migrateOrgLabel(career.contract.org, career.tier);
+	      career.contract.tier = clamp(Number(career.contract.tier ?? career.tier), 0, ORGS.length - 1);
+	      career.contract.orgId = career.contract.orgId || orgForTier(career.contract.tier).id;
 	      career.contract.remainingFights = career.contract.remainingFights ?? career.contract.fights ?? 0;
 	      career.contract.purseBoost = career.contract.purseBoost || 1;
 	      const clauseNeedsWins = /contender/i.test(career.contract.titleClause || "");
@@ -3211,12 +3268,19 @@
     return plan.purseMult || 1;
   }
 
+  function adjustedFightHype(career, base = 0, fight = {}) {
+    const org = orgForTier(career?.tier || 0);
+    const titleBonus = fight.title ? 2 : 0;
+    return Math.max(1, Math.round((base + titleBonus) * (org.hypeScale || 1)));
+  }
+
   function adjustedFightMoney(career, base, fight = {}) {
     const proScale = career.tier >= 4 ? 1.38 : career.tier >= 2 ? 1.2 : 1;
+    const orgScale = orgForTier(career.tier).purseScale || 1;
     const charismaScale = 1 + Math.min(0.18, (career.stats.charisma || 50) / 650);
     const contractScale = career.contract?.purseBoost || 1;
     const eventScale = fight.title ? 1.25 : fight.rematch ? 1.12 : fight.short ? 1.08 : 1;
-    return Math.round(base * proScale * charismaScale * contractScale * seasonPurseMultiplier(career) * eventScale / 500) * 500;
+    return Math.round(base * proScale * orgScale * charismaScale * contractScale * seasonPurseMultiplier(career) * eventScale / 500) * 500;
   }
 
   function campLength(fight) {
@@ -3472,7 +3536,7 @@
 	    const career = ui.career;
 	    if (!career?.season) return;
 	    if (!career.season.settled) settleSeason(career);
-	    if (!career.pendingContracts && career.lastResult?.won) career.pendingContracts = buildContractOffers();
+	    if ((!career.pendingContracts || career.pendingContracts.length === 0) && career.lastResult?.won) career.pendingContracts = buildContractOffers();
 	    career.phase = "season-summary";
 	    ui.view = "seasonSummary";
 	    saveCareer();
@@ -5555,13 +5619,14 @@
       return item.tier >= Math.max(0, career.tier - 1) && item.tier <= Math.min(5, career.tier + 1);
     });
     if (tierWindow.length) {
-      const sorted = tierWindow.sort((a, b) => Math.abs((a.base + difficulty) - (48 + career.tier * 7)) - Math.abs((b.base + difficulty) - (48 + career.tier * 7)));
+      const targetBase = opponentBaseForTier(career.tier);
+      const sorted = tierWindow.sort((a, b) => Math.abs((a.base + difficulty) - targetBase) - Math.abs((b.base + difficulty) - targetBase));
       const pickIndex = Math.floor(nextRand(career) * Math.min(12, sorted.length));
       return blueprintToOpponent(career, sorted[pickIndex], difficulty);
     }
     const style = pick(career, STYLES);
     const country = pick(career, COUNTRIES);
-    const base = 43 + career.tier * 7 + Math.max(0, career.age - 18) * 1.15 + difficulty + Math.floor(nextRand(career) * 12 - 4);
+    const base = opponentBaseForTier(career.tier) - 5 + Math.max(0, career.age - 18) * 1.15 + difficulty + Math.floor(nextRand(career) * 12 - 4);
     const stats = newEmptyStats();
     Object.keys(stats).forEach(key => {
       stats[key] = clamp(base + Math.floor(nextRand(career) * 18 - 8), 22, 96);
@@ -5610,7 +5675,8 @@
   }
 
   function promotionStatus(career) {
-    const nextOrg = ORGS[career.tier + 1] || null;
+    const targets = promotionTargets(career);
+    const nextOrg = targets[0] || null;
     const season = career.season || {};
     const fightLog = season.fightLog || [];
     const wins = fightLog.filter(row => row.result === "Victoire").length;
@@ -5619,8 +5685,16 @@
     const winRate = honored ? wins / honored : career.lastResult?.won ? 1 : 0;
     const hasBelt = hasCurrentTierTitle(career);
     const clauseReady = contenderClauseReady(career);
+    const perfectSeason = honored >= 3 && wins === honored;
+    const strongSeason = honored >= 3 && winRate >= 0.75;
+    const unbeatenRun = career.record.w >= 2 && career.record.l === 0;
+    const internationalStep = career.tier === 2;
+    const ufcStep = career.tier === 3 || career.tier === 4;
     const winningRecord = career.record.w >= career.record.l || career.streak >= 3;
     const cageSuccess = winningRecord && (
+      perfectSeason ||
+      strongSeason ||
+      unbeatenRun ||
       career.streak >= 2 ||
       career.rank <= 8 ||
       winRate >= 0.66 ||
@@ -5629,17 +5703,25 @@
       hasBelt ||
       clauseReady
     );
+    const hypeTarget = career.tier <= 2 ? 16 + career.tier * 5 : 30 + career.tier * 7;
+    const charismaTarget = career.tier <= 2 ? 52 + career.tier * 3 : 58 + career.tier * 4;
     const businessSuccess = (
-      (career.hype || 0) >= 28 + career.tier * 8 ||
-      (career.stats.charisma || 50) >= 58 + career.tier * 4 ||
+      perfectSeason ||
+      hasBelt ||
+      clauseReady ||
+      (career.hype || 0) >= hypeTarget ||
+      (career.stats.charisma || 50) >= charismaTarget ||
       (career.money || 0) >= 65000 + career.tier * 28000 ||
       hasBelt
     );
     const debtTrouble = (career.money || 0) < -5000 || (career.flags?.debtSeasons || 0) > 0 || missed > 0 || (career.flags?.lockedContract || 0) > 0;
+    const threshold = targets.length ? Math.min(...targets.map(org => org.threshold || 0)) : 0;
     const visibilityAccess = (
-      nextOrg &&
+      targets.length &&
       (
-        career.rep >= nextOrg.threshold * 0.75 ||
+        perfectSeason ||
+        strongSeason ||
+        career.rep >= threshold * 0.65 ||
         career.rank <= 6 ||
         career.flags.fastTrack ||
         career.streak >= 4 ||
@@ -5647,19 +5729,34 @@
         clauseReady
       )
     );
-    const promotionEligible = Boolean(nextOrg) && !debtTrouble && (
+    const localEligible = career.tier <= 2 && (
       clauseReady ||
-      (hasBelt && career.lastResult?.won) ||
+      hasBelt ||
+      perfectSeason ||
       (cageSuccess && businessSuccess && visibilityAccess)
     );
+    const ufcEligible = ufcStep && hasBelt && !missed && career.lastResult?.won;
+    const promotionEligible = Boolean(targets.length) && !debtTrouble && (
+      ufcStep ? ufcEligible : localEligible
+    );
+    const targetLabel = targets.map(org => org.label).join(" / ");
     return {
       nextOrg,
+      targets,
+      targetLabel,
       wins,
       honored,
       missed,
       winRate,
       hasBelt,
       clauseReady,
+      perfectSeason,
+      strongSeason,
+      unbeatenRun,
+      internationalStep,
+      ufcStep,
+      hypeTarget,
+      charismaTarget,
       cageSuccess,
       businessSuccess,
       debtTrouble,
@@ -5694,7 +5791,7 @@
         summary: "Adversaire prenable, progression propre, risque limite.",
         opponent: makeOpponent(-6),
         risk: "low",
-        hype: 4 + career.tier,
+        hype: adjustedFightHype(career, 4 + career.tier),
         money: adjustedFightMoney(career, 8000 + career.tier * 9000, { risk: "low" }),
         rankMove: 2,
         title: false,
@@ -5706,7 +5803,7 @@
         summary: "Un vrai test. Gagner vous rapproche des affiches importantes.",
         opponent: makeOpponent(1),
         risk: "mid",
-        hype: 9 + career.tier * 2,
+        hype: adjustedFightHype(career, 9 + career.tier * 2),
         money: adjustedFightMoney(career, 15000 + career.tier * 18000, { risk: "mid" }),
         rankMove: 5,
         title: false,
@@ -5724,7 +5821,7 @@
             : "Peu de preparation, grosse lumiere, grosse menace.",
         opponent: activeRival && !titleReady ? rivalToOpponent(career, activeRival, 5) : makeOpponent(titleReady ? 7 : 9),
         risk: "high",
-        hype: titleReady ? 18 + career.tier * 3 : 16,
+        hype: adjustedFightHype(career, titleReady ? 18 + career.tier * 3 : 16, { title: titleReady }),
         money: adjustedFightMoney(career, titleReady ? 30000 + career.tier * 35000 : 22000 + career.tier * 16000, {
           title: titleReady,
           rematch: Boolean(activeRival && !titleReady),
@@ -5745,7 +5842,7 @@
         tag: "Defense",
         summary: `${defenseBase} en jeu contre un profil prenable. Moins de lumiere, mais le titre reste expose.`,
         title: true,
-        hype: 10 + career.tier * 2,
+        hype: adjustedFightHype(career, 10 + career.tier * 2, { title: true }),
         money: adjustedFightMoney(career, 14000 + career.tier * 16000, { title: true, risk: "low" }),
         rankMove: 5,
       };
@@ -5756,7 +5853,7 @@
         tag: "Defense",
         summary: `${defenseBase} en jeu contre un vrai pretendant. Gagner nourrit la montee, perdre coute tout.`,
         title: true,
-        hype: 15 + career.tier * 3,
+        hype: adjustedFightHype(career, 15 + career.tier * 3, { title: true }),
         money: adjustedFightMoney(career, 23000 + career.tier * 26000, { title: true, risk: "mid" }),
         rankMove: 8,
       };
@@ -6220,6 +6317,9 @@
       career.rep = clamp(career.rep + fight.hype * 0.7 + (fight.title ? 8 : 1), 0, 160);
       career.hype = clamp(career.hype + fight.hype, 0, 160);
       career.money += fight.money;
+      if (orgForTier(career.tier).charismaWin) {
+        career.stats.charisma = clamp((career.stats.charisma || 50) + orgForTier(career.tier).charismaWin, 1, 99);
+      }
       if (method === "KO" || method === "TKO") career.record.ko += 1;
       else if (method === "Soumission") career.record.sub += 1;
       else career.record.dec += 1;
@@ -6236,8 +6336,11 @@
         }
         if (career.flags.doublePath && career.titles.filter(t => t.tier >= 4).length >= 2) career.flags.doubleChamp = true;
       }
-      if (fight.short && career.tier < 5 && career.rep >= ORGS[career.tier + 1].threshold - 8) {
-        career.flags.fastTrack = true;
+      {
+        const threshold = nextPromotionThreshold(career);
+        if (fight.short && threshold !== null && career.rep >= threshold - 8) {
+          career.flags.fastTrack = true;
+        }
       }
     } else {
       career.record.l += 1;
@@ -6268,6 +6371,9 @@
     growCareer(career, growthBase + ageSlow, plan);
     career.morale = clamp(career.morale + (won ? 4 : -4), 0, 100);
     let analysis = buildFightAnalysis(career, opponent, plan, won, method, edge, effectiveCondition, damage);
+    if (won && orgForTier(career.tier).charismaWin) {
+      analysis = [`Victoire UFC: charisme +${orgForTier(career.tier).charismaWin}, la lumiere media change d'echelle.`, ...analysis].slice(0, 5);
+    }
     if (fatigueImpact.fatigue <= 2 || fatigueImpact.fatigue >= 6) {
       analysis = [
         `Fatigue ${fatigueImpact.fatigue}/12 (${fatigueImpact.label}): ${fatigueImpact.text}`,
@@ -6491,6 +6597,9 @@
       career.rep = clamp(career.rep + fight.hype * 0.7 + (fight.title ? 8 : 1), 0, 160);
       career.hype = clamp(career.hype + fight.hype, 0, 160);
       career.money += fight.money;
+      if (orgForTier(career.tier).charismaWin) {
+        career.stats.charisma = clamp((career.stats.charisma || 50) + orgForTier(career.tier).charismaWin, 1, 99);
+      }
       if (method === "KO" || method === "TKO") career.record.ko += 1;
       else if (method === "Soumission") career.record.sub += 1;
       else career.record.dec += 1;
@@ -6507,8 +6616,11 @@
         }
         if (career.flags.doublePath && career.titles.filter(t => t.tier >= 4).length >= 2) career.flags.doubleChamp = true;
       }
-      if (fight.short && career.tier < 5 && career.rep >= ORGS[career.tier + 1].threshold - 8) {
-        career.flags.fastTrack = true;
+      {
+        const threshold = nextPromotionThreshold(career);
+        if (fight.short && threshold !== null && career.rep >= threshold - 8) {
+          career.flags.fastTrack = true;
+        }
       }
     } else {
       career.record.l += 1;
@@ -6539,6 +6651,9 @@
     growCareer(career, growthBase + ageSlow, plan);
     career.morale = clamp(career.morale + (won ? 4 : -4), 0, 100);
     let analysis = buildFightAnalysis(career, opponent, plan, won, method, edge, effectiveCondition, damage);
+    if (won && orgForTier(career.tier).charismaWin) {
+      analysis = [`Victoire UFC: charisme +${orgForTier(career.tier).charismaWin}, la lumiere media change d'echelle.`, ...analysis].slice(0, 5);
+    }
     if (fatigueImpact.fatigue <= 2 || fatigueImpact.fatigue >= 6) {
       analysis = [
         `Fatigue ${fatigueImpact.fatigue}/12 (${fatigueImpact.label}): ${fatigueImpact.text}`,
@@ -6669,54 +6784,124 @@
     }
   }
 
+  function promotionContractOffer(career, org, status) {
+    const hype = career.hype || 0;
+    const rep = career.rep || 0;
+    const charisma = career.stats.charisma || 50;
+    const common = {
+      tier: org.tier,
+      orgId: org.id,
+      fights: org.id === "ufc" ? 3 : 4,
+      sponsor: org.id === "ufc" ? "Partenaires US prudents" : "Equipementier international",
+    };
+    if (org.id === "ksw") {
+      return {
+        ...common,
+        id: "move-ksw",
+        label: "Signer au KSW",
+        tag: "Europe de l'Est",
+        summary: "Porte internationale accessible: opposition au-dessus du National, hype plus lente, bonnes bourses si vous prenez la ceinture.",
+        money: Math.round((52000 + hype * 420 + rep * 260) / 1000) * 1000,
+        purseBoost: 1.12,
+        titleClause: "Title eliminator si 2 victoires",
+        contenderWinsRequired: 2,
+        entryRank: 16,
+        effects: { morale: 1, rep: 5, hype: 3 },
+      };
+    }
+    if (org.id === "pfl") {
+      return {
+        ...common,
+        id: "move-pfl",
+        label: "Signer au PFL",
+        tag: "Europe centrale",
+        summary: "Contrat plus riche et marche sportive plus dure que KSW. Gros cheque, moins de charisme et de hype qu'une trajectoire UFC.",
+        money: Math.round((82000 + hype * 620 + rep * 360) / 1000) * 1000,
+        purseBoost: 1.24,
+        titleClause: "Contender serie si 2 victoires",
+        contenderWinsRequired: 2,
+        entryRank: 18,
+        effects: { morale: -1, rep: 6, hype: 2 },
+      };
+    }
+    if (org.id === "regional" || org.id === "national") {
+      return {
+        ...common,
+        id: `move-${org.id}`,
+        label: `Signer en ${org.label}`,
+        tag: org.id === "national" ? "Palier national" : "Palier local",
+        summary: org.id === "national"
+          ? "Le circuit national vous donne des adversaires plus serieux et rend visible la prochaine bascule internationale."
+          : "Vous quittez les cartes obscures pour un circuit regional plus lisible et mieux observe.",
+        money: Math.round((24000 + org.tier * 18000 + hype * 260 + rep * 180) / 1000) * 1000,
+        purseBoost: org.id === "national" ? 1.1 : 1.06,
+        titleClause: "Progression ranking acceleree",
+        contenderWinsRequired: 0,
+        entryRank: org.id === "national" ? 18 : 20,
+        sponsor: org.id === "national" ? "Equipementier national" : "Sponsor regional",
+        effects: { morale: 3, rep: 4, hype: 4 },
+      };
+    }
+    return {
+      ...common,
+      id: "move-ufc",
+      label: "Signer a l'UFC",
+      tag: "Sommet mondial",
+      summary: "La ceinture KSW/PFL ouvre la porte. Bourse de base plus basse, mais chaque victoire UFC fait bondir hype et charisme.",
+      money: Math.round((46000 + hype * 360 + charisma * 180) / 1000) * 1000,
+      purseBoost: 0.96,
+      titleClause: status.hasBelt ? "Champion international signe: top 15 a meriter" : "Top 15 a meriter",
+      contenderWinsRequired: 0,
+      entryRank: 15,
+      sponsor: "Equipementier global",
+      effects: { morale: 5, rep: 8, hype: 12, stats: { charisma: 1 } },
+    };
+  }
+
 		  function buildContractOffers() {
 		    const career = ui.career;
 		    const status = promotionStatus(career);
-		    const nextOrg = status.nextOrg;
 		    if (career.contract?.remainingFights > 0 && !status.clauseReady && !status.hasBelt) return [];
 		    if (!career.lastResult?.won) return [];
 	    const debtTrouble = status.debtTrouble;
 	    const promotionEligible = status.promotionEligible;
+	    const currentOrg = orgForTier(career.tier);
+	    const championStayingInternational = status.hasBelt && (currentOrg.id === "ksw" || currentOrg.id === "pfl");
+	    const stayMoneyBase = championStayingInternational
+	      ? currentOrg.id === "ksw" ? 92000 : 135000
+	      : (debtTrouble ? 14000 : 22000) + career.tier * (debtTrouble ? 12000 : 21000);
+	    const stayPurseBoost = championStayingInternational
+	      ? currentOrg.id === "ksw" ? 1.28 : 1.34
+	      : debtTrouble ? 1 : 1.05;
 	    const sponsorEligible = !debtTrouble && (
-	      (career.hype || 0) >= 32 + career.tier * 6 ||
-	      (career.stats.charisma || 50) >= 60 + career.tier * 3 ||
+	      (career.hype || 0) >= 28 + career.tier * 5 ||
+	      (career.stats.charisma || 50) >= 58 + career.tier * 3 ||
 	      (career.money || 0) >= 100000
 	    );
 	    const premiumSponsor = sponsorEligible && (career.hype || 0) >= 54 && (career.stats.charisma || 50) >= 66 && (career.money || 0) >= 50000;
 	    const offers = [
 	      {
 	        id: "stay",
-	        label: `Rester en ${ORGS[career.tier].label}`,
-	        tag: debtTrouble ? "Relance" : "Regne",
-	        summary: debtTrouble ? "Stabiliser comptes et image avant de viser plus haut." : "Defendre votre place, construire votre nom sans bruler les etapes.",
+	        label: `Rester en ${currentOrg.label}`,
+	        tag: debtTrouble ? "Relance" : championStayingInternational ? "Champion" : "Regne",
+	        summary: debtTrouble
+	          ? "Stabiliser comptes et image avant de viser plus haut."
+	          : championStayingInternational
+	            ? `${currentOrg.label} veut garder son champion: meilleure bourse, defense de ceinture, route UFC toujours ouverte si vous continuez a gagner.`
+	            : "Defendre votre place, construire votre nom sans bruler les etapes.",
 	        tier: career.tier,
-	        money: Math.round(((debtTrouble ? 14000 : 22000) + career.tier * (debtTrouble ? 12000 : 21000)) / 1000) * 1000,
+	        orgId: currentOrg.id,
+	        money: Math.round(stayMoneyBase / 1000) * 1000,
 	        fights: career.tier >= 3 ? 4 : 3,
-	        purseBoost: debtTrouble ? 1 : 1.05,
-	        titleClause: debtTrouble ? "Contrat de confiance a reconstruire" : career.rank <= 5 ? "Title eliminator garanti" : "Progression ranking",
-	        sponsor: debtTrouble ? "Sponsor local prudent" : "Sponsors locaux",
-	        effects: debtTrouble ? { morale: -1, rep: 1, hype: -2, locked: 1 } : { morale: 4, rep: 3, hype: -2 },
+	        purseBoost: stayPurseBoost,
+	        titleClause: debtTrouble ? "Contrat de confiance a reconstruire" : career.rank <= 5 || status.hasBelt ? "Title eliminator garanti" : "Progression ranking",
+	        sponsor: debtTrouble ? "Sponsor local prudent" : championStayingInternational ? "Sponsor champion" : "Sponsors locaux",
+	        effects: debtTrouble ? { morale: -1, rep: 1, hype: -2, locked: 1 } : { morale: championStayingInternational ? 2 : 4, rep: 3, hype: championStayingInternational ? 1 : -2 },
 	      },
 	    ];
 	    if (promotionEligible) {
-	      const nextTier = nextOrg.tier;
-	      offers.push({
-	        id: "move",
-	        label: status.clauseReady ? `Activer la clause ${nextOrg.label}` : `Signer en ${nextOrg.label}`,
-	        tag: "Montee",
-	        summary: status.clauseReady
-	          ? "La clause contender est validee: le manager peut forcer une marche au-dessus."
-	          : status.hasBelt
-	            ? "Vous terminez champion: l'organisation du dessus ouvre la porte."
-	            : "Sport, hype et business alignes: vraie marche au-dessus.",
-	        tier: nextTier,
-	        money: Math.round((52000 + nextTier * 38000 + Math.min(36000, (career.hype || 0) * 420)) / 1000) * 1000,
-	        fights: 4,
-	        purseBoost: 1.16,
-	        titleClause: "Clause contender si 2 victoires",
-	        contenderWinsRequired: 2,
-	        sponsor: "Equipementier international",
-	        effects: { morale: -2, rep: 5, hype: 8 },
+	      status.targets.forEach(org => {
+	        offers.push(promotionContractOffer(career, org, status));
 	      });
 	    }
 	    if (sponsorEligible) {
@@ -6726,6 +6911,7 @@
 	        tag: premiumSponsor ? "Mainstream" : "Business",
 	        summary: premiumSponsor ? "Charisme, hype et image ouvrent une grosse enveloppe." : "Moins de securite sportive, plus de cash et de negociation.",
 	        tier: career.tier,
+	        orgId: currentOrg.id,
 	        money: Math.round(((premiumSponsor ? 72000 : 36000) + career.tier * 32000 + Math.floor(career.stats.charisma * (premiumSponsor ? 780 : 520))) / 1000) * 1000,
 	        fights: career.tier >= 2 ? 3 : 2,
 	        purseBoost: premiumSponsor ? 1.34 : 1.24,
@@ -6740,12 +6926,15 @@
   function chooseContract(index) {
     const career = ui.career;
     const offer = career.pendingContracts[index];
+    const org = orgForTier(offer.tier);
     career.tier = offer.tier;
-    career.org = { id: `org-${offer.tier}`, label: ORGS[offer.tier].label, org: offer.tier, summary: offer.summary, stats: {} };
+    career.org = { id: offer.orgId || org.id, label: org.label, org: org.tier, summary: org.summary, stats: {} };
     career.money += offer.money;
     applyEffects(career, offer.effects);
 	    career.contract = {
-	      org: ORGS[offer.tier].label,
+	      org: org.label,
+	      orgId: offer.orgId || org.id,
+	      tier: offer.tier,
 	      fights: offer.fights,
 	      remainingFights: offer.fights,
 	      purseBoost: offer.purseBoost || 1,
@@ -6755,7 +6944,7 @@
 	      contenderWins: 0,
 	      signedYear: career.year,
     };
-    career.rank = offer.tier > 0 && offer.id === "move" ? 18 : career.rank;
+    career.rank = offer.entryRank || (offer.tier > 0 && String(offer.id).startsWith("move") ? 18 : career.rank);
     career.flags.fastTrack = false;
     career.flags.contenderClauseReady = false;
     career.history.push({
@@ -7603,11 +7792,11 @@
 
   function renderPromotionPath(career) {
     const status = promotionStatus(career);
-    if (!status.nextOrg) {
+    if (!status.targets?.length) {
       return `
         <div class="promotion-path complete">
-          <strong>${iconOnly("trophy", "P")} Sommet atteint</strong>
-          <span>Plus de ligue au-dessus. L'enjeu devient defense de ceinture, money fights et legacy.</span>
+          <strong>${iconOnly("trophy", "P")} Sommet UFC atteint</strong>
+          <span>Plus d'organisation au-dessus. L'enjeu devient defense de ceinture, money fights et legacy.</span>
         </div>
       `;
     }
@@ -7618,12 +7807,12 @@
       {
         ok: status.cageSuccess,
         label: "Resultats cage",
-        value: status.hasBelt ? "ceinture active" : `serie ${career.streak}, rang #${career.rank}`,
+        value: status.perfectSeason ? `saison parfaite ${status.wins}/${status.honored}` : status.hasBelt ? "ceinture active" : `serie ${career.streak}, rang #${career.rank}`,
       },
       {
         ok: status.businessSuccess,
         label: "Hype et business",
-        value: `hype ${career.hype}, charisme ${career.stats.charisma}`,
+        value: status.perfectSeason ? "bonus saison invaincue" : `hype ${career.hype}/${status.hypeTarget}, charisme ${career.stats.charisma}/${status.charismaTarget}`,
       },
       {
         ok: !status.debtTrouble,
@@ -7632,14 +7821,18 @@
       },
       {
         ok: status.visibilityAccess || status.clauseReady,
-        label: "Acces superieur",
-        value: status.clauseReady ? "clause activee" : clauseText,
+        label: status.ufcStep ? "Porte UFC" : status.internationalStep ? "Porte internationale" : "Acces superieur",
+        value: status.ufcStep
+          ? status.hasBelt ? "champion KSW/PFL" : "ceinture KSW/PFL requise"
+          : status.internationalStep
+            ? status.promotionEligible ? "KSW/PFL sur la table" : "saison forte ou invaincue"
+            : status.clauseReady ? "clause activee" : clauseText,
       },
     ];
     return `
       <div class="promotion-path ${status.promotionEligible ? "ready" : ""}">
-        <strong>${iconOnly(status.promotionEligible ? "circle-check" : "move-up-right", "P")} Montee vers ${esc(status.nextOrg.label)}</strong>
-        <span>${status.promotionEligible ? "Offre possible au prochain bilan." : "Il faut aligner sport, image business et fiabilite."}</span>
+        <strong>${iconOnly(status.promotionEligible ? "circle-check" : "move-up-right", "P")} ${status.internationalStep ? "Signature internationale" : `Montee vers ${esc(status.targetLabel)}`}</strong>
+        <span>${status.promotionEligible ? `Offre ${esc(status.targetLabel)} possible au prochain bilan.` : status.ufcStep ? "L'UFC attend un champion KSW/PFL fiable." : "Une grosse saison peut suffire: victoires, image minimale et dossier propre."}</span>
         <div class="promotion-checks">
           ${rows.map(row => `
             <div class="promotion-check ${row.ok ? "ok" : "todo"}">
@@ -7669,7 +7862,7 @@
           ${career.pendingContracts.map((offer, index) => `
             <button class="choice-btn contract-offer-card" data-action="choose-contract" data-index="${index}">
 	              <span class="contract-offer-head">
-	                <span class="choice-icon">${iconOnly(offer.id === "move" ? "circle-dollar-sign" : offer.id === "sponsor" ? "badge-dollar-sign" : "shield-check", "$")}</span>
+	                <span class="choice-icon">${iconOnly(String(offer.id).startsWith("move") ? "circle-dollar-sign" : offer.id === "sponsor" ? "badge-dollar-sign" : "shield-check", "$")}</span>
 	                <strong>${esc(offer.label)}</strong>
 	              </span>
 	              <span class="choice-summary">${esc(offer.summary)}</span>
@@ -7678,7 +7871,7 @@
 	                <span>${iconOnly("badge-dollar-sign", "B")} x${(offer.purseBoost || 1).toFixed(2)}</span>
 	                <span>${iconOnly("circle-dollar-sign", "$")} ${formatMoney(offer.money)}</span>
 	              </span>
-              <small>Sponsor: ${esc(offer.sponsor)}. Clause: ${esc(offer.titleClause)}</small>
+              <small>${esc(offer.tag || "Contrat")} | Sponsor: ${esc(offer.sponsor)}. Clause: ${esc(offer.titleClause)}</small>
             </button>
           `).join("")}
         </div>
@@ -8058,7 +8251,7 @@
 	    const opportunity = currentCampOpportunity(career);
 	    const opportunityChoices = opportunity ? campOpportunityBinaryChoices(opportunity) : [];
 		    renderShell(`
-		      <section class="game-screen training-screen">
+			      <section class="game-screen training-screen ${opportunity ? "quick-choice-screen camp-stage-choice-screen" : ""}">
 	        ${campPrepPanel(career)}
 	        ${renderCampStatus(career)}
 	        ${renderCampRiskWarning(career)}
@@ -8163,28 +8356,27 @@
     `);
   }
 
-  function renderLifeEvent() {
-    const career = ui.career;
-    const event = career.pendingEvent;
-    if (!event) {
-      prepareLifeEvent();
-      return;
-    }
-    const mobileChoices = event.options.map((option, index) => ({
-      label: option.label,
-      summary: option.result,
+	  function renderLifeEvent() {
+	    const career = ui.career;
+	    const event = career.pendingEvent;
+	    if (!event) {
+	      prepareLifeEvent();
+	      return;
+	    }
+	    const quickChoice = event.options.length === 2;
+	    const mobileChoices = event.options.map((option, index) => ({
+	      label: option.label,
+	      summary: option.result,
       meta: effectLine(option.effects) || "Aucun effet visible",
       action: "event-option",
-      attrs: { index },
-    }));
-    renderShell(`
-      <section class="game-screen">
-        ${fighterHeader(career)}
-        ${seasonPanel(career)}
-        ${renderSeasonFocusPanel(career)}
-        <div class="story-panel">
-          <h3>${esc(event.title)}</h3>
-          <p>${esc(event.text)}</p>
+	      attrs: { index },
+	    }));
+	    renderShell(`
+	      <section class="game-screen ${quickChoice ? "quick-choice-screen life-choice-screen" : ""}">
+	        ${fighterHeader(career)}
+	        <div class="story-panel">
+	          <h3>${esc(event.title)}</h3>
+	          <p>${esc(event.text)}</p>
         </div>
         <div class="choice-grid ${event.options.length === 2 ? "binary-choice-grid" : "mobile-option-stack"}">
 	          ${event.options.map((option, index) => `
@@ -8205,25 +8397,26 @@
     `);
   }
 
-  function renderEvent() {
-    const career = ui.career;
-    const event = career.pendingEvent;
-    if (!event || !career.pendingFight) {
-      startFightSelection();
-      return;
-    }
-    const mobileChoices = event.options.map((option, index) => ({
-      label: option.label,
-      summary: option.result,
+	  function renderEvent() {
+	    const career = ui.career;
+	    const event = career.pendingEvent;
+	    if (!event || !career.pendingFight) {
+	      startFightSelection();
+	      return;
+	    }
+	    const quickChoice = event.options.length === 2;
+	    const mobileChoices = event.options.map((option, index) => ({
+	      label: option.label,
+	      summary: option.result,
       meta: effectLine(option.effects) || "Aucun effet visible",
       action: "event-option",
-      attrs: { index },
-    }));
-    renderShell(`
-      <section class="game-screen">
-        ${fighterHeader(career)}
-        <div class="story-panel">
-          <h3>${esc(event.title)}</h3>
+	      attrs: { index },
+	    }));
+	    renderShell(`
+	      <section class="game-screen ${quickChoice ? "quick-choice-screen life-choice-screen" : ""}">
+	        ${fighterHeader(career)}
+	        <div class="story-panel">
+	          <h3>${esc(event.title)}</h3>
           <p>${esc(event.text)}</p>
         </div>
         <div class="choice-grid ${event.options.length === 2 ? "binary-choice-grid" : "mobile-option-stack"}">
@@ -8871,7 +9064,7 @@
       settleSeason(career);
       saveCareer();
     }
-    if (!career.pendingContracts && career.lastResult?.won) {
+    if ((!career.pendingContracts || career.pendingContracts.length === 0) && career.lastResult?.won) {
       career.pendingContracts = buildContractOffers();
       saveCareer();
     }
