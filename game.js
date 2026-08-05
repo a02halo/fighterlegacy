@@ -9919,11 +9919,19 @@
 
 		  async function saveCurrentAndStartNewCareer() {
 		    const career = currentPublishableCareer();
+		    if (!ui.online.session && career) {
+		      ui.view = "account";
+		      ui.online.authOpen = true;
+		      renderOnlineAccountScreen();
+		      showToast("Connectez-vous pour garder cette carriere avant d'en ajouter une.");
+		      return;
+		    }
 		    if (ui.online.session && career) {
 		      const imported = await importCurrentCareerOnline({ fromAuth: true });
 		      if (!imported) return;
 		    }
 		    startNewCareerCreation();
+		    if (career) showToast("Carriere conservee. Nouvelle creation lancee.");
 		  }
 
 		  function renderOnlineAuthBlock(career) {
@@ -10038,20 +10046,21 @@
 	          <span>${iconOnly("users", "C")} Combattants</span>
 	          <strong>${fighters.length}/5</strong>
 	        </div>
-	        <p class="online-help">Votre compte peut garder jusqu'a 5 combattants publies. Une nouvelle carriere locale ne supprime pas les combattants deja importes.</p>
+	        <p class="online-help">Votre compte peut garder jusqu'a 5 combattants. Ajouter une carriere conserve d'abord la carriere en cours dans votre ecurie: elle ne sera pas effacee.</p>
 	        ${career ? `
 	          <div class="online-current-career">
 	            <span>${iconOnly("database", "L")} Carriere locale</span>
 	            <strong>${esc(career.name)} (${career.record.w}-${career.record.l})</strong>
 	            <small>${esc(career.weight?.label || "Categorie")} | ${esc(career.style?.label || "Style")} | OVR ${overall(career)}</small>
 	          </div>
-	          ${atLimit ? `<div class="notice online-error">${iconOnly("triangle-alert", "L")} Limite atteinte: vous avez deja 5 combattants. Cette carriere ne peut pas etre importee comme nouveau combattant.</div>` : ""}
+	          ${atLimit ? `<div class="notice online-error">${iconOnly("triangle-alert", "L")} Limite atteinte: vous avez deja 5 combattants. Cette carriere doit rester locale tant qu'une place n'est pas liberee.</div>` : ""}
 	          <div class="menu-actions online-actions">
 	            <button class="btn btn-primary" data-action="import-current-career" ${atLimit ? "disabled" : ""}>${iconText("upload-cloud", importLabel, "I")}</button>
 	            ${atLimit
-	              ? `<button class="btn" data-action="new-career">${iconText("plus-circle", "Nouvelle carriere locale", "+")}</button>`
-	              : `<button class="btn" data-action="save-and-new-career">${iconText("plus-circle", "Publier puis nouvelle carriere", "+")}</button>`}
+	              ? `<button class="btn" disabled>${iconText("lock", "Ecurie pleine", "L")}</button>`
+	              : `<button class="btn" data-action="save-and-new-career">${iconText("plus-circle", "Ajouter une carriere", "+")}</button>`}
 	          </div>
+	          ${atLimit ? "" : `<p class="online-help">La carriere actuelle sera gardee dans Combattants avant d'ouvrir la creation suivante.</p>`}
 	        ` : `
 	          <div class="notice online-neutral">${iconOnly("plus-circle", "N")} Aucune carriere locale active. Vous pouvez lancer une nouvelle carriere sans toucher a votre ecurie en ligne.</div>
 	          <div class="menu-actions online-actions">
@@ -10617,6 +10626,7 @@
 	            <h2 class="screen-title">${career ? "Stats et coulisses" : "Stats"}</h2>
 	            <p class="screen-lead">${career ? "Les valeurs cachees ou semi-cachees sont ici: reputation, hype, credit, scandale, dette medicale et stats permanentes." : "Les stats ne sont pas juste decoratives: elles influencent le camp, les rounds, les fins avant la limite, l'argent et la duree de carriere."}</p>
 	          </div>
+	          ${career ? `<button class="btn btn-primary" data-action="continue-career">${iconText("play", "Retour au jeu", "R")}</button>` : ""}
 	        </div>
 	        ${career ? `
 	          <div class="summary-grid dossier-grid">
