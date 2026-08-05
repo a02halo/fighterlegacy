@@ -1981,6 +1981,60 @@ input:focus-visible {
   font-size: 15px;
 }
 
+.result-story {
+  position: relative;
+}
+
+.press-result-story {
+  background:
+    linear-gradient(90deg, rgba(16, 15, 13, 0.88), rgba(16, 15, 13, 0.66)),
+    #151311;
+  border: 1px solid rgba(214, 165, 59, 0.42);
+  border-left: 8px solid var(--red);
+  box-shadow: 0 20px 44px rgba(23, 19, 15, 0.18);
+  color: var(--paper);
+  isolation: isolate;
+  margin-top: 18px;
+  min-height: 230px;
+  overflow: hidden;
+  padding: clamp(18px, 3vw, 30px);
+}
+
+.press-result-story::before {
+  background-image: url("./assets/press-conference-fight-legacy.png");
+  background-position: center 36%;
+  background-size: cover;
+  content: "";
+  inset: 0;
+  opacity: 0.2;
+  position: absolute;
+  transform: scale(1.02);
+  z-index: -2;
+}
+
+.press-result-story::after {
+  background:
+    linear-gradient(90deg, rgba(16, 15, 13, 0.78), rgba(16, 15, 13, 0.5)),
+    linear-gradient(180deg, rgba(16, 15, 13, 0.18), rgba(16, 15, 13, 0.7));
+  content: "";
+  inset: 0;
+  position: absolute;
+  z-index: -1;
+}
+
+.press-result-story h3,
+.press-result-story p {
+  color: var(--paper);
+  max-width: 760px;
+  position: relative;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.34);
+}
+
+.press-result-story p {
+  color: rgba(255, 250, 240, 0.9);
+  font-size: clamp(18px, 2vw, 23px);
+}
+
 .special-screen {
   background:
     linear-gradient(135deg, rgba(215, 52, 56, 0.12), transparent 32%),
@@ -4369,8 +4423,16 @@ input:focus-visible {
 		  }
 
 		  .press-conference-screen .story-panel {
-		    margin: 10px 0 8px;
 		    padding: 12px;
+		  }
+
+		  .press-result-story {
+		    min-height: 190px;
+		    padding: 18px;
+		  }
+
+		  .press-result-story::before {
+		    opacity: 0.14;
 		  }
 
 		  .press-choice {

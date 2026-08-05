@@ -4128,6 +4128,7 @@
       title: "Conference de presse",
       text: [option.result, extraText].filter(Boolean).join(" "),
       effects,
+      visual: "press",
       nextAction: hasMedicalRest(career) ? "to-medical-rest" : "to-special-fight",
 	      nextLabel: hasMedicalRest(career) ? "Repos medical" : "Combat de boxe",
 	    });
@@ -4239,6 +4240,7 @@
 	      title: "Conference de presse",
 	      text: resultText,
 	      effects,
+	      visual: "press",
 	      nextAction: hasMedicalRest(career) ? "to-medical-rest" : "to-fight-plan",
 	      nextLabel: hasMedicalRest(career) ? "Repos medical" : "Plan de coin",
 	    });
@@ -8807,13 +8809,14 @@
     const campContext = career.camp && career.pendingFight
       ? `${renderCampStatus(career)}${renderCampRiskWarning(career)}`
       : "";
+    const isPressResult = result.visual === "press";
     renderShell(`
-      <section class="game-screen">
+      <section class="game-screen decision-result-screen ${isPressResult ? "press-result-screen" : ""}">
         ${fighterHeader(career)}
         ${seasonPanel(career)}
         ${renderSeasonFocusPanel(career)}
         ${campContext}
-        <div class="story-panel">
+        <div class="story-panel result-story ${isPressResult ? "press-result-story" : ""}">
           <h3>${esc(result.title)}</h3>
           <p>${esc(result.text)}</p>
         </div>
@@ -9052,23 +9055,16 @@
       <section class="game-screen special-screen">
         ${fighterHeader(career)}
         ${seasonPanel(career)}
-        <div class="press-visual-layout">
-          <div class="press-copy-stack">
-            <div class="special-hero compact">
-              <span>${iconOnly("mic", "P")} Conference de presse</span>
-              <h3>${esc(career.name)} vs ${esc(special.opponent.name)}</h3>
-              <p>Le camp est termine. Il reste a vendre le gala sans casser la forme ni donner trop de carburant a l'adversaire.</p>
-            </div>
-            <div class="summary-grid press-summary">
-              <div class="summary-item"><span>${iconOnly("sparkles", "%")} Chance estimee</span><strong>${clamp((special.baseWinChance || 8) + (special.prepBonus || 0), 3, 30)}%</strong></div>
-              <div class="summary-item"><span>${iconOnly("flame", "H")} Hype</span><strong>${career.hype}/160</strong></div>
-              <div class="summary-item"><span>${iconOnly("heart-pulse", "F")} Forme</span><strong>${career.condition}/100</strong></div>
-              <div class="summary-item"><span>${iconOnly("activity", "R")} Risque</span><strong>${ensureMedical(career).injuryRisk}/90</strong></div>
-            </div>
-          </div>
-          <figure class="press-art">
-            <img src="./assets/press-conference-fight-legacy.png" alt="Conference de presse MMA">
-          </figure>
+        <div class="special-hero compact">
+          <span>${iconOnly("mic", "P")} Conference de presse</span>
+          <h3>${esc(career.name)} vs ${esc(special.opponent.name)}</h3>
+          <p>Le camp est termine. Il reste a vendre le gala sans casser la forme ni donner trop de carburant a l'adversaire.</p>
+        </div>
+        <div class="summary-grid press-summary">
+          <div class="summary-item"><span>${iconOnly("sparkles", "%")} Chance estimee</span><strong>${clamp((special.baseWinChance || 8) + (special.prepBonus || 0), 3, 30)}%</strong></div>
+          <div class="summary-item"><span>${iconOnly("flame", "H")} Hype</span><strong>${career.hype}/160</strong></div>
+          <div class="summary-item"><span>${iconOnly("heart-pulse", "F")} Forme</span><strong>${career.condition}/100</strong></div>
+          <div class="summary-item"><span>${iconOnly("activity", "R")} Risque</span><strong>${ensureMedical(career).injuryRisk}/90</strong></div>
         </div>
         <div class="choice-grid three">
           ${BOXING_PRESS_OPTIONS.map(option => `
@@ -9224,22 +9220,15 @@
 		        ${fighterHeader(career)}
 		        ${seasonPanel(career)}
 		        ${renderMedicalAlert(career)}
-		        <div class="press-visual-layout">
-		          <div class="press-copy-stack">
-		            <div class="story-panel press-intro">
-		              <h3>Conference de presse</h3>
-		              <p>${esc(career.name)} vs ${esc(fight.opponent.name)}. Le camp est termine: il faut vendre le combat sans se mettre l'organisation, les sponsors ou l'adversaire completement a dos.</p>
-		            </div>
-		            <div class="summary-grid press-summary">
-		              <div class="summary-item"><span>${iconOnly("target", "A")} Adversaire</span><strong>${esc(fight.opponent.name)}</strong></div>
-		              <div class="summary-item"><span>${iconOnly("flame", "H")} Hype combat</span><strong>${fight.hype}</strong></div>
-		              <div class="summary-item"><span>${iconOnly("activity", "F")} Fatigue</span><strong>${fatigueImpact.fatigue}/12</strong></div>
-		              <div class="summary-item"><span>${iconOnly("circle-dollar-sign", "$")} Bourse</span><strong>${formatMoney(fight.money)}</strong></div>
-		            </div>
-		          </div>
-		          <figure class="press-art">
-		            <img src="./assets/press-conference-fight-legacy.png" alt="Conference de presse MMA">
-		          </figure>
+		        <div class="story-panel press-intro">
+		          <h3>Conference de presse</h3>
+		          <p>${esc(career.name)} vs ${esc(fight.opponent.name)}. Le camp est termine: il faut vendre le combat sans se mettre l'organisation, les sponsors ou l'adversaire completement a dos.</p>
+		        </div>
+		        <div class="summary-grid press-summary">
+		          <div class="summary-item"><span>${iconOnly("target", "A")} Adversaire</span><strong>${esc(fight.opponent.name)}</strong></div>
+		          <div class="summary-item"><span>${iconOnly("flame", "H")} Hype combat</span><strong>${fight.hype}</strong></div>
+		          <div class="summary-item"><span>${iconOnly("activity", "F")} Fatigue</span><strong>${fatigueImpact.fatigue}/12</strong></div>
+		          <div class="summary-item"><span>${iconOnly("circle-dollar-sign", "$")} Bourse</span><strong>${formatMoney(fight.money)}</strong></div>
 		        </div>
 		        <div class="choice-grid three press-grid">
 		          ${PRESS_OPTIONS.map(option => `
