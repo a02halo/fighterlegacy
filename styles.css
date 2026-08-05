@@ -3104,10 +3104,41 @@ input:focus-visible {
 
 .online-fighter-card {
   align-items: center;
+  appearance: none;
   display: grid;
   gap: 10px;
   grid-template-columns: 46px minmax(0, 1fr) auto;
+  font: inherit;
   padding: 9px;
+  text-align: left;
+  width: 100%;
+}
+
+.online-fighter-card:hover,
+.online-fighter-card.selected {
+  border-color: rgba(201, 46, 49, 0.58);
+  box-shadow: 0 10px 22px rgba(17, 16, 14, 0.1);
+}
+
+.online-fighter-card.is-active {
+  border-color: rgba(12, 148, 127, 0.72);
+}
+
+.online-switch-panel {
+  background: rgba(255, 250, 239, 0.72);
+  border: 1px dashed rgba(17, 16, 14, 0.24);
+  border-radius: var(--radius);
+  color: var(--ink);
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 13px;
+}
+
+.online-switch-panel p {
+  color: var(--muted);
+  font-weight: 760;
+  margin: 0;
 }
 
 .online-fighter-main,

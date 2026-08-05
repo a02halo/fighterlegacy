@@ -1,6 +1,7 @@
 (() => {
   const STORAGE_META = "fightLegacy.meta.v1";
   const STORAGE_CAREER = "fightLegacy.currentCareer.v1";
+  const STORAGE_CAREER_ARCHIVE = "fightLegacy.careerArchive.v1";
   const STORAGE_CREATOR = "fightLegacy.creatorDraft.v1";
   const STORAGE_ONLINE = "fightLegacy.online.v1";
   const SUPABASE_URL = "https://cytsfvhwbsesbywwythu.supabase.co";
@@ -2747,11 +2748,91 @@
   function saveCareer() {
     if (ui.career && ui.career.active) {
       localStorage.setItem(STORAGE_CAREER, JSON.stringify(ui.career));
+      archiveCareerLocally(ui.career);
     }
   }
 
   function clearCareer() {
     localStorage.removeItem(STORAGE_CAREER);
+  }
+
+  function clonePlain(value) {
+    try {
+      return JSON.parse(JSON.stringify(value));
+    } catch {
+      return null;
+    }
+  }
+
+  function loadCareerArchive() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_CAREER_ARCHIVE)) || {};
+      return {
+        saveVersion: SAVE_VERSION,
+        fighters: parsed.fighters && typeof parsed.fighters === "object" ? parsed.fighters : {},
+      };
+    } catch {
+      return { saveVersion: SAVE_VERSION, fighters: {} };
+    }
+  }
+
+  function saveCareerArchive(archive) {
+    localStorage.setItem(STORAGE_CAREER_ARCHIVE, JSON.stringify({
+      saveVersion: SAVE_VERSION,
+      fighters: archive.fighters || {},
+    }));
+  }
+
+  function onlineArchiveKeyFromParts(source, name) {
+    const clean = normalizeFighterName(name);
+    return clean ? `${source || "beta_import"}:${clean}` : "";
+  }
+
+  function onlineArchiveKeys(row = {}) {
+    const keys = [];
+    if (row.id || row.fighter_id) keys.push(row.id || row.fighter_id);
+    const name = row.fighter_name || row.name;
+    const source = row.source || "beta_import";
+    const nameKey = onlineArchiveKeyFromParts(source, name);
+    if (nameKey) keys.push(nameKey);
+    return [...new Set(keys.filter(Boolean))];
+  }
+
+  function archiveCareerLocally(career, row = null) {
+    if (!career?.active) return;
+    const keys = onlineArchiveKeys({
+      id: row?.id || row?.fighter_id || career.onlineFighterId,
+      source: row?.source || career.onlineSource || "beta_import",
+      fighter_name: row?.fighter_name || career.name,
+    });
+    if (!keys.length) return;
+    const copy = clonePlain({
+      ...career,
+      onlineFighterId: keys[0],
+      onlineSource: row?.source || career.onlineSource || "beta_import",
+      archivedAt: new Date().toISOString(),
+    });
+    if (!copy) return;
+    const archive = loadCareerArchive();
+    keys.forEach(key => {
+      archive.fighters[key] = {
+        fighterId: row?.id || row?.fighter_id || career.onlineFighterId || "",
+        source: row?.source || career.onlineSource || "beta_import",
+        fighterName: row?.fighter_name || career.name,
+        updatedAt: new Date().toISOString(),
+        career: copy,
+      };
+    });
+    saveCareerArchive(archive);
+  }
+
+  function archivedCareerForOnlineRow(row = {}) {
+    const archive = loadCareerArchive();
+    for (const key of onlineArchiveKeys(row)) {
+      const item = archive.fighters[key];
+      if (item?.career) return clonePlain(item.career);
+    }
+    return null;
   }
 
   function startNewCareerCreation() {
@@ -5957,16 +6038,31 @@
     return STYLES.find(style => style.id === clean || normalizeFighterName(style.label) === clean) || STYLES[0];
   }
 
-  function weightIndexFromLabel(value = "") {
-    const clean = normalizeFighterName(value);
-    const index = WEIGHTS.findIndex(weight => weight.id === clean || normalizeFighterName(weight.label) === clean);
-    return index >= 0 ? index : -1;
-  }
+	  function weightIndexFromLabel(value = "") {
+	    const clean = normalizeFighterName(value);
+	    const index = WEIGHTS.findIndex(weight => weight.id === clean || normalizeFighterName(weight.label) === clean);
+	    return index >= 0 ? index : -1;
+	  }
 
-  function onlineFighterSnapshot(row = {}) {
-    const snapshot = row.snapshot && typeof row.snapshot === "object" ? row.snapshot : {};
-    const stats = row.stats && typeof row.stats === "object" ? row.stats : snapshot.stats || {};
-    const styleId = snapshot.styleId || snapshot.style?.id || row.style;
+	  function findCountryFromOnline(value = "") {
+	    const clean = normalizeFighterName(value);
+	    return COUNTRIES.find(country => country.id === clean || normalizeFighterName(country.label) === clean) || COUNTRIES[0];
+	  }
+
+	  function findWeightFromOnline(value = "") {
+	    const clean = normalizeFighterName(value);
+	    return WEIGHTS.find(weight => weight.id === clean || normalizeFighterName(weight.label) === clean) || WEIGHTS[2];
+	  }
+
+	  function findStyleFromOnline(value = "") {
+	    const clean = normalizeFighterName(value);
+	    return STYLES.find(style => style.id === clean || normalizeFighterName(style.label) === clean) || STYLES[0];
+	  }
+
+	  function onlineFighterSnapshot(row = {}) {
+	    const snapshot = row.snapshot && typeof row.snapshot === "object" ? row.snapshot : {};
+	    const stats = row.stats && typeof row.stats === "object" ? row.stats : snapshot.stats || {};
+	    const styleId = snapshot.styleId || snapshot.style?.id || row.style;
     const weightLabel = row.weight_class || snapshot.weightClass || snapshot.weight?.label || "";
     const record = snapshot.record || { w: row.record_w || 0, l: row.record_l || 0, ko: row.finishes_ko || 0, sub: row.finishes_sub || 0 };
     return {
@@ -5983,11 +6079,139 @@
       score: row.score || 0,
       record,
       org: row.org || snapshot.org || "Organisation",
-      retired: Boolean(row.retired || snapshot.retired),
-    };
-  }
+	      retired: Boolean(row.retired || snapshot.retired),
+	    };
+	  }
 
-  function challengeWeightCompatible(a, b) {
+	  function onlineFighterBelts(row = {}) {
+	    const belts = Array.isArray(row.belts) ? row.belts : [];
+	    const count = Math.max(0, Math.round(row.titles_count || belts.length || 0));
+	    if (belts.length) {
+	      return belts.slice(0, 8).map(belt => {
+	        const tier = clamp(Number(belt.tier ?? row.org_tier ?? 0), 0, ORGS.length - 1);
+	        return {
+	          label: belt.label || orgForTier(tier).belt,
+	          tier,
+	          defenses: Math.max(0, Math.round(belt.defenses || 0)),
+	          lost: Boolean(belt.lost),
+	        };
+	      });
+	    }
+	    return Array.from({ length: count }, (_, index) => {
+	      const tier = clamp(Number(row.org_tier ?? 0), 0, ORGS.length - 1);
+	      return {
+	        label: index ? `${orgForTier(tier).belt} ${index + 1}` : orgForTier(tier).belt,
+	        tier,
+	        defenses: 0,
+	        lost: false,
+	      };
+	    });
+	  }
+
+	  function onlineRowMatchesCareer(row, career) {
+	    if (!row || !career) return false;
+	    if ((row.id || row.fighter_id) && career.onlineFighterId === (row.id || row.fighter_id)) return true;
+	    return row.source === (career.onlineSource || "beta_import") && sameFighterName(row.fighter_name || row.name, career.name);
+	  }
+
+	  function careerFromOnlineFighter(row = {}) {
+	    const archived = archivedCareerForOnlineRow(row);
+	    if (archived) {
+	      archived.onlineFighterId = row.id || row.fighter_id || archived.onlineFighterId;
+	      archived.onlineSource = row.source || archived.onlineSource || "beta_import";
+	      archived.active = archived.active !== false;
+	      return withCareerDefaults(archived);
+	    }
+	    const snapshot = onlineFighterSnapshot(row);
+	    const country = findCountryFromOnline(row.country || snapshot.country);
+	    const weight = findWeightFromOnline(row.weight_class || snapshot.weightClass);
+	    const style = findStyleFromOnline(row.style || snapshot.style?.label);
+	    const tier = clamp(Number(row.org_tier ?? snapshot.orgTier ?? 0), 0, ORGS.length - 1);
+	    const org = orgForTier(tier);
+	    const wins = Math.max(0, Math.round(row.record_w ?? snapshot.record?.w ?? 0));
+	    const losses = Math.max(0, Math.round(row.record_l ?? snapshot.record?.l ?? 0));
+	    const ko = Math.max(0, Math.round(row.finishes_ko ?? snapshot.record?.ko ?? 0));
+	    const sub = Math.max(0, Math.round(row.finishes_sub ?? snapshot.record?.sub ?? 0));
+	    const seed = Number(snapshot.seed || hashSeed(`${row.fighter_name || snapshot.name}-${row.updated_at || Date.now()}`));
+	    const career = {
+	      saveVersion: SAVE_VERSION,
+	      active: !row.retired,
+	      name: row.fighter_name || snapshot.name || "Combattant",
+	      nickname: "",
+	      country,
+	      weight,
+	      style,
+	      origin: ORIGINS[0],
+	      lifestyle: LIFESTYLES[1],
+	      entourage: ENTOURAGES[0],
+	      age: row.career_age || snapshot.age || 18,
+	      year: snapshot.year || row.season_year || CURRENT_YEAR,
+	      seed,
+	      rngSeed: seed,
+	      stats: { ...newEmptyStats(), ...(row.stats || snapshot.stats || {}) },
+	      potential: 78,
+	      money: row.money || 0,
+	      rep: row.reputation || snapshot.rep || 8,
+	      hype: row.hype || snapshot.hype || 5,
+	      morale: 62,
+	      condition: row.condition ?? snapshot.condition ?? 72,
+	      org: {
+	        id: org.id,
+	        label: org.label,
+	        org: org.tier,
+	        summary: org.summary,
+	      },
+	      tier,
+	      rank: snapshot.rank || 25,
+	      record: { w: wins, l: losses, d: 0, ko, sub, dec: Math.max(0, wins - ko - sub) },
+	      titles: onlineFighterBelts(row),
+	      streak: 0,
+	      lastResult: null,
+	      fights: [],
+	      exhibitions: [],
+	      history: [`Carriere restauree depuis votre ecurie en ligne (${row.updated_at ? new Date(row.updated_at).toLocaleDateString("fr-FR") : "date inconnue"}).`],
+	      moments: [],
+	      news: [],
+	      rivals: [],
+	      contract: null,
+	      medical: {
+	        injuryRisk: 0,
+	        restWeeks: 0,
+	        activeInjury: null,
+	        injuries: [],
+	        rehabLog: [],
+	        careerWarnings: 0,
+	      },
+	      flags: { statsNudge: true, restoredFromOnline: true },
+	      pendingConsequences: [],
+	      phase: row.retired ? "retirement-choice" : "season-setup",
+	      season: null,
+	      camp: null,
+	      pendingEvent: null,
+	      pendingSpecial: null,
+	      specialFight: null,
+	      specialCamp: null,
+	      pendingTraining: null,
+	      pendingLifeEvent: null,
+	      pendingFightOptions: null,
+	      pendingFight: null,
+	      pendingPressChoice: null,
+	      pendingPlan: null,
+	      pendingContracts: null,
+	      choiceResult: null,
+	      onlineFighterId: row.id || row.fighter_id || "",
+	      onlineSource: row.source || "beta_import",
+	      startSummary: {
+	        country: country.label,
+	        weight: weight.label,
+	        style: style.label,
+	        origin: "Ecurie en ligne",
+	      },
+	    };
+	    return withCareerDefaults(career);
+	  }
+
+	  function challengeWeightCompatible(a, b) {
     const left = typeof a === "number" ? a : onlineFighterSnapshot(a).weightIndex;
     const right = typeof b === "number" ? b : onlineFighterSnapshot(b).weightIndex;
     if (left < 0 || right < 0) return false;
@@ -9609,7 +9833,7 @@
 	    }
 	    const { data, error } = await client
 	      .from("official_fighters")
-	      .select("id,user_id,source,fighter_name,weight_class,country,style,org,org_tier,record_w,record_l,finishes_ko,finishes_sub,titles_count,overall,hype,reputation,money,condition,score,rank_label,retired,published_at,updated_at,stats,snapshot")
+	      .select("id,user_id,source,fighter_name,weight_class,country,style,org,org_tier,record_w,record_l,finishes_ko,finishes_sub,titles_count,belts,overall,hype,reputation,money,condition,career_age,season_year,score,rank_label,retired,published_at,updated_at,stats,snapshot")
 	      .eq("user_id", session.user.id)
 	      .order("score", { ascending: false })
 	      .limit(5);
@@ -9908,7 +10132,19 @@
 			    ui.online.success = data?.fighter?.verified
 			      ? "Votre carriere officielle a bien ete publiee dans le classement."
 			      : "Votre carriere en cours a bien ete importee dans le classement.";
-			    if (data?.fighter?.id) ui.online.selectedFighterId = data.fighter.id;
+			    if (data?.fighter?.id) {
+			      career.onlineFighterId = data.fighter.id;
+			      career.onlineSource = data.fighter.source || "beta_import";
+			      career.onlinePublishedAt = new Date().toISOString();
+			      ui.online.selectedFighterId = data.fighter.id;
+			      ui.online.selectedOwnFighterId = data.fighter.id;
+			      saveCareer();
+			      archiveCareerLocally(career, {
+			        id: data.fighter.id,
+			        source: data.fighter.source || "beta_import",
+			        fighter_name: career.name,
+			      });
+			    }
 			    showToast(data?.fighter?.verified ? "Carriere publiee." : "Carriere importee.");
 			    await loadOnlineFighters({ rerender: false });
 			    await loadOnlineChallenges({ rerender: false });
@@ -9932,6 +10168,52 @@
 		    }
 		    startNewCareerCreation();
 		    if (career) showToast("Carriere conservee. Nouvelle creation lancee.");
+		  }
+
+		  async function switchToOnlineFighter(fighterId, options = {}) {
+		    const row = (ui.online.myFighters || []).find(fighter => fighter.id === fighterId);
+		    if (!row) {
+		      showToast("Combattant introuvable.");
+		      return;
+		    }
+		    if (row.retired) {
+		      showToast("Cette carriere est terminee.");
+		      return;
+		    }
+		    const current = ui.career?.active ? ui.career : null;
+		    const sameAsCurrent = onlineRowMatchesCareer(row, current);
+		    if (current && !sameAsCurrent) {
+		      const currentOnlineRow = (ui.online.myFighters || []).find(fighter => onlineRowMatchesCareer(fighter, current));
+		      archiveCareerLocally(current, currentOnlineRow || null);
+		      if (options.saveCurrent) {
+		        const currentAlreadyPublished = currentCareerAlreadyPublished(current);
+		        if (!currentAlreadyPublished && (ui.online.myFighters || []).length >= 5) {
+		          showToast("Ecurie pleine: impossible de garder la carriere actuelle.");
+		          return;
+		        }
+		        const imported = await importCurrentCareerOnline({ fromAuth: true });
+		        if (!imported) return;
+		      }
+		    }
+		    const restored = careerFromOnlineFighter(row);
+		    if (!restored?.active) {
+		      showToast("Carriere non jouable.");
+		      return;
+		    }
+		    restored.onlineFighterId = row.id;
+		    restored.onlineSource = row.source || "beta_import";
+		    restored.onlinePublishedAt = row.updated_at || row.published_at || restored.onlinePublishedAt || "";
+		    ui.career = restored;
+		    ui.finalCareer = null;
+		    ui.resultChoice = null;
+		    ui.online.selectedOwnFighterId = row.id;
+		    ui.online.success = `${restored.name} est maintenant votre carriere active.`;
+		    clearCreatorDraft();
+		    saveCareer();
+		    archiveCareerLocally(restored, row);
+		    ui.view = viewForPhase(restored.phase);
+		    render();
+		    showToast(`${restored.name} charge.`);
 		  }
 
 		  function renderOnlineAuthBlock(career) {
@@ -10013,23 +10295,64 @@
 	  function currentCareerAlreadyPublished(career) {
 	    if (!career) return false;
 	    return (ui.online.myFighters || []).some(row => (
-	      row.source === "beta_import" &&
-	      sameFighterName(row.fighter_name, career.name)
+	      row.id === career.onlineFighterId ||
+	      (row.source === "beta_import" && sameFighterName(row.fighter_name, career.name))
 	    ));
 	  }
 
 	  function renderOnlineFighterCard(row, index = 0) {
 	    const snapshot = onlineFighterSnapshot(row);
+	    const selected = ui.online.selectedOwnFighterId === row.id;
+	    const active = onlineRowMatchesCareer(row, ui.career);
 	    return `
-	      <div class="online-fighter-card">
+	      <button class="online-fighter-card ${selected ? "selected" : ""} ${active ? "is-active" : ""}" data-action="select-own-fighter" data-id="${esc(row.id)}">
 	        <span class="leaderboard-rank">#${index + 1}</span>
 	        <div class="online-fighter-main">
 	          <strong>${esc(snapshot.name)}</strong>
-	          <small>${esc(snapshot.weightClass || "Categorie")} | ${esc(snapshot.style?.label || row.style || "MMA")} | ${esc(snapshot.org || "Organisation")}</small>
+	          <small>${active ? "Actif | " : ""}${esc(snapshot.weightClass || "Categorie")} | ${esc(snapshot.style?.label || row.style || "MMA")} | ${esc(snapshot.org || "Organisation")}</small>
 	        </div>
 	        <div class="online-fighter-meta">
 	          <b>${snapshot.score || 0} pts</b>
 	          <small>${snapshot.record?.w || 0}-${snapshot.record?.l || 0} | OVR ${snapshot.overall || "-"}</small>
+	        </div>
+	      </button>
+	    `;
+	  }
+
+	  function renderOnlineSwitchPanel(row, career, atLimit = false) {
+	    if (!row) {
+	      return `<div class="notice online-neutral">${iconOnly("mouse-pointer-click", "C")} Cliquez sur un combattant de votre ecurie pour le charger comme carriere active.</div>`;
+	    }
+	    const snapshot = onlineFighterSnapshot(row);
+	    const active = onlineRowMatchesCareer(row, career);
+	    const currentNeedsImport = Boolean(career?.active && !active && !currentCareerAlreadyPublished(career));
+	    if (row.retired) {
+	      return `
+	        <div class="online-switch-panel">
+	          <div class="panel-title">
+	            <span>${iconOnly("archive", "T")} ${esc(snapshot.name)}</span>
+	            <strong>Terminee</strong>
+	          </div>
+	          <p>Cette carriere est terminee. Elle reste dans le classement, mais elle ne peut pas redevenir la carriere jouable.</p>
+	        </div>
+	      `;
+	    }
+	    return `
+	      <div class="online-switch-panel">
+	        <div class="panel-title">
+	          <span>${iconOnly(active ? "circle-check" : "repeat-2", "P")} ${esc(snapshot.name)}</span>
+	          <strong>${active ? "Actif" : "Changer"}</strong>
+	        </div>
+	        <p>${active
+	          ? "Ce combattant est deja votre carriere active sur ce navigateur."
+	          : currentNeedsImport
+	            ? "Votre carriere actuelle sera d'abord gardee dans Combattants, puis ce combattant deviendra la carriere active."
+	            : "Ce combattant deviendra la carriere active. Vous pourrez revenir aux autres depuis ce meme onglet."}</p>
+	        ${currentNeedsImport && atLimit ? `<div class="notice online-error">${iconOnly("triangle-alert", "L")} Ecurie pleine: impossible de garder la carriere actuelle avant de changer.</div>` : ""}
+	        <div class="menu-actions online-actions">
+	          <button class="btn btn-primary" data-action="switch-online-fighter" data-id="${esc(row.id)}" data-save-current="${currentNeedsImport ? "1" : "0"}" ${active || (currentNeedsImport && atLimit) ? "disabled" : ""}>
+	            ${iconText(active ? "circle-check" : "repeat-2", active ? "Combattant actif" : currentNeedsImport ? "Garder l'actuelle puis passer" : "Passer a ce combattant", "P")}
+	          </button>
 	        </div>
 	      </div>
 	    `;
@@ -10040,6 +10363,7 @@
 	    const alreadyPublished = currentCareerAlreadyPublished(career);
 	    const atLimit = fighters.length >= 5 && !alreadyPublished;
 	    const importLabel = alreadyPublished ? "Mettre a jour la carriere en cours" : "Importer la carriere en cours";
+	    const selectedOwn = fighters.find(row => row.id === ui.online.selectedOwnFighterId) || fighters[0] || null;
 	    return `
 	      <div class="online-panel online-stable-panel">
 	        <div class="panel-title">
@@ -10077,6 +10401,7 @@
 	          <div class="online-fighter-list">
 	            ${fighters.map((row, index) => renderOnlineFighterCard(row, index)).join("")}
 	          </div>
+	          ${renderOnlineSwitchPanel(selectedOwn, career, atLimit)}
 	        ` : `<div class="notice">Aucun combattant publie pour ce compte. Importez votre carriere en cours pour entrer dans le classement.</div>`}
 	      </div>
 	    `;
@@ -11174,6 +11499,11 @@
 		      importCurrentCareerOnline();
 		    } else if (action === "save-and-new-career") {
 		      saveCurrentAndStartNewCareer();
+		    } else if (action === "select-own-fighter") {
+		      ui.online.selectedOwnFighterId = target.dataset.id;
+		      renderOnlineAccountScreen();
+		    } else if (action === "switch-online-fighter") {
+		      switchToOnlineFighter(target.dataset.id, { saveCurrent: target.dataset.saveCurrent === "1" });
 	    } else if (action === "select-online-fighter") {
 	      ui.online.selectedFighterId = target.dataset.id;
 	      renderOnlineScreen();
