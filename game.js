@@ -10079,7 +10079,18 @@
 		    return true;
 		  }
 
-	  async function submitOnlineAuth(mode) {
+	  function readableAuthError(primaryError, fallbackError = null) {
+	    const message = `${primaryError?.message || ""} ${fallbackError?.message || ""}`.toLowerCase();
+	    if (message.includes("already") || message.includes("registered") || message.includes("exists")) {
+	      return "Cet email existe deja: verifiez le mot de passe.";
+	    }
+	    if (message.includes("invalid") || message.includes("credential") || message.includes("password")) {
+	      return "Email ou mot de passe incorrect. Si c'est votre premiere fois, renseignez aussi un nom de manager.";
+	    }
+	    return primaryError?.message || fallbackError?.message || "Connexion impossible.";
+	  }
+
+	  async function submitOnlineAuth(mode = "auto") {
 		    const client = onlineClient();
 		    if (!client) {
 		      showToast("Service multijoueur indisponible.");
@@ -10096,16 +10107,47 @@
 	      showToast("Choisissez un nom de manager.");
 	      return;
 	    }
+	    ui.online.email = email;
+	    if (managerName) ui.online.managerName = managerName;
+	    saveOnlinePrefs();
 		    ui.online.loading = true;
 		    ui.online.error = "";
 		    ui.online.success = "";
 		    renderOnlineCurrentScreen();
-	    const response = mode === "signup"
-	      ? await client.auth.signUp({ email, password })
-	      : await client.auth.signInWithPassword({ email, password });
+	    let resolvedMode = mode;
+	    let response;
+	    if (mode === "auto") {
+	      resolvedMode = "signin";
+	      response = await client.auth.signInWithPassword({ email, password });
+	      if (response.error) {
+	        if (managerName.length < 2) {
+	          ui.online.loading = false;
+	          ui.online.error = "Compte introuvable ou mot de passe incorrect. Pour creer un compte, ajoutez un nom de manager.";
+	          ui.online.authOpen = true;
+	          renderOnlineCurrentScreen();
+	          return;
+	        }
+	        const signinError = response.error;
+	        const signupResponse = await client.auth.signUp({ email, password });
+	        if (signupResponse.error) {
+	          ui.online.loading = false;
+	          ui.online.error = readableAuthError(signupResponse.error, signinError);
+	          ui.online.authOpen = true;
+	          renderOnlineCurrentScreen();
+	          return;
+	        }
+	        response = signupResponse;
+	        resolvedMode = "signup";
+	      }
+	    } else {
+	      response = mode === "signup"
+	        ? await client.auth.signUp({ email, password })
+	        : await client.auth.signInWithPassword({ email, password });
+	      resolvedMode = mode;
+	    }
 	    ui.online.loading = false;
 		    if (response.error) {
-		      ui.online.error = response.error.message;
+		      ui.online.error = readableAuthError(response.error);
 		      ui.online.authOpen = true;
 		      renderOnlineCurrentScreen();
 		      return;
@@ -10141,7 +10183,7 @@
 			      await loadOnlineFighters({ rerender: false });
 			      await loadOnlineChallenges({ rerender: false });
 			      await loadOnlineLeaderboard({ rerender: false });
-			      ui.online.success = mode === "signup"
+			      ui.online.success = resolvedMode === "signup"
 			        ? "Compte joueur cree."
 			        : "Connexion reussie.";
 			      scheduleOnlineCareerSync(250);
@@ -10486,24 +10528,18 @@
 		        </div>
 		      `;
 		    }
-			    const signup = ui.online.authMode === "signup";
-			    const submitLabel = signup ? "Creer le compte" : "Se connecter";
 		    return `
 			      <div class="online-panel">
 		        <div class="panel-title">
 		          <span>${iconOnly("user-round", "C")} Se connecter</span>
-		          <strong>${signup ? "Creation" : "Connexion"}</strong>
+		          <strong>Compte joueur</strong>
 		        </div>
-			        <p class="online-help">Le jeu reste jouable sans compte. La connexion sert seulement au classement et aux fonctions multi.</p>
+			        <p class="online-help">Le jeu reste jouable sans compte. Entrez un email, un mot de passe et un manager: si le compte n'existe pas encore, il sera cree automatiquement.</p>
 			        ${career ? `
 			          <div class="notice online-local-save">
 			            ${iconOnly("refresh-cw", "S")} Carriere en cours detectee: ${esc(career.name)} (${career.record.w}-${career.record.l}). Elle sera synchronisee automatiquement apres connexion.
 			          </div>
 			        ` : ""}
-		        <div class="tabs">
-		          <button class="tab ${!signup ? "active" : ""}" data-action="online-auth-mode" data-mode="signin">Connexion</button>
-		          <button class="tab ${signup ? "active" : ""}" data-action="online-auth-mode" data-mode="signup">Creation</button>
-		        </div>
 	        <div class="online-account-grid">
 	          <label>
 	            <span>Email</span>
@@ -10511,7 +10547,7 @@
 	          </label>
 	          <label>
 	            <span>Mot de passe</span>
-	            <input id="onlinePassword" type="password" autocomplete="${signup ? "new-password" : "current-password"}" placeholder="6 caracteres minimum">
+	            <input id="onlinePassword" type="password" autocomplete="current-password" placeholder="6 caracteres minimum">
 	          </label>
 	          <label>
 	            <span>Manager public</span>
@@ -10519,7 +10555,7 @@
 	          </label>
 	        </div>
 	        <div class="menu-actions online-actions">
-		          <button class="btn btn-primary" data-action="${signup ? "online-signup" : "online-signin"}">${iconText(signup ? "user-plus" : "log-in", submitLabel, "C")}</button>
+		          <button class="btn btn-primary" data-action="online-auth-continue">${iconText("log-in", "Se connecter", "C")}</button>
 	        </div>
 	      </div>
 	    `;
@@ -11725,6 +11761,8 @@
 			      ui.online.authOpen = true;
 			      ui.online.authMode = target.dataset.mode === "signup" ? "signup" : "signin";
 			      renderOnlineCurrentScreen();
+	    } else if (action === "online-auth-continue") {
+	      submitOnlineAuth("auto");
 	    } else if (action === "online-signin") {
 	      submitOnlineAuth("signin");
 	    } else if (action === "online-signup") {
