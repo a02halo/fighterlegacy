@@ -2131,15 +2131,17 @@
       managerName: savedOnlinePrefs.managerName,
       email: savedOnlinePrefs.email,
       authMode: "signin",
-      loading: false,
-      ready: false,
-      error: "",
-      leaderboard: [],
-      leaderboardLoaded: false,
-      selectedFighterId: null,
-      lastPublish: null,
-    },
-  };
+	      loading: false,
+	      ready: false,
+	      error: "",
+	      success: "",
+	      leaderboard: [],
+	      leaderboardLoaded: false,
+	      selectedFighterId: null,
+	      lastPublish: null,
+	      authOpen: false,
+	    },
+	  };
 
 	  if (savedCareer) {
 	    ui.career = savedCareer;
@@ -7454,7 +7456,7 @@
 	          </button>
 	          <button class="panel-action" data-action="show-online">
 	            <strong>${iconText("users", "Classement joueurs", "J")}</strong>
-	            <span>Manager, combattant, import beta et tableau commun entre testeurs.</span>
+	            <span>Manager, combattant, carriere en cours et tableau commun entre testeurs.</span>
 	            <span class="metric">${ui.online?.session ? "Connecte" : "Online"}</span>
 	          </button>
 	          <button class="panel-action" data-action="show-badges">
@@ -9490,13 +9492,13 @@
 	  }
 
 	  async function initOnline() {
-	    const client = onlineClient();
-	    if (!client) {
-	      ui.online.error = "Client Supabase indisponible. Verifiez que le script CDN est bien charge.";
-	      ui.online.ready = true;
-	      renderOnlineIfVisible();
-	      return;
-	    }
+		    const client = onlineClient();
+		    if (!client) {
+		      ui.online.error = "Service multijoueur indisponible. Rechargez la page ou reessayez plus tard.";
+		      ui.online.ready = true;
+		      renderOnlineIfVisible();
+		      return;
+		    }
 	    try {
 	      const { data } = await client.auth.getSession();
 	      ui.online.session = data?.session || null;
@@ -9512,7 +9514,7 @@
 	        }
 	      });
 	    } catch (error) {
-	      ui.online.error = error?.message || "Connexion online impossible.";
+		      ui.online.error = error?.message || "Connexion au service multijoueur impossible.";
 	    } finally {
 	      ui.online.ready = true;
 	      renderOnlineIfVisible();
@@ -9540,17 +9542,22 @@
 	  async function saveOnlineProfileFromForm() {
 	    const client = onlineClient();
 	    const session = ui.online.session;
-	    if (!client || !session?.user) {
-	      showToast("Connectez-vous d'abord.");
-	      return false;
-	    }
-	    const managerName = (document.querySelector("#onlineManager")?.value || ui.online.managerName || "").trim();
-	    if (managerName.length < 2) {
-	      showToast("Nom de manager trop court.");
-	      return false;
-	    }
-	    ui.online.loading = true;
-	    renderOnlineScreen();
+		    if (!client || !session?.user) {
+		      showToast("Connectez-vous d'abord.");
+		      ui.online.authOpen = true;
+		      renderOnlineScreen();
+		      return false;
+		    }
+		    const managerName = (document.querySelector("#onlineManager")?.value || ui.online.managerName || "").trim();
+		    if (managerName.length < 2) {
+		      showToast("Nom de manager trop court.");
+		      ui.online.authOpen = true;
+		      renderOnlineScreen();
+		      return false;
+		    }
+		    ui.online.loading = true;
+		    ui.online.success = "";
+		    renderOnlineScreen();
 	    const { error } = await client.from("profiles").upsert({
 	      user_id: session.user.id,
 	      manager_name: managerName,
@@ -9560,21 +9567,22 @@
 	      showToast(error.message.includes("duplicate") ? "Ce nom de manager est deja pris." : "Profil manager refuse.");
 	      renderOnlineScreen();
 	      return false;
-	    }
-	    ui.online.managerName = managerName;
-	    ui.online.profile = { manager_name: managerName };
-	    saveOnlinePrefs();
-	    showToast("Manager enregistre.");
-	    renderOnlineScreen();
-	    return true;
-	  }
+		    }
+		    ui.online.managerName = managerName;
+		    ui.online.profile = { manager_name: managerName };
+		    saveOnlinePrefs();
+		    ui.online.success = "Profil manager enregistre.";
+		    showToast("Manager enregistre.");
+		    renderOnlineScreen();
+		    return true;
+		  }
 
 	  async function submitOnlineAuth(mode) {
-	    const client = onlineClient();
-	    if (!client) {
-	      showToast("Supabase n'est pas charge.");
-	      return;
-	    }
+		    const client = onlineClient();
+		    if (!client) {
+		      showToast("Service multijoueur indisponible.");
+		      return;
+		    }
 	    const email = (document.querySelector("#onlineEmail")?.value || "").trim();
 	    const password = document.querySelector("#onlinePassword")?.value || "";
 	    const managerName = (document.querySelector("#onlineManager")?.value || "").trim();
@@ -9586,48 +9594,74 @@
 	      showToast("Choisissez un nom de manager.");
 	      return;
 	    }
-	    ui.online.loading = true;
-	    ui.online.error = "";
-	    renderOnlineScreen();
+		    ui.online.loading = true;
+		    ui.online.error = "";
+		    ui.online.success = "";
+		    renderOnlineScreen();
 	    const response = mode === "signup"
 	      ? await client.auth.signUp({ email, password })
 	      : await client.auth.signInWithPassword({ email, password });
 	    ui.online.loading = false;
-	    if (response.error) {
-	      ui.online.error = response.error.message;
-	      renderOnlineScreen();
-	      return;
-	    }
-	    ui.online.email = email;
-	    ui.online.session = response.data?.session || (await client.auth.getSession()).data?.session || null;
-	    saveOnlinePrefs();
-	    if (ui.online.session && managerName) {
-	      ui.online.managerName = managerName;
-	      await saveOnlineProfileFromForm();
-	    } else if (!ui.online.session) {
-	      showToast("Compte cree. Verifiez l'email si Supabase demande confirmation.");
-	    }
-	    await loadOnlineProfile({ rerender: false });
-	    await loadOnlineLeaderboard({ rerender: false });
-	    renderOnlineScreen();
-	  }
+		    if (response.error) {
+		      ui.online.error = response.error.message;
+		      ui.online.authOpen = true;
+		      renderOnlineScreen();
+		      return;
+		    }
+		    ui.online.email = email;
+		    ui.online.session = response.data?.session || (await client.auth.getSession()).data?.session || null;
+		    saveOnlinePrefs();
+			    if (ui.online.session && managerName) {
+			      ui.online.managerName = managerName;
+			      const { error: profileError } = await client.from("profiles").upsert({
+			        user_id: ui.online.session.user.id,
+			        manager_name: managerName,
+			      });
+			      if (profileError) {
+			        ui.online.error = profileError.message.includes("duplicate") ? "Ce nom de manager est deja pris." : "Profil manager refuse.";
+			        ui.online.authOpen = true;
+			        renderOnlineScreen();
+			        return;
+			      }
+			      ui.online.profile = { manager_name: managerName };
+			      saveOnlinePrefs();
+			    } else if (!ui.online.session) {
+				      ui.online.success = "Compte cree. Connectez-vous pour publier votre carriere en cours.";
+			      showToast("Compte cree.");
+			    }
+			    await loadOnlineProfile({ rerender: false });
+			    if (ui.online.session) {
+			      ui.online.authOpen = false;
+			      if (currentPublishableCareer()) {
+			        await importCurrentCareerOnline({ fromAuth: true });
+			        return;
+			      }
+			      await loadOnlineLeaderboard({ rerender: false });
+			      ui.online.success = mode === "signup"
+			        ? "Compte joueur cree."
+			        : "Connexion reussie.";
+			    }
+			    renderOnlineScreen();
+			  }
 
 	  async function signOutOnline() {
 	    const client = onlineClient();
 	    if (!client) return;
-	    await client.auth.signOut();
-	    ui.online.session = null;
-	    ui.online.profile = null;
-	    ui.online.lastPublish = null;
-	    renderOnlineScreen();
-	  }
+		    await client.auth.signOut();
+		    ui.online.session = null;
+		    ui.online.profile = null;
+		    ui.online.lastPublish = null;
+		    ui.online.authOpen = false;
+		    ui.online.success = "Deconnexion reussie. Vous pouvez continuer a jouer en local.";
+		    renderOnlineScreen();
+		  }
 
 	  async function loadOnlineLeaderboard(options = {}) {
 	    const client = onlineClient();
 	    if (!client) return;
-	    ui.online.loading = true;
-	    ui.online.error = "";
-	    if (options.rerender) renderOnlineScreen();
+		    ui.online.loading = true;
+		    ui.online.error = "";
+		    if (options.rerender) renderOnlineScreen();
 	    let { data, error } = await client
 	      .from("leaderboard_all_public")
 	      .select("*")
@@ -9708,52 +9742,66 @@
 	    return null;
 	  }
 
-	  async function importBetaCareerOnline() {
-	    const client = onlineClient();
-	    const career = currentPublishableCareer();
-	    if (!client || !ui.online.session) {
-	      showToast("Connectez-vous pour importer.");
-	      return;
-	    }
-	    if (!career) {
-	      showToast("Aucune carriere locale a importer.");
-	      return;
-	    }
-	    if (!ui.online.managerName || ui.online.managerName.trim().length < 2) {
-	      const saved = await saveOnlineProfileFromForm();
-	      if (!saved) return;
-	    }
-	    ui.online.loading = true;
-	    ui.online.error = "";
-	    renderOnlineScreen();
-	    const { data, error } = await client.functions.invoke("publish-fighter", {
-	      body: onlineFighterPayload(career, "beta_import"),
-	    });
-	    ui.online.loading = false;
-	    if (error || data?.error) {
-	      ui.online.error = data?.details || data?.error || error?.message || "Import refuse.";
-	      renderOnlineScreen();
-	      return;
-	    }
-	    ui.online.lastPublish = data;
-	    showToast(data?.fighter?.verified ? "Carriere officielle publiee." : "Carriere beta importee.");
-	    await loadOnlineLeaderboard({ rerender: false });
-	    renderOnlineScreen();
-	  }
+		  async function importCurrentCareerOnline(options = {}) {
+		    const client = onlineClient();
+			    const career = currentPublishableCareer();
+			    if (!client || !ui.online.session) {
+			      ui.online.authOpen = true;
+			      renderOnlineScreen();
+			      showToast("Connectez-vous pour importer.");
+			      return;
+			    }
+		    if (!career) {
+		      showToast("Aucune carriere en cours a importer.");
+		      return;
+		    }
+		    const formManagerName = (document.querySelector("#onlineManager")?.value || "").trim();
+		    if (formManagerName) {
+		      ui.online.managerName = formManagerName;
+		      saveOnlinePrefs();
+		    }
+			    if (!ui.online.managerName || ui.online.managerName.trim().length < 2) {
+			      ui.online.authOpen = true;
+			      renderOnlineScreen();
+			      showToast("Ajoutez votre nom de manager avant l'import.");
+			      return;
+			    }
+			    ui.online.loading = true;
+			    ui.online.error = "";
+			    ui.online.success = "";
+			    if (!options.fromAuth) renderOnlineScreen();
+		    const { data, error } = await client.functions.invoke("publish-fighter", {
+		      body: onlineFighterPayload(career, "beta_import"),
+		    });
+		    ui.online.loading = false;
+		    if (error || data?.error) {
+		      ui.online.error = data?.details || data?.error || error?.message || "Import refuse.";
+		      renderOnlineScreen();
+		      return;
+		    }
+			    ui.online.lastPublish = data;
+			    ui.online.success = data?.fighter?.verified
+			      ? "Votre carriere officielle a bien ete publiee dans le classement."
+			      : "Votre carriere en cours a bien ete importee dans le classement.";
+			    if (data?.fighter?.id) ui.online.selectedFighterId = data.fighter.id;
+			    showToast(data?.fighter?.verified ? "Carriere publiee." : "Carriere importee.");
+			    await loadOnlineLeaderboard({ rerender: false });
+			    renderOnlineScreen();
+			  }
 
-	  function renderOnlineAuthBlock() {
-	    const session = ui.online.session;
-	    const email = session?.user?.email || ui.online.email || "";
-	    if (session) {
-	      return `
-	        <div class="online-panel">
-	          <div class="panel-title">
-	            <span>${iconOnly("shield-check", "C")} Compte joueur</span>
-	            <strong>Connecte</strong>
-	          </div>
-	          <div class="online-account-grid">
-	            <label>
-	              <span>Email</span>
+		  function renderOnlineAuthBlock(career) {
+		    const session = ui.online.session;
+		    const email = session?.user?.email || ui.online.email || "";
+		    if (session) {
+		      return `
+		        <div class="online-panel">
+		          <div class="panel-title">
+		            <span>${iconOnly("shield-check", "C")} Espace manager</span>
+		            <strong>Connecte</strong>
+		          </div>
+		          <div class="online-account-grid">
+		            <label>
+		              <span>Email</span>
 	              <input id="onlineEmail" type="email" value="${esc(email)}" disabled>
 	            </label>
 	            <label>
@@ -9761,25 +9809,37 @@
 	              <input id="onlineManager" maxlength="32" value="${esc(ui.online.managerName || ui.online.profile?.manager_name || "")}" placeholder="Ex: Arnaud">
 	            </label>
 	          </div>
-	          <div class="menu-actions online-actions">
-	            <button class="btn btn-primary" data-action="save-online-profile">${iconText("save", "Sauver manager", "S")}</button>
-	            <button class="btn" data-action="import-beta-career">${iconText("upload-cloud", "Importer carriere beta", "I")}</button>
-	            <button class="btn btn-ghost" data-action="online-signout">${iconText("log-out", "Deconnexion", "D")}</button>
-	          </div>
-	        </div>
-	      `;
-	    }
-	    const signup = ui.online.authMode === "signup";
-	    return `
-	      <div class="online-panel">
-	        <div class="panel-title">
-	          <span>${iconOnly("user-round", "C")} Compte joueur</span>
-	          <strong>${signup ? "Creation" : "Connexion"}</strong>
-	        </div>
-	        <div class="tabs">
-	          <button class="tab ${!signup ? "active" : ""}" data-action="online-auth-mode" data-mode="signin">Connexion</button>
-	          <button class="tab ${signup ? "active" : ""}" data-action="online-auth-mode" data-mode="signup">Creation</button>
-	        </div>
+		          <div class="menu-actions online-actions">
+		            <button class="btn btn-primary" data-action="save-online-profile">${iconText("save", "Sauver manager", "S")}</button>
+			            ${career ? `<button class="btn" data-action="import-current-career">${iconText("upload-cloud", "Importer la carriere en cours", "I")}</button>` : ""}
+		            <button class="btn btn-ghost" data-action="online-signout">${iconText("log-out", "Deconnexion", "D")}</button>
+		          </div>
+		          <div class="notice online-local-save">
+		            ${iconOnly("database", "B")} ${career ? `Carriere locale detectee: ${esc(career.name)} (${career.record.w}-${career.record.l}).` : "Aucune carriere locale active a importer sur cet appareil."}
+		          </div>
+		        </div>
+		      `;
+		    }
+			    const signup = ui.online.authMode === "signup";
+			    const submitLabel = career
+			      ? signup ? "Creer le compte et importer" : "Se connecter et importer"
+			      : signup ? "Creer le compte" : "Se connecter";
+		    return `
+			      <div class="online-panel">
+		        <div class="panel-title">
+		          <span>${iconOnly("user-round", "C")} Se connecter</span>
+		          <strong>${signup ? "Creation" : "Connexion"}</strong>
+		        </div>
+			        <p class="online-help">Le jeu reste jouable sans compte. La connexion sert seulement au classement et aux fonctions multi.</p>
+			        ${career ? `
+			          <div class="notice online-local-save">
+			            ${iconOnly("upload-cloud", "I")} Carriere en cours detectee: ${esc(career.name)} (${career.record.w}-${career.record.l}). Elle sera importee directement apres validation.
+			          </div>
+			        ` : ""}
+		        <div class="tabs">
+		          <button class="tab ${!signup ? "active" : ""}" data-action="online-auth-mode" data-mode="signin">Connexion</button>
+		          <button class="tab ${signup ? "active" : ""}" data-action="online-auth-mode" data-mode="signup">Creation</button>
+		        </div>
 	        <div class="online-account-grid">
 	          <label>
 	            <span>Email</span>
@@ -9795,7 +9855,7 @@
 	          </label>
 	        </div>
 	        <div class="menu-actions online-actions">
-	          <button class="btn btn-primary" data-action="${signup ? "online-signup" : "online-signin"}">${iconText(signup ? "user-plus" : "log-in", signup ? "Creer le compte" : "Se connecter", "C")}</button>
+		          <button class="btn btn-primary" data-action="${signup ? "online-signup" : "online-signin"}">${iconText(signup ? "user-plus" : "log-in", submitLabel, "C")}</button>
 	        </div>
 	      </div>
 	    `;
@@ -9809,7 +9869,7 @@
 	      <div class="leaderboard-list">
 	        ${rows.map((row, index) => {
 	          const selected = ui.online.selectedFighterId === row.fighter_id;
-	          const source = row.source === "beta_import" ? "Beta importee" : "Officiel";
+	          const source = row.source === "beta_import" ? "Carriere en cours" : "Officiel";
 	          return `
 	            <button class="leaderboard-row ${selected ? "selected" : ""}" data-action="select-online-fighter" data-id="${esc(row.fighter_id)}">
 	              <span class="leaderboard-rank">#${row.leaderboard_rank || index + 1}</span>
@@ -9828,11 +9888,22 @@
 	    `;
 	  }
 
-	  function renderOnlineFighterDetail(row) {
-	    if (!row) return "";
-	    const source = row.source === "beta_import" ? "Carriere beta importee" : "Carriere officielle";
-	    return `
-	      <div class="online-detail">
+		  function renderOnlineFighterDetail(row) {
+		    if (!row) {
+		      return `
+		        <div class="online-detail online-empty">
+		          <div class="panel-title">
+		            <span>${iconOnly("users", "J")} Combattant selectionne</span>
+		            <strong>Vide</strong>
+		          </div>
+		          <h3>Aucun combattant</h3>
+		          <p>Importez une carriere en cours ou revenez quand un autre testeur aura publie son combattant.</p>
+		        </div>
+		      `;
+		    }
+		    const source = row.source === "beta_import" ? "Carriere en cours" : "Carriere officielle";
+		    return `
+		      <div class="online-detail">
 	        <div class="panel-title">
 	          <span>${iconOnly(row.source === "beta_import" ? "flask-conical" : "shield-check", "F")} ${esc(source)}</span>
 	          <strong>${row.score || 0} pts</strong>
@@ -9850,58 +9921,53 @@
 	    `;
 	  }
 
-	  function renderOnlineScreen() {
-	    const career = currentPublishableCareer();
-	    const rows = ui.online.leaderboard || [];
-	    const officialRows = rows.filter(row => row.source !== "beta_import");
-	    const betaRows = rows.filter(row => row.source === "beta_import");
-	    const selected = rows.find(row => row.fighter_id === ui.online.selectedFighterId) || rows[0];
-	    renderShell(`
-	      <section class="game-screen online-screen">
-	        ${ui.career ? fighterHeader(ui.career) : ""}
-	        <div class="screen-head">
-	          <div>
-	            <p class="eyebrow">Leaderboard joueurs</p>
-	            <h2 class="screen-title">Managers et combattants</h2>
-	            <p class="screen-lead">Compte joueur, manager public, classement officiel et reprise des carrieres beta sans effacer les sauvegardes locales.</p>
-	          </div>
-	          <button class="btn" data-action="refresh-online">${iconText("refresh-cw", "Actualiser", "R")}</button>
-	        </div>
-	        <div class="notice online-status ${ui.online.session ? "good" : ""}">
-	          ${ui.online.session
-	            ? `${iconOnly("shield-check", "S")} Connecte. Les publications passent par Supabase et la fonction serveur.`
-	            : `${iconOnly("lock", "L")} Connectez-vous pour publier. Le classement reste lisible publiquement.`}
-	        </div>
-	        ${ui.online.error ? `<div class="notice online-error">${iconOnly("triangle-alert", "E")} ${esc(ui.online.error)}</div>` : ""}
-	        ${ui.online.lastPublish?.warning ? `<div class="notice">${iconOnly("info", "I")} ${esc(ui.online.lastPublish.warning)}</div>` : ""}
-	        <div class="online-layout">
-	          <div>
-	            ${renderOnlineAuthBlock()}
-	            <div class="notice">
-	              ${iconOnly("database", "B")} ${career ? `Carriere locale detectee: ${esc(career.name)} (${career.record.w}-${career.record.l}).` : "Aucune carriere locale active a importer sur cet appareil."}
-	            </div>
-	          </div>
-	          <div>
-	            ${renderOnlineFighterDetail(selected)}
-	          </div>
-	        </div>
-	        <div class="tabs">
-	          <button class="tab active" data-action="noop">Officiel ${officialRows.length}</button>
-	          <button class="tab active" data-action="noop">Beta importee ${betaRows.length}</button>
-	        </div>
-	        <div class="online-board-grid">
-	          <div>
-	            <div class="panel-title"><span>${iconOnly("shield-check", "O")} Classement officiel</span><strong>${officialRows.length}</strong></div>
-	            ${renderLeaderboardRows(officialRows)}
-	          </div>
-	          <div>
-	            <div class="panel-title"><span>${iconOnly("flask-conical", "B")} Imports beta</span><strong>${betaRows.length}</strong></div>
-	            ${renderLeaderboardRows(betaRows)}
-	          </div>
-	        </div>
-	      </section>
-	    `);
-	  }
+		  function renderOnlineScreen() {
+		    const career = currentPublishableCareer();
+		    const rows = ui.online.leaderboard || [];
+		    const selected = rows.find(row => row.fighter_id === ui.online.selectedFighterId) || rows[0];
+		    const officialCount = rows.filter(row => row.source !== "beta_import").length;
+		    const betaCount = rows.filter(row => row.source === "beta_import").length;
+		    renderShell(`
+		      <section class="game-screen online-screen">
+		        ${ui.career ? fighterHeader(ui.career) : ""}
+		        <div class="screen-head online-head">
+		          <div>
+		            <p class="eyebrow">Leaderboard joueurs</p>
+		            <h2 class="screen-title">Managers et combattants</h2>
+		            <p class="screen-lead">Classement public des testeurs. La connexion sert uniquement a publier une carriere et debloquer les fonctions multi.</p>
+		          </div>
+		          <div class="online-head-actions">
+		            <button class="btn" data-action="refresh-online">${iconText("refresh-cw", "Actualiser", "R")}</button>
+		            ${ui.online.session && career ? `<button class="btn btn-primary" data-action="import-current-career">${iconText("upload-cloud", "Importer ma carriere", "I")}</button>` : ""}
+		            <button class="btn ${ui.online.session ? "btn-ghost" : "btn-primary"}" data-action="open-online-auth">
+		              ${iconText(ui.online.session ? "user-round-cog" : "log-in", ui.online.session ? "Compte" : "Se connecter", "C")}
+		            </button>
+		          </div>
+		        </div>
+		        ${!ui.online.session ? `
+		          <div class="notice online-neutral">
+		            ${iconOnly("gamepad-2", "J")} Vous pouvez jouer sans compte. Connectez-vous seulement pour apparaitre dans le classement et tester les options multi.
+		          </div>
+		        ` : ""}
+		        ${ui.online.success ? `<div class="notice online-success">${iconOnly("circle-check", "S")} ${esc(ui.online.success)}</div>` : ""}
+		        ${ui.online.error ? `<div class="notice online-error">${iconOnly("triangle-alert", "E")} ${esc(ui.online.error)}</div>` : ""}
+		        <div class="online-board-grid online-board-primary">
+		          <div class="online-panel online-ranking-panel">
+		            <div class="panel-title">
+		              <span>${iconOnly("trophy", "C")} Classement joueurs</span>
+		              <strong>${rows.length}</strong>
+		            </div>
+		            <p class="online-help">${officialCount} officiel${officialCount > 1 ? "s" : ""} | ${betaCount} carriere${betaCount > 1 ? "s" : ""} en cours</p>
+		            ${renderLeaderboardRows(rows)}
+		          </div>
+		          <div class="online-side-stack">
+		            ${renderOnlineFighterDetail(selected)}
+		          </div>
+		        </div>
+		        ${ui.online.authOpen ? `<div class="online-account-section">${renderOnlineAuthBlock(career)}</div>` : ""}
+		      </section>
+		    `);
+		  }
 
 	  function renderStatsHelp() {
 	    const career = ui.career;
@@ -10411,13 +10477,18 @@
 		    } else if (action === "show-news") {
 	      ui.view = "news";
 	      render();
-	    } else if (action === "show-online") {
-	      ui.view = "online";
-	      render();
-	      loadOnlineLeaderboard({ rerender: true });
-	    } else if (action === "online-auth-mode") {
-	      ui.online.authMode = target.dataset.mode === "signup" ? "signup" : "signin";
-	      renderOnlineScreen();
+		    } else if (action === "show-online") {
+		      ui.view = "online";
+		      ui.online.authOpen = false;
+		      render();
+		      loadOnlineLeaderboard({ rerender: true });
+		    } else if (action === "open-online-auth") {
+		      ui.online.authOpen = true;
+		      renderOnlineScreen();
+		    } else if (action === "online-auth-mode") {
+		      ui.online.authOpen = true;
+		      ui.online.authMode = target.dataset.mode === "signup" ? "signup" : "signin";
+		      renderOnlineScreen();
 	    } else if (action === "online-signin") {
 	      submitOnlineAuth("signin");
 	    } else if (action === "online-signup") {
@@ -10426,10 +10497,11 @@
 	      signOutOnline();
 	    } else if (action === "save-online-profile") {
 	      saveOnlineProfileFromForm();
-	    } else if (action === "refresh-online") {
-	      loadOnlineLeaderboard({ rerender: true });
-	    } else if (action === "import-beta-career") {
-	      importBetaCareerOnline();
+		    } else if (action === "refresh-online") {
+		      ui.online.success = "";
+		      loadOnlineLeaderboard({ rerender: true });
+		    } else if (action === "import-current-career" || action === "import-beta-career") {
+		      importCurrentCareerOnline();
 	    } else if (action === "select-online-fighter") {
 	      ui.online.selectedFighterId = target.dataset.id;
 	      renderOnlineScreen();

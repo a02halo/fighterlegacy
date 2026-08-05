@@ -2953,9 +2953,60 @@ input:focus-visible {
   margin-top: 12px;
 }
 
+.online-head-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.online-board-primary {
+  align-items: start;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+}
+
+.online-ranking-panel {
+  min-height: 100%;
+}
+
+.online-side-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.online-account-section {
+  margin-top: 14px;
+}
+
+.online-help {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 780;
+  line-height: 1.35;
+  margin: 8px 0 12px;
+}
+
+.online-local-save {
+  margin-top: 12px;
+}
+
+.online-neutral {
+  background: #fff8e5;
+  color: #59461c;
+  margin-bottom: 12px;
+}
+
 .online-status.good {
   background: #e4f1e8;
   color: #173d28;
+}
+
+.online-success {
+  background: #e4f1e8;
+  border-color: rgba(38, 112, 72, 0.32);
+  color: #173d28;
+  margin-bottom: 12px;
 }
 
 .online-error {
@@ -3979,15 +4030,24 @@ input:focus-visible {
 	    grid-template-columns: 1fr;
 	  }
 
-  .online-layout,
-  .online-board-grid,
-  .online-account-grid {
-    grid-template-columns: 1fr;
-  }
+	  .online-layout,
+	  .online-board-grid,
+	  .online-account-grid {
+	    grid-template-columns: 1fr;
+	  }
 
-  .online-panel,
-  .online-detail {
-    padding: 11px;
+	  .online-head-actions {
+	    justify-content: stretch;
+	  }
+
+	  .online-head-actions .btn {
+	    flex: 1 1 100%;
+	    justify-content: center;
+	  }
+
+	  .online-panel,
+	  .online-detail {
+	    padding: 11px;
   }
 
   .online-detail h3 {
