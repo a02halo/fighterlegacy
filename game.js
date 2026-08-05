@@ -10300,12 +10300,21 @@
 	    ));
 	  }
 
-	  function renderOnlineFighterCard(row, index = 0) {
+	  function renderOnlineFighterCard(row, index = 0, career = null, atLimit = false) {
 	    const snapshot = onlineFighterSnapshot(row);
-	    const selected = ui.online.selectedOwnFighterId === row.id;
-	    const active = onlineRowMatchesCareer(row, ui.career);
+	    const fighterId = row.id || row.fighter_id || "";
+	    const selected = ui.online.selectedOwnFighterId === fighterId;
+	    const active = onlineRowMatchesCareer(row, career || ui.career);
+	    const currentNeedsImport = Boolean(career?.active && !active && !currentCareerAlreadyPublished(career));
+	    const actionLabel = row.retired
+	      ? "Terminee"
+	      : active
+	        ? "Actif"
+	        : currentNeedsImport && atLimit
+	          ? "Bloque"
+	          : "Voir carriere";
 	    return `
-	      <button class="online-fighter-card ${selected ? "selected" : ""} ${active ? "is-active" : ""}" data-action="select-own-fighter" data-id="${esc(row.id)}">
+	      <button class="online-fighter-card ${selected ? "selected" : ""} ${active ? "is-active" : ""}" data-action="select-own-fighter" data-id="${esc(fighterId)}">
 	        <span class="leaderboard-rank">#${index + 1}</span>
 	        <div class="online-fighter-main">
 	          <strong>${esc(snapshot.name)}</strong>
@@ -10314,6 +10323,7 @@
 	        <div class="online-fighter-meta">
 	          <b>${snapshot.score || 0} pts</b>
 	          <small>${snapshot.record?.w || 0}-${snapshot.record?.l || 0} | OVR ${snapshot.overall || "-"}</small>
+	          <span class="online-fighter-cta">${esc(actionLabel)}</span>
 	        </div>
 	      </button>
 	    `;
@@ -10321,7 +10331,7 @@
 
 	  function renderOnlineSwitchPanel(row, career, atLimit = false) {
 	    if (!row) {
-	      return `<div class="notice online-neutral">${iconOnly("mouse-pointer-click", "C")} Cliquez sur un combattant de votre ecurie pour le charger comme carriere active.</div>`;
+	      return `<div class="notice online-neutral">${iconOnly("mouse-pointer-click", "C")} Cliquez sur un combattant de votre ecurie pour afficher sa carriere.</div>`;
 	    }
 	    const snapshot = onlineFighterSnapshot(row);
 	    const active = onlineRowMatchesCareer(row, career);
@@ -10340,18 +10350,18 @@
 	    return `
 	      <div class="online-switch-panel">
 	        <div class="panel-title">
-	          <span>${iconOnly(active ? "circle-check" : "repeat-2", "P")} ${esc(snapshot.name)}</span>
-	          <strong>${active ? "Actif" : "Changer"}</strong>
+	          <span>${iconOnly(active ? "circle-check" : "user-round-check", "P")} Carriere de ${esc(snapshot.name)}</span>
+	          <strong>${active ? "Active" : "Disponible"}</strong>
 	        </div>
 	        <p>${active
-	          ? "Ce combattant est deja votre carriere active sur ce navigateur."
+	          ? "Vous etes deja en train de jouer cette carriere."
 	          : currentNeedsImport
-	            ? "Votre carriere actuelle sera d'abord gardee dans Combattants, puis ce combattant deviendra la carriere active."
-	            : "Ce combattant deviendra la carriere active. Vous pourrez revenir aux autres depuis ce meme onglet."}</p>
-	        ${currentNeedsImport && atLimit ? `<div class="notice online-error">${iconOnly("triangle-alert", "L")} Ecurie pleine: impossible de garder la carriere actuelle avant de changer.</div>` : ""}
+	            ? "Cette carriere peut devenir la carriere jouable. La carriere active actuelle restera disponible dans votre compte."
+	            : "Cette carriere peut devenir la carriere jouable sur cet appareil."}</p>
+	        ${currentNeedsImport && atLimit ? `<div class="notice online-error">${iconOnly("triangle-alert", "L")} Ecurie pleine: impossible de prendre cette carriere en main sans liberer une place.</div>` : ""}
 	        <div class="menu-actions online-actions">
 	          <button class="btn btn-primary" data-action="switch-online-fighter" data-id="${esc(row.id)}" data-save-current="${currentNeedsImport ? "1" : "0"}" ${active || (currentNeedsImport && atLimit) ? "disabled" : ""}>
-	            ${iconText(active ? "circle-check" : "repeat-2", active ? "Combattant actif" : currentNeedsImport ? "Garder l'actuelle puis passer" : "Passer a ce combattant", "P")}
+	            ${iconText(active ? "circle-check" : "user-round-check", active ? "Carriere active" : "Prendre en main cette carriere", "P")}
 	          </button>
 	        </div>
 	      </div>
@@ -10363,7 +10373,7 @@
 	    const alreadyPublished = currentCareerAlreadyPublished(career);
 	    const atLimit = fighters.length >= 5 && !alreadyPublished;
 	    const importLabel = alreadyPublished ? "Mettre a jour la carriere en cours" : "Importer la carriere en cours";
-	    const selectedOwn = fighters.find(row => row.id === ui.online.selectedOwnFighterId) || fighters[0] || null;
+	    const selectedOwn = fighters.find(row => (row.id || row.fighter_id) === ui.online.selectedOwnFighterId) || fighters[0] || null;
 	    return `
 	      <div class="online-panel online-stable-panel">
 	        <div class="panel-title">
@@ -10399,7 +10409,7 @@
 	        </div>
 	        ${fighters.length ? `
 	          <div class="online-fighter-list">
-	            ${fighters.map((row, index) => renderOnlineFighterCard(row, index)).join("")}
+	            ${fighters.map((row, index) => renderOnlineFighterCard(row, index, career, atLimit)).join("")}
 	          </div>
 	          ${renderOnlineSwitchPanel(selectedOwn, career, atLimit)}
 	        ` : `<div class="notice">Aucun combattant publie pour ce compte. Importez votre carriere en cours pour entrer dans le classement.</div>`}
