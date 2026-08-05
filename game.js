@@ -10380,7 +10380,7 @@
 	          <span>${iconOnly("users", "C")} Combattants</span>
 	          <strong>${fighters.length}/5</strong>
 	        </div>
-	        <p class="online-help">Votre compte peut garder jusqu'a 5 combattants. Ajouter une carriere conserve d'abord la carriere en cours dans votre ecurie: elle ne sera pas effacee.</p>
+	        <p class="online-help">Votre compte peut garder jusqu'a 5 combattants. Commencer une nouvelle carriere conserve d'abord la carriere en cours dans votre ecurie: elle ne sera pas effacee.</p>
 	        ${career ? `
 	          <div class="online-current-career">
 	            <span>${iconOnly("database", "L")} Carriere locale</span>
@@ -10392,7 +10392,7 @@
 	            <button class="btn btn-primary" data-action="import-current-career" ${atLimit ? "disabled" : ""}>${iconText("upload-cloud", importLabel, "I")}</button>
 	            ${atLimit
 	              ? `<button class="btn" disabled>${iconText("lock", "Ecurie pleine", "L")}</button>`
-	              : `<button class="btn" data-action="save-and-new-career">${iconText("plus-circle", "Ajouter une carriere", "+")}</button>`}
+	              : `<button class="btn" data-action="save-and-new-career">${iconText("plus-circle", "Commencer une nouvelle carriere", "+")}</button>`}
 	          </div>
 	          ${atLimit ? "" : `<p class="online-help">La carriere actuelle sera gardee dans Combattants avant d'ouvrir la creation suivante.</p>`}
 	        ` : `
