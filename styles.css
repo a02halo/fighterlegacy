@@ -552,6 +552,7 @@ input:focus-visible {
 .ranking-panel,
 .contract-panel,
 .medical-panel,
+.season-calendar-panel,
 .camp-weeks,
 .analysis-panel,
 .legacy-panel {
@@ -2748,6 +2749,110 @@ input:focus-visible {
   color: #33332f;
   font-size: 14px;
   line-height: 1.35;
+}
+
+.season-calendar-panel {
+  grid-column: 1 / -1;
+}
+
+.season-calendar-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.season-calendar-month {
+  background: rgba(255, 250, 239, 0.68);
+  border: 1px solid rgba(17, 16, 14, 0.12);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  min-height: 92px;
+  padding: 9px;
+}
+
+.season-calendar-month.is-current {
+  border-color: rgba(201, 46, 49, 0.62);
+  box-shadow: inset 0 0 0 2px rgba(201, 46, 49, 0.08);
+}
+
+.season-calendar-month > strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.calendar-chip,
+.calendar-empty {
+  border-radius: 7px;
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+}
+
+.calendar-chip {
+  background: rgba(35, 32, 27, 0.08);
+  border-left: 3px solid rgba(17, 16, 14, 0.34);
+}
+
+.calendar-chip b {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 950;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.calendar-chip em,
+.calendar-empty {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 760;
+  line-height: 1.25;
+}
+
+.calendar-empty {
+  background: rgba(17, 16, 14, 0.04);
+}
+
+.calendar-chip.fight-win {
+  border-left-color: #0c947f;
+}
+
+.calendar-chip.fight-loss,
+.calendar-chip.medical {
+  border-left-color: var(--red);
+}
+
+.calendar-chip.camp-current,
+.calendar-chip.fight-current {
+  border-left-color: var(--gold);
+}
+
+.calendar-chip.training,
+.calendar-chip.life,
+.calendar-chip.medical-done {
+  border-left-color: #427a9d;
+}
+
+@media (max-width: 900px) {
+  .season-calendar-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .season-calendar-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .season-calendar-month {
+    min-height: 84px;
+    padding: 8px;
+  }
 }
 
 .final-card {

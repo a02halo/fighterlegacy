@@ -2141,12 +2141,16 @@
 	      selectedFighterId: null,
 	      myFighters: [],
 	      selectedOwnFighterId: null,
+	      activeFighterId: savedOnlinePrefs.activeFighterId,
 	      notifications: [],
 	      challenges: [],
 	      accountTab: "fighters",
 	      challengeFight: null,
 	      challengeResult: null,
 	      lastPublish: null,
+	      lastSyncKey: "",
+	      syncTimer: null,
+	      syncInFlight: false,
 	      authOpen: false,
 	    },
 	  };
@@ -2437,9 +2441,10 @@
       return {
         managerName: parsed.managerName || "",
         email: parsed.email || "",
+        activeFighterId: parsed.activeFighterId || "",
       };
     } catch {
-      return { managerName: "", email: "" };
+      return { managerName: "", email: "", activeFighterId: "" };
     }
   }
 
@@ -2451,6 +2456,7 @@
 	    localStorage.setItem(STORAGE_ONLINE, JSON.stringify({
 	      managerName: ui.online?.managerName || "",
 	      email: ui.online?.email || "",
+	      activeFighterId: ui.online?.activeFighterId || "",
 	    }));
 	  }
 
@@ -2749,6 +2755,7 @@
     if (ui.career && ui.career.active) {
       localStorage.setItem(STORAGE_CAREER, JSON.stringify(ui.career));
       archiveCareerLocally(ui.career);
+      scheduleOnlineCareerSync();
     }
   }
 
@@ -8081,6 +8088,127 @@
     `;
   }
 
+  const SEASON_MONTHS = ["Jan", "Fev", "Mar", "Avr", "Mai", "Juin", "Juil", "Aout", "Sep", "Oct", "Nov", "Dec"];
+
+  function seasonFightMonth(index, target) {
+    const count = Math.max(1, Number(target) || 1);
+    if (count === 1) return 6;
+    return clamp(Math.round(2 + index * (10 / (count - 1))), 1, 12);
+  }
+
+  function calendarCurrentMonth(career, season) {
+    const target = season?.fightsTarget || seasonFightTarget(career);
+    const done = Math.max(0, season?.fightsDone || 0);
+    if (done >= target) return 12;
+    return clamp(seasonFightMonth(done, target) - 1, 1, 12);
+  }
+
+  function addCalendarItem(months, month, item) {
+    const index = clamp((Number(month) || 1) - 1, 0, 11);
+    months[index].items.push(item);
+  }
+
+  function renderSeasonCalendarPanel(career) {
+    const season = career.season;
+    if (!season) return "";
+    const months = SEASON_MONTHS.map(label => ({ label, items: [] }));
+    const target = Math.max(1, season.fightsTarget || seasonFightTarget(career));
+    const fightLog = Array.isArray(season.fightLog) ? season.fightLog : [];
+    const trainingLog = Array.isArray(season.trainingLog) ? season.trainingLog : [];
+    const lifeLog = Array.isArray(season.lifeLog) ? season.lifeLog : [];
+    const medical = ensureMedical(career);
+    const currentMonth = calendarCurrentMonth(career, season);
+
+    addCalendarItem(months, 1, {
+      type: "setup",
+      title: "Saison",
+      text: season.planLabel || seasonPlanById(season.strategy || "standard").label || "Construction de saison",
+    });
+
+    Array.from({ length: target }, (_, index) => {
+      const number = index + 1;
+      const fightMonth = seasonFightMonth(index, target);
+      const campMonth = clamp(fightMonth - 1, 1, 12);
+      const fight = fightLog.find(row => row.number === number);
+      const isNext = number === (season.fightsDone || 0) + 1;
+      const pendingOpponent = isNext && career.pendingFight?.opponent?.name ? career.pendingFight.opponent.name : "";
+      addCalendarItem(months, campMonth, {
+        type: fight ? "camp-done" : isNext && career.pendingFight ? "camp-current" : "camp",
+        title: `Camp ${number}`,
+        text: fight ? `Preparation terminee contre ${fight.opponent}.` : pendingOpponent ? `Preparation contre ${pendingOpponent}.` : "Camp a venir apres signature.",
+      });
+      addCalendarItem(months, fightMonth, {
+        type: fight ? (fight.result === "Victoire" ? "fight-win" : "fight-loss") : isNext && career.pendingFight ? "fight-current" : "fight",
+        title: `Combat ${number}`,
+        text: fight
+          ? `${fight.result} contre ${fight.opponent} (${fight.method}, R${fight.round}).`
+          : pendingOpponent
+            ? `Affiche signee contre ${pendingOpponent}.`
+            : "Adversaire a signer.",
+      });
+    });
+
+    trainingLog.forEach((row, index) => {
+      const month = clamp(1 + Math.floor((index / Math.max(1, trainingLog.length)) * 10), 1, 11);
+      addCalendarItem(months, month, {
+        type: "training",
+        title: `Semaine ${row.week || index + 1}`,
+        text: row.label || "Entrainement",
+      });
+    });
+
+    lifeLog.forEach((row, index) => {
+      const month = clamp(currentMonth + index, 1, 12);
+      addCalendarItem(months, month, {
+        type: "life",
+        title: row.title || "Vie de combattant",
+        text: row.choice ? `${row.choice}.` : (row.result || "Decision hors cage."),
+      });
+    });
+
+    if (medical.restWeeks > 0 || medical.activeInjury) {
+      addCalendarItem(months, currentMonth, {
+        type: "medical",
+        title: "Repos medical",
+        text: `${medical.activeInjury?.label || "Protocole"} | ${formatRestWeeks(medical.restWeeks || 0)}.`,
+      });
+    }
+
+    (medical.rehabLog || [])
+      .filter(row => row.year === season.year)
+      .slice(0, 2)
+      .forEach(row => {
+        addCalendarItem(months, currentMonth, {
+          type: "medical-done",
+          title: "Retour medical",
+          text: `${row.protocol || "Protocole"} | ${formatRestWeeks(row.weeks || 0)}.`,
+        });
+      });
+
+    return `
+      <div class="season-calendar-panel">
+        <div class="panel-title">
+          <span>${iconOnly("calendar-days", "C")} Calendrier ${season.year || career.year}</span>
+          <strong>${formatCombats(target)}</strong>
+        </div>
+        <p class="online-help">Une saison dure un an. Les camps, combats et repos medicaux sont regroupes ici pour lire la trajectoire de la saison.</p>
+        <div class="season-calendar-grid">
+          ${months.map((month, index) => `
+            <div class="season-calendar-month ${index + 1 === currentMonth ? "is-current" : ""}">
+              <strong>${esc(month.label)}</strong>
+              ${month.items.length ? month.items.map(item => `
+                <span class="calendar-chip ${esc(item.type)}">
+                  <b>${esc(item.title)}</b>
+                  <em>${esc(item.text)}</em>
+                </span>
+              `).join("") : `<span class="calendar-empty">Respiration</span>`}
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }
+
   function renderRankingPanel(career) {
     return `
 	      <div class="ranking-panel">
@@ -9780,6 +9908,7 @@
 	        await loadOnlineProfile({ rerender: false });
 	        await loadOnlineFighters({ rerender: false });
 	        await loadOnlineChallenges({ rerender: false });
+	        scheduleOnlineCareerSync(300);
 	      }
 	      await loadOnlineLeaderboard({ rerender: false });
 	      client.auth.onAuthStateChange((_event, session) => {
@@ -9790,7 +9919,10 @@
 	            loadOnlineProfile({ rerender: false }),
 	            loadOnlineFighters({ rerender: false }),
 	            loadOnlineChallenges({ rerender: false }),
-	          ]).finally(() => renderOnlineIfVisible());
+	          ]).finally(() => {
+	            scheduleOnlineCareerSync(300);
+	            renderOnlineIfVisible();
+	          });
 	        } else {
 	          ui.online.myFighters = [];
 	          ui.online.notifications = [];
@@ -9846,8 +9978,33 @@
 	    if (!ui.online.selectedOwnFighterId && ui.online.myFighters[0]) {
 	      ui.online.selectedOwnFighterId = ui.online.myFighters[0].id;
 	    }
+	    ensureActiveCareerFromOnlineFighters();
 	    if (options.rerender !== false) renderOnlineIfVisible();
 	    return ui.online.myFighters;
+	  }
+
+	  function ensureActiveCareerFromOnlineFighters() {
+	    if (ui.career?.active || ui.view === "creator") return false;
+	    const fighters = (ui.online.myFighters || []).filter(row => !row.retired);
+	    if (!fighters.length) return false;
+	    const preferred =
+	      fighters.find(row => row.id === ui.online.activeFighterId) ||
+	      fighters.find(row => row.id === ui.online.selectedOwnFighterId) ||
+	      fighters[0];
+	    const restored = careerFromOnlineFighter(preferred);
+	    if (!restored?.active) return false;
+	    restored.onlineFighterId = preferred.id;
+	    restored.onlineSource = preferred.source || "beta_import";
+	    restored.onlinePublishedAt = preferred.updated_at || preferred.published_at || restored.onlinePublishedAt || "";
+	    ui.career = restored;
+	    ui.finalCareer = null;
+	    ui.resultChoice = null;
+	    ui.online.selectedOwnFighterId = preferred.id;
+	    ui.online.activeFighterId = preferred.id;
+	    saveOnlinePrefs();
+	    saveCareer();
+	    archiveCareerLocally(restored, preferred);
+	    return true;
 	  }
 
 	  async function loadOnlineChallenges(options = {}) {
@@ -9917,6 +10074,7 @@
 		    saveOnlinePrefs();
 		    ui.online.success = "Profil manager enregistre.";
 		    showToast("Manager enregistre.");
+		    scheduleOnlineCareerSync(100);
 		    renderOnlineCurrentScreen();
 		    return true;
 		  }
@@ -9969,15 +10127,15 @@
 			      }
 			      ui.online.profile = { manager_name: managerName };
 			      saveOnlinePrefs();
-			    } else if (!ui.online.session) {
-				      ui.online.success = "Compte cree. Connectez-vous pour publier votre carriere en cours.";
+		    } else if (!ui.online.session) {
+				      ui.online.success = "Compte cree. Connectez-vous pour synchroniser votre carriere.";
 			      showToast("Compte cree.");
 			    }
 			    await loadOnlineProfile({ rerender: false });
 			    if (ui.online.session) {
 			      ui.online.authOpen = false;
 			      if (currentPublishableCareer()) {
-			        await importCurrentCareerOnline({ fromAuth: true });
+			        await syncCurrentCareerOnline({ fromAuth: true, silent: false, skipIfUnchanged: false });
 			        return;
 			      }
 			      await loadOnlineFighters({ rerender: false });
@@ -9986,6 +10144,7 @@
 			      ui.online.success = mode === "signup"
 			        ? "Compte joueur cree."
 			        : "Connexion reussie.";
+			      scheduleOnlineCareerSync(250);
 			    }
 			    renderOnlineCurrentScreen();
 			  }
@@ -10085,23 +10244,93 @@
 	    };
 	  }
 
+	  function onlineCareerSyncKey(career) {
+	    if (!career) return "";
+	    return JSON.stringify({
+	      name: career.name,
+	      country: career.country?.label || career.country?.id || "",
+	      weight: career.weight?.label || career.weight?.id || "",
+	      style: career.style?.label || career.style?.id || "",
+	      tier: career.tier || 0,
+	      org: ORGS[career.tier]?.label || career.org?.label || "",
+	      record: career.record || {},
+	      titles: (career.titles || []).map(title => ({
+	        label: title.label || title.org || "",
+	        tier: title.tier || 0,
+	        defenses: title.defenses || 0,
+	        lost: Boolean(title.lost),
+	      })),
+	      stats: career.stats || {},
+	      money: career.money || 0,
+	      rep: career.rep || 0,
+	      hype: career.hype || 0,
+	      condition: career.condition || 0,
+	      age: career.age || 0,
+	      year: career.year || CURRENT_YEAR,
+	      season: career.season ? {
+	        year: career.season.year,
+	        fightsDone: career.season.fightsDone || 0,
+	        fightsTarget: career.season.fightsTarget || 0,
+	      } : null,
+	      active: Boolean(career.active),
+	    });
+	  }
+
+	  function onlineManagerReady() {
+	    return Boolean((ui.online?.managerName || ui.online?.profile?.manager_name || "").trim().length >= 2);
+	  }
+
+	  function scheduleOnlineCareerSync(delay = 1200) {
+	    if (!ui?.online?.session || !ui.career?.active || !onlineManagerReady()) return;
+	    const key = onlineCareerSyncKey(ui.career);
+	    if (!key || key === ui.online.lastSyncKey || ui.online.syncInFlight) return;
+	    if (ui.online.syncTimer) window.clearTimeout(ui.online.syncTimer);
+	    ui.online.syncTimer = window.setTimeout(() => {
+	      ui.online.syncTimer = null;
+	      syncCurrentCareerOnline({ silent: true });
+	    }, delay);
+	  }
+
 	  function currentPublishableCareer() {
 	    if (ui.career?.active) return ui.career;
 	    if (ui.finalCareer) return ui.finalCareer;
 	    return null;
 	  }
 
+	  async function syncCurrentCareerOnline(options = {}) {
+	    const career = currentPublishableCareer();
+	    const key = onlineCareerSyncKey(career);
+	    if (!career || !ui.online.session || !onlineManagerReady()) return false;
+	    if (options.skipIfUnchanged !== false && key && key === ui.online.lastSyncKey) return true;
+	    if (ui.online.syncInFlight) return false;
+	    ui.online.syncInFlight = true;
+	    try {
+	      const ok = await importCurrentCareerOnline({
+	        ...options,
+	        silent: options.silent !== false,
+	        auto: true,
+	        syncKey: key,
+	      });
+	      return ok;
+	    } finally {
+	      ui.online.syncInFlight = false;
+	    }
+	  }
+
 		  async function importCurrentCareerOnline(options = {}) {
+		    const silent = Boolean(options.silent);
 		    const client = onlineClient();
 			    const career = currentPublishableCareer();
 			    if (!client || !ui.online.session) {
-			      ui.online.authOpen = true;
-			      renderOnlineCurrentScreen();
-			      showToast("Connectez-vous pour importer.");
+			      if (!silent) {
+			        ui.online.authOpen = true;
+			        renderOnlineCurrentScreen();
+			        showToast("Connectez-vous pour synchroniser.");
+			      }
 			      return false;
 			    }
 		    if (!career) {
-		      showToast("Aucune carriere en cours a importer.");
+		      if (!silent) showToast("Aucune carriere en cours a synchroniser.");
 		      return false;
 		    }
 		    const formManagerName = (document.querySelector("#onlineManager")?.value || "").trim();
@@ -10110,34 +10339,41 @@
 		      saveOnlinePrefs();
 		    }
 			    if (!ui.online.managerName || ui.online.managerName.trim().length < 2) {
-			      ui.online.authOpen = true;
-				      renderOnlineCurrentScreen();
-			      showToast("Ajoutez votre nom de manager avant l'import.");
+			      if (!silent) {
+			        ui.online.authOpen = true;
+				        renderOnlineCurrentScreen();
+			        showToast("Ajoutez votre nom de manager avant la synchronisation.");
+			      }
 			      return false;
 			    }
-			    ui.online.loading = true;
+			    if (!silent) ui.online.loading = true;
 			    ui.online.error = "";
-			    ui.online.success = "";
-				    if (!options.fromAuth) renderOnlineCurrentScreen();
+			    if (!silent) ui.online.success = "";
+				    if (!options.fromAuth && !silent) renderOnlineCurrentScreen();
 		    const { data, error } = await client.functions.invoke("publish-fighter", {
 		      body: onlineFighterPayload(career, "beta_import"),
 		    });
-		    ui.online.loading = false;
+		    if (!silent) ui.online.loading = false;
 		    if (error || data?.error) {
-		      ui.online.error = data?.details || data?.error || error?.message || "Import refuse.";
-		      renderOnlineCurrentScreen();
+		      ui.online.error = data?.details || data?.error || error?.message || "Synchronisation refusee.";
+		      renderOnlineIfVisible();
 		      return false;
 		    }
 			    ui.online.lastPublish = data;
-			    ui.online.success = data?.fighter?.verified
-			      ? "Votre carriere officielle a bien ete publiee dans le classement."
-			      : "Votre carriere en cours a bien ete importee dans le classement.";
+			    if (!silent) {
+			      ui.online.success = data?.fighter?.verified
+			        ? "Votre carriere officielle a bien ete publiee dans le classement."
+			        : "Votre carriere est synchronisee dans le leaderboard.";
+			    }
+			    ui.online.lastSyncKey = options.syncKey || onlineCareerSyncKey(career);
 			    if (data?.fighter?.id) {
 			      career.onlineFighterId = data.fighter.id;
 			      career.onlineSource = data.fighter.source || "beta_import";
 			      career.onlinePublishedAt = new Date().toISOString();
 			      ui.online.selectedFighterId = data.fighter.id;
 			      ui.online.selectedOwnFighterId = data.fighter.id;
+			      ui.online.activeFighterId = data.fighter.id;
+			      saveOnlinePrefs();
 			      saveCareer();
 			      archiveCareerLocally(career, {
 			        id: data.fighter.id,
@@ -10145,11 +10381,12 @@
 			        fighter_name: career.name,
 			      });
 			    }
-			    showToast(data?.fighter?.verified ? "Carriere publiee." : "Carriere importee.");
+			    if (!silent) showToast(data?.fighter?.verified ? "Carriere publiee." : "Carriere synchronisee.");
 			    await loadOnlineFighters({ rerender: false });
 			    await loadOnlineChallenges({ rerender: false });
 			    await loadOnlineLeaderboard({ rerender: false });
-				    renderOnlineCurrentScreen();
+				    if (silent) renderOnlineIfVisible();
+				    else renderOnlineCurrentScreen();
 				    return true;
 			  }
 
@@ -10163,8 +10400,8 @@
 		      return;
 		    }
 		    if (ui.online.session && career) {
-		      const imported = await importCurrentCareerOnline({ fromAuth: true });
-		      if (!imported) return;
+		      const synced = await syncCurrentCareerOnline({ fromAuth: true, silent: false, skipIfUnchanged: false });
+		      if (!synced) return;
 		    }
 		    startNewCareerCreation();
 		    if (career) showToast("Carriere conservee. Nouvelle creation lancee.");
@@ -10191,8 +10428,8 @@
 		          showToast("Ecurie pleine: impossible de garder la carriere actuelle.");
 		          return;
 		        }
-		        const imported = await importCurrentCareerOnline({ fromAuth: true });
-		        if (!imported) return;
+		        const synced = await syncCurrentCareerOnline({ fromAuth: true, silent: false, skipIfUnchanged: false });
+		        if (!synced) return;
 		      }
 		    }
 		    const restored = careerFromOnlineFighter(row);
@@ -10207,7 +10444,9 @@
 		    ui.finalCareer = null;
 		    ui.resultChoice = null;
 		    ui.online.selectedOwnFighterId = row.id;
+		    ui.online.activeFighterId = row.id;
 		    ui.online.success = `${restored.name} est maintenant votre carriere active.`;
+		    saveOnlinePrefs();
 		    clearCreatorDraft();
 		    saveCareer();
 		    archiveCareerLocally(restored, row);
@@ -10238,19 +10477,17 @@
 	          </div>
 		          <div class="menu-actions online-actions">
 		            <button class="btn btn-primary" data-action="save-online-profile">${iconText("save", "Sauver manager", "S")}</button>
-			            ${career ? `<button class="btn" data-action="import-current-career">${iconText("upload-cloud", "Importer la carriere en cours", "I")}</button>` : ""}
+			            ${career ? `<button class="btn" data-action="sync-current-career">${iconText("refresh-cw", "Synchroniser maintenant", "S")}</button>` : ""}
 			            <button class="btn btn-light" data-action="online-signout">${iconText("log-out", "Deconnexion", "D")}</button>
 		          </div>
 		          <div class="notice online-local-save">
-		            ${iconOnly("database", "B")} ${career ? `Carriere locale detectee: ${esc(career.name)} (${career.record.w}-${career.record.l}).` : "Aucune carriere locale active a importer sur cet appareil."}
+		            ${iconOnly("database", "B")} ${career ? `Synchro automatique active pour ${esc(career.name)} (${career.record.w}-${career.record.l}).` : "Aucune carriere locale active sur cet appareil."}
 		          </div>
 		        </div>
 		      `;
 		    }
 			    const signup = ui.online.authMode === "signup";
-			    const submitLabel = career
-			      ? signup ? "Creer le compte et importer" : "Se connecter et importer"
-			      : signup ? "Creer le compte" : "Se connecter";
+			    const submitLabel = signup ? "Creer le compte" : "Se connecter";
 		    return `
 			      <div class="online-panel">
 		        <div class="panel-title">
@@ -10260,7 +10497,7 @@
 			        <p class="online-help">Le jeu reste jouable sans compte. La connexion sert seulement au classement et aux fonctions multi.</p>
 			        ${career ? `
 			          <div class="notice online-local-save">
-			            ${iconOnly("upload-cloud", "I")} Carriere en cours detectee: ${esc(career.name)} (${career.record.w}-${career.record.l}). Elle sera importee directement apres validation.
+			            ${iconOnly("refresh-cw", "S")} Carriere en cours detectee: ${esc(career.name)} (${career.record.w}-${career.record.l}). Elle sera synchronisee automatiquement apres connexion.
 			          </div>
 			        ` : ""}
 		        <div class="tabs">
@@ -10372,7 +10609,6 @@
 	    const fighters = ui.online.myFighters || [];
 	    const alreadyPublished = currentCareerAlreadyPublished(career);
 	    const atLimit = fighters.length >= 5 && !alreadyPublished;
-	    const importLabel = alreadyPublished ? "Mettre a jour la carriere en cours" : "Importer la carriere en cours";
 	    const selectedOwn = fighters.find(row => (row.id || row.fighter_id) === ui.online.selectedOwnFighterId) || fighters[0] || null;
 	    return `
 	      <div class="online-panel online-stable-panel">
@@ -10380,7 +10616,7 @@
 	          <span>${iconOnly("users", "C")} Combattants</span>
 	          <strong>${fighters.length}/5</strong>
 	        </div>
-	        <p class="online-help">Votre compte peut garder jusqu'a 5 combattants. Commencer une nouvelle carriere conserve d'abord la carriere en cours dans votre ecurie: elle ne sera pas effacee.</p>
+	        <p class="online-help">Votre compte peut garder jusqu'a 5 combattants. Quand vous etes connecte, la carriere active est synchronisee automatiquement dans le leaderboard.</p>
 	        ${career ? `
 	          <div class="online-current-career">
 	            <span>${iconOnly("database", "L")} Carriere locale</span>
@@ -10389,12 +10625,12 @@
 	          </div>
 	          ${atLimit ? `<div class="notice online-error">${iconOnly("triangle-alert", "L")} Limite atteinte: vous avez deja 5 combattants. Cette carriere doit rester locale tant qu'une place n'est pas liberee.</div>` : ""}
 	          <div class="menu-actions online-actions">
-	            <button class="btn btn-primary" data-action="import-current-career" ${atLimit ? "disabled" : ""}>${iconText("upload-cloud", importLabel, "I")}</button>
+	            <button class="btn btn-primary" data-action="sync-current-career" ${atLimit ? "disabled" : ""}>${iconText("refresh-cw", "Synchroniser maintenant", "S")}</button>
 	            ${atLimit
 	              ? `<button class="btn" disabled>${iconText("lock", "Ecurie pleine", "L")}</button>`
 	              : `<button class="btn" data-action="save-and-new-career">${iconText("plus-circle", "Commencer une nouvelle carriere", "+")}</button>`}
 	          </div>
-	          ${atLimit ? "" : `<p class="online-help">La carriere actuelle sera gardee dans Combattants avant d'ouvrir la creation suivante.</p>`}
+	          ${atLimit ? "" : `<p class="online-help">La carriere actuelle reste dans Combattants avant d'ouvrir la creation suivante.</p>`}
 	        ` : `
 	          <div class="notice online-neutral">${iconOnly("plus-circle", "N")} Aucune carriere locale active. Vous pouvez lancer une nouvelle carriere sans toucher a votre ecurie en ligne.</div>
 	          <div class="menu-actions online-actions">
@@ -10412,7 +10648,7 @@
 	            ${fighters.map((row, index) => renderOnlineFighterCard(row, index, career, atLimit)).join("")}
 	          </div>
 	          ${renderOnlineSwitchPanel(selectedOwn, career, atLimit)}
-	        ` : `<div class="notice">Aucun combattant publie pour ce compte. Importez votre carriere en cours pour entrer dans le classement.</div>`}
+	        ` : `<div class="notice">Aucun combattant publie pour ce compte. Lancez une carriere pendant que vous etes connecte: elle entrera automatiquement dans le classement.</div>`}
 	      </div>
 	    `;
 	  }
@@ -10539,8 +10775,10 @@
 	    if (!ownFighters.length) {
 	      return `
 	        <div class="online-challenge-box">
-	          <p>Importez une carriere dans votre compte pour pouvoir lancer des defis.</p>
-	          <button class="btn" data-action="show-account">${iconText("upload-cloud", "Importer ma carriere", "I")}</button>
+	          <p>Connectez-vous avec une carriere active pour lancer des defis. Votre combattant rejoindra le classement automatiquement.</p>
+	          ${currentPublishableCareer()
+	            ? `<button class="btn" data-action="sync-current-career">${iconText("refresh-cw", "Synchroniser maintenant", "S")}</button>`
+	            : `<button class="btn" data-action="show-account">${iconText("log-in", "Se connecter", "C")}</button>`}
 	        </div>
 	      `;
 	    }
@@ -10582,7 +10820,7 @@
 		            <strong>Vide</strong>
 		          </div>
 		          <h3>Aucun combattant</h3>
-		          <p>Importez une carriere en cours ou revenez quand un autre testeur aura publie son combattant.</p>
+		          <p>Connectez-vous avec une carriere active ou revenez quand un autre testeur aura publie son combattant.</p>
 		        </div>
 		      `;
 		    }
@@ -10634,7 +10872,7 @@
 		          <div>
 		            <p class="eyebrow">Leaderboard joueurs</p>
 		            <h2 class="screen-title">Managers et combattants</h2>
-			            <p class="screen-lead">Classement public des testeurs. Les comptes et imports de carriere se gerent dans l'onglet Compte.</p>
+			            <p class="screen-lead">Classement public des testeurs. Les comptes et la synchronisation des carrieres se gerent dans l'onglet Compte.</p>
 			          </div>
 			          <div class="online-head-actions">
 			            <button class="btn" data-action="refresh-online">${iconText("refresh-cw", "Actualiser", "R")}</button>
@@ -10668,7 +10906,7 @@
 		          <div>
 		            <p class="eyebrow">Compte joueur</p>
 		            <h2 class="screen-title">${ui.online.session ? "Espace manager" : "Se connecter"}</h2>
-		            <p class="screen-lead">Le jeu reste jouable sans compte. Cette zone sert au classement, a l'import de la carriere en cours et aux futures fonctions multi.</p>
+		            <p class="screen-lead">Le jeu reste jouable sans compte. Cette zone sert au classement, a la synchronisation des carrieres et aux futures fonctions multi.</p>
 		          </div>
 		          <div class="online-head-actions">
 		            <button class="btn" data-action="show-online">${iconText("users", "Voir joueurs", "J")}</button>
@@ -10678,7 +10916,7 @@
 		        ${ui.online.error ? `<div class="notice online-error">${iconOnly("triangle-alert", "E")} ${esc(ui.online.error)}</div>` : ""}
 		        ${!ui.online.session ? `
 		          <div class="notice online-neutral">
-		            ${iconOnly("gamepad-2", "J")} Sans compte, vos sauvegardes locales restent intactes. Connectez-vous seulement pour publier votre carriere.
+		            ${iconOnly("gamepad-2", "J")} Sans compte, vos sauvegardes locales restent intactes. Connectez-vous seulement pour afficher votre carriere dans le classement.
 		          </div>
 		        ` : ""}
 		        ${ui.online.session ? renderOnlineAccountTabs(career) : `
@@ -11022,6 +11260,7 @@
           </div>
         </div>
         <div class="context-grid">
+          ${renderSeasonCalendarPanel(career)}
           ${renderNewsPanel(career, 12) || `<div class="notice">Pas encore d'actu. Signez un combat et la machine va commencer a parler.</div>`}
           ${renderRankingPanel(career)}
           ${renderObjectivesPanel(career)}
@@ -11303,7 +11542,8 @@
       ui.view = "menu";
       render();
     } else if (action === "new-career") {
-      startNewCareerCreation();
+      if (ui.career?.active) saveCurrentAndStartNewCareer();
+      else startNewCareerCreation();
     } else if (action === "continue-creator") {
       ui.view = "creator";
       render();
@@ -11505,8 +11745,8 @@
 		        loadOnlineChallenges({ rerender: false });
 		      }
 		      loadOnlineLeaderboard({ rerender: true });
-		    } else if (action === "import-current-career" || action === "import-beta-career") {
-		      importCurrentCareerOnline();
+		    } else if (action === "sync-current-career" || action === "import-current-career" || action === "import-beta-career") {
+		      syncCurrentCareerOnline({ silent: false, skipIfUnchanged: false });
 		    } else if (action === "save-and-new-career") {
 		      saveCurrentAndStartNewCareer();
 		    } else if (action === "select-own-fighter") {
