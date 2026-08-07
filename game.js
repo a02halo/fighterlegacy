@@ -7562,13 +7562,174 @@
     const moneyBonus = Math.min(42, Math.floor(career.money / 45000));
     const longevity = Math.max(0, career.age - 34) * 4;
     const score = Math.max(0, Math.round(recordBonus + finishBonus + beltBonus + tierBonus + fameBonus + moneyBonus + longevity));
-    let rank = "Combattant local";
-    if (score >= 260) rank = "Legende du MMA mondial";
-    else if (score >= 220) rank = "Hall of Famer";
-    else if (score >= 175) rank = "Champion reconnu";
-    else if (score >= 125) rank = "Main eventer";
-    else if (score >= 80) rank = "Veteran respecte";
+    const rank = pantheonRankForScore(score);
 	    return { score, rank };
+	  }
+
+	  function pantheonRankForScore(score = 0) {
+	    if (score >= 260) return "Legende du MMA mondial";
+	    if (score >= 220) return "Hall of Famer";
+	    if (score >= 175) return "Champion reconnu";
+	    if (score >= 125) return "Main eventer";
+	    if (score >= 80) return "Veteran respecte";
+	    return "Combattant local";
+	  }
+
+	  function pantheonNickname(entity = {}) {
+	    const score = Number(entity.score) || 0;
+	    const wins = Number(entity.wins ?? entity.record_w ?? entity.record?.w) || 0;
+	    const losses = Number(entity.losses ?? entity.record_l ?? entity.record?.l) || 0;
+	    const ko = Number(entity.ko ?? entity.finishes_ko ?? entity.record?.ko) || 0;
+	    const sub = Number(entity.sub ?? entity.finishes_sub ?? entity.record?.sub) || 0;
+	    const finishes = Number(entity.finishes) || ko + sub;
+	    const titlesCount = Number(entity.titlesCount ?? entity.titles_count) || (Array.isArray(entity.titles) ? entity.titles.length : 0);
+	    const orgTier = Number(entity.orgTier ?? entity.org_tier ?? entity.tier) || 0;
+	    const hype = Number(entity.hype) || 0;
+	    const money = Number(entity.money) || 0;
+	    const style = String(entity.style || entity.styleLabel || "").toLowerCase();
+	    if (orgTier >= 5 && titlesCount > 0 && score >= 240) return "Le Roi du pay-per-view";
+	    if (titlesCount >= 3) return "Le Collectionneur de ceintures";
+	    if (losses === 0 && wins >= 8) return "L'Invaincu";
+	    if (finishes >= 8) return "Le Finisseur";
+	    if (hype >= 160) return "Le Micro ouvert";
+	    if (money >= 750000) return "Le Box-office";
+	    if (style.includes("lutte") || style.includes("sambo") || style.includes("grappl")) return "Le Marteau du sol";
+	    if (style.includes("kick") || style.includes("box") || style.includes("strik")) return "Le Casseur de distance";
+	    if (score >= 175) return "Le Nom de l'affiche";
+	    if (score >= 125) return "Le Main event";
+	    return "L'Invite du Pantheon";
+	  }
+
+	  function pantheonEligible(entity = {}) {
+	    const org = String(entity.org || entity.orgLabel || entity.organization || "").toLowerCase();
+	    const orgTier = Number(entity.orgTier ?? entity.org_tier ?? entity.tier) || 0;
+	    const titlesCount = Number(entity.titlesCount ?? entity.titles_count) || (Array.isArray(entity.titles) ? entity.titles.length : 0);
+	    const score = Number(entity.score) || 0;
+	    return orgTier >= 3 || ["ksw", "pfl", "ufc"].some(label => org.includes(label)) || titlesCount > 0 || score >= 125;
+	  }
+
+	  function careerHallEntry(career, options = {}) {
+	    const scored = scoreCareer(career);
+	    const retired = Boolean(options.retired || !career.active);
+	    return {
+	      id: `career-${career.seed}`,
+	      sourceId: career.seed,
+	      name: career.name,
+	      nickname: pantheonNickname({
+	        ...career,
+	        score: scored.score,
+	        wins: career.record.w,
+	        losses: career.record.l,
+	        ko: career.record.ko,
+	        sub: career.record.sub,
+	        titlesCount: career.titles.length,
+	        orgTier: career.tier,
+	        org: orgForTier(career.tier).label,
+	        style: career.style?.label,
+	      }),
+	      score: scored.score,
+	      rank: scored.rank,
+	      record: `${career.record.w}-${career.record.l}`,
+	      finishes: career.record.ko + career.record.sub,
+	      titles: career.titles.map(t => t.label),
+	      titlesCount: career.titles.length,
+	      money: career.money,
+	      age: career.age,
+	      style: career.style?.label || "",
+	      country: career.country?.label || "",
+	      org: orgForTier(career.tier).label,
+	      orgTier: career.tier,
+	      overall: overall(career),
+	      active: !retired,
+	      retired,
+	      date: options.date || new Date().toISOString(),
+	    };
+	  }
+
+	  function upsertLocalPantheon(career, options = {}) {
+	    if (!career || (!options.force && !pantheonEligible({ ...career, orgTier: career.tier, titlesCount: career.titles?.length || 0 }))) return false;
+	    const entry = careerHallEntry(career, options);
+	    const hall = Array.isArray(ui.meta.hall) ? ui.meta.hall : [];
+	    const existingIndex = hall.findIndex(item => item.sourceId === entry.sourceId || item.id === entry.id);
+	    if (existingIndex >= 0) {
+	      hall[existingIndex] = {
+	        ...hall[existingIndex],
+	        ...entry,
+	        date: hall[existingIndex].date || entry.date,
+	      };
+	    } else {
+	      hall.push(entry);
+	    }
+	    ui.meta.hall = hall
+	      .slice()
+	      .sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0))
+	      .slice(0, 24);
+	    if (options.save) saveMeta();
+	    return true;
+	  }
+
+	  function normalizeLocalPantheonEntry(item = {}) {
+	    const score = Number(item.score) || 0;
+	    const titles = Array.isArray(item.titles) ? item.titles : [];
+	    return {
+	      ...item,
+	      score,
+	      rank: item.rank || pantheonRankForScore(score),
+	      nickname: item.nickname || pantheonNickname({
+	        ...item,
+	        score,
+	        titlesCount: item.titlesCount ?? titles.length,
+	      }),
+	      record: item.record || "0-0",
+	      finishes: Number(item.finishes) || 0,
+	      titles,
+	      titlesCount: Number(item.titlesCount) || titles.length,
+	      org: item.org || "Local",
+	      active: Boolean(item.active),
+	      retired: item.retired !== false && !item.active,
+	    };
+	  }
+
+	  function sharedPantheonEntries() {
+	    return (ui.online.leaderboard || [])
+	      .filter(row => pantheonEligible({
+	        org: row.org,
+	        orgTier: row.org_tier,
+	        titlesCount: row.titles_count,
+	        score: row.score,
+	      }))
+	      .map(row => {
+	        const score = Number(row.score) || 0;
+	        const finishes = (Number(row.finishes_ko) || 0) + (Number(row.finishes_sub) || 0);
+	        return {
+	          id: row.fighter_id,
+	          name: row.fighter_name || "Combattant inconnu",
+	          nickname: pantheonNickname({
+	            ...row,
+	            score,
+	            finishes,
+	            titlesCount: row.titles_count,
+	            orgTier: row.org_tier,
+	            wins: row.record_w,
+	            losses: row.record_l,
+	          }),
+	          score,
+	          rank: row.rank_label || pantheonRankForScore(score),
+	          record: `${row.record_w || 0}-${row.record_l || 0}`,
+	          finishes,
+	          titlesCount: Number(row.titles_count) || 0,
+	          money: Number(row.money) || 0,
+	          style: row.style || "",
+	          country: row.country || "",
+	          org: row.org || "Organisation",
+	          orgTier: Number(row.org_tier) || 0,
+	          manager: row.manager_name || "Manager inconnu",
+	          active: !row.retired,
+	          retired: Boolean(row.retired),
+	        };
+	      })
+	      .sort((a, b) => b.score - a.score)
+	      .slice(0, 24);
 	  }
 
 	  function badgeById(id) {
@@ -7591,21 +7752,7 @@
     ui.meta.tokens += tokenGain;
     ui.meta.record = Math.max(ui.meta.record || 0, scored.score);
     ui.meta.totalCareers += 1;
-    ui.meta.hall.unshift({
-      id: `${career.seed}-${Date.now()}`,
-      name: career.name,
-      score: scored.score,
-      rank: scored.rank,
-      record: `${career.record.w}-${career.record.l}`,
-      finishes: career.record.ko + career.record.sub,
-      titles: career.titles.map(t => t.label),
-      money: career.money,
-      age: career.age,
-      style: career.style.label,
-      country: career.country.label,
-      date: new Date().toISOString(),
-    });
-    ui.meta.hall = ui.meta.hall.slice(0, 12);
+    upsertLocalPantheon(career, { force: true, retired: true });
 	    career.final = { ...scored, tokenGain, unlockedNow: unlockedNow.map(b => b.id), endReason: careerEndReason(career, cause) };
     ui.finalCareer = career;
     ui.career = null;
@@ -7668,13 +7815,13 @@
 	    const statsNudge = statsNudgeActive();
 	    return `
 	      <header class="topbar ${ui.mobileMenuOpen ? "menu-open" : ""}">
-        <div class="brand">
+        <button class="brand" data-action="menu" aria-label="Retour a l'accueil">
           <div class="brand-mark" aria-hidden="true">FL</div>
           <div>
             <h1 class="brand-title">Fight Legacy</h1>
             <p class="brand-subtitle">Prototype carriere MMA</p>
           </div>
-        </div>
+        </button>
         <button class="mobile-menu-toggle" data-action="toggle-mobile-menu" aria-expanded="${ui.mobileMenuOpen ? "true" : "false"}" aria-label="Menu">
           ${iconOnly(ui.mobileMenuOpen ? "x" : "menu", "M")}
         </button>
@@ -7916,7 +8063,7 @@
 		    const rightIntent = right.intent || context.rightIntent || "Droite";
 		    return `
 		      <div class="swipe-choice-deck" data-swipe-deck>
-		        <div class="swipe-choice-card" data-swipe-card>
+		        <div class="swipe-choice-card" data-swipe-card data-left-label="${esc(left.label)}" data-right-label="${esc(right.label)}">
 	          <div class="swipe-card-top">
 	            <span>${iconOnly("move-horizontal", "S")} ${esc(kicker)}</span>
 	            <strong>${esc(title)}</strong>
@@ -8845,7 +8992,7 @@
         ${renderSeasonFocusPanel(career)}
         ${campContext}
         ${visualResult ? `
-          <div class="visual-result-card ${visualResult.className}">
+          <div class="visual-result-card ${visualResult.className}" style="--visual-image: url('${esc(visualResult.image)}')">
             <img src="${esc(visualResult.image)}" alt="${esc(visualResult.alt)}">
             <div class="visual-result-content">
               <span class="visual-result-kicker">${iconOnly(visualResult.icon, "V")} ${esc(visualResult.kicker)}</span>
@@ -9850,26 +9997,71 @@
     `);
   }
 
+  function renderPantheonList(entries = [], options = {}) {
+    if (!entries.length) return `<div class="notice">${esc(options.empty || "Aucun combattant dans ce Pantheon pour le moment.")}</div>`;
+    return `
+      <div class="pantheon-list">
+        ${entries.map((raw, index) => {
+          const item = normalizeLocalPantheonEntry(raw);
+          return `
+            <article class="pantheon-card ${item.active ? "is-active" : ""}">
+              <span class="pantheon-rank">#${index + 1}</span>
+              <div class="pantheon-main">
+                <span class="pantheon-status">${iconOnly(item.active ? "activity" : "trophy", "P")} ${item.active ? "Carriere active" : "Hall of Fame"}</span>
+                <h3>${esc(item.name)}</h3>
+                <strong>${esc(item.nickname)}</strong>
+                <p>${esc(item.rank)} | ${esc(item.record)} | ${esc(item.org || "Organisation")} | ${item.finishes || 0} finition(s)</p>
+              </div>
+              <div class="pantheon-score">
+                <strong>${item.score || 0}</strong>
+                <span>pts</span>
+              </div>
+            </article>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
   function renderHall() {
+    if (ui.career?.active) upsertLocalPantheon(ui.career, { save: true });
+    const localEntries = (ui.meta.hall || []).map(normalizeLocalPantheonEntry)
+      .sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0));
+    const sharedEntries = sharedPantheonEntries();
     renderShell(`
-      <section class="game-screen">
+      <section class="game-screen pantheon-screen">
         <div class="screen-head">
           <div>
-            <p class="eyebrow">Pantheon local</p>
-            <h2 class="screen-title">Legendes</h2>
-            <p class="screen-lead">${ui.meta.totalCareers || 0} carriere(s) terminee(s). Record: ${ui.meta.record || 0} pts.</p>
+            <p class="eyebrow">Pantheon</p>
+            <h2 class="screen-title">Hall of Fame</h2>
+            <p class="screen-lead">Les combattants entrent dans le Pantheon des qu'ils atteignent KSW, PFL ou UFC. Ensuite, chaque victoire, ceinture et gros moment fait grimper la plaque.</p>
           </div>
+          <button class="btn" data-action="refresh-pantheon">${iconText("refresh-cw", "Actualiser commun", "R")}</button>
         </div>
-        ${ui.meta.hall.length ? `
-	          <div class="timeline">
-	            ${ui.meta.hall.map(item => `
-	              <div class="timeline-row">
-	                <strong>${iconOnly("trophy", "#")} ${item.score} pts</strong>
-	                <span>${esc(item.name)} | ${esc(item.rank)} | ${esc(item.record)} | ${item.finishes} finitions | ${formatMoney(item.money)}</span>
-	              </div>
-            `).join("")}
-          </div>
-        ` : `<div class="notice">Aucune carriere terminee pour le moment. Le premier nom attend sa plaque.</div>`}
+        <div class="pantheon-grid">
+          <section class="pantheon-section">
+            <div class="panel-title">
+              <span>${iconOnly("trophy", "P")} Pantheon local</span>
+              <strong>${localEntries.length}</strong>
+            </div>
+            <p class="online-help">Vos legendes sur cet appareil, y compris les carrieres encore actives qui ont atteint une grosse organisation.</p>
+            ${renderPantheonList(localEntries, {
+              empty: ui.career?.active
+                ? "Votre combattant doit atteindre KSW, PFL ou UFC pour ouvrir sa plaque locale."
+                : "Aucune plaque locale pour le moment. Lancez une carriere ou reprenez une sauvegarde."
+            })}
+          </section>
+          <section class="pantheon-section pantheon-shared">
+            <div class="panel-title">
+              <span>${iconOnly("globe-2", "C")} Pantheon commun</span>
+              <strong>${sharedEntries.length}</strong>
+            </div>
+            <p class="online-help">Classement commun alimente par les carrieres connectees au leaderboard.</p>
+            ${ui.online.leaderboardLoaded
+              ? renderPantheonList(sharedEntries, { empty: "Aucun joueur connecte n'a encore atteint une grosse organisation." })
+              : `<div class="notice online-neutral">${iconOnly("wifi", "O")} Connectez-vous ou actualisez pour charger le Pantheon commun.</div>`}
+          </section>
+        </div>
       </section>
     `);
   }
@@ -9921,7 +10113,7 @@
 	  }
 
 	  function renderOnlineIfVisible() {
-	    if (["online", "account", "onlineChallenge", "onlineChallengeResult", "menu"].includes(ui.view)) render();
+	    if (["online", "account", "onlineChallenge", "onlineChallengeResult", "menu", "hall"].includes(ui.view)) render();
 	  }
 
 	  async function initOnline() {
@@ -10914,6 +11106,7 @@
 
 	  function renderOnlineCurrentScreen() {
 		    if (ui.view === "account") renderOnlineAccountScreen();
+		    else if (ui.view === "hall") renderHall();
 		    else renderOnlineScreen();
 		  }
 
@@ -11543,6 +11736,7 @@
 	  function resetSwipeCard(card) {
 	    if (!card) return;
 	    card.style.transform = "";
+	    card.style.removeProperty("--swipe-progress");
 	    card.classList.remove("is-dragging", "swipe-left", "swipe-right");
 	  }
 
@@ -11568,7 +11762,9 @@
 	    if (Math.abs(activeSwipe.dx) < 6 && Math.abs(activeSwipe.dy) > 12) return;
 	    event.preventDefault?.();
 	    const rotate = clamp(activeSwipe.dx / 14, -10, 10);
+	    const progress = clamp(Math.abs(activeSwipe.dx) / 120, 0, 1);
 	    activeSwipe.card.style.transform = `translateX(${activeSwipe.dx}px) rotate(${rotate}deg)`;
+	    activeSwipe.card.style.setProperty("--swipe-progress", progress.toFixed(2));
 	    activeSwipe.card.classList.toggle("swipe-left", activeSwipe.dx < -36);
 	    activeSwipe.card.classList.toggle("swipe-right", activeSwipe.dx > 36);
 	  });
@@ -11751,6 +11947,13 @@
     } else if (action === "show-hall") {
       ui.view = "hall";
       render();
+      safeOnlineRefresh(async () => {
+        await loadOnlineLeaderboard({ rerender: true });
+      });
+	    } else if (action === "refresh-pantheon") {
+	      safeOnlineRefresh(async () => {
+	        await loadOnlineLeaderboard({ rerender: true });
+	      });
 	    } else if (action === "show-shop") {
 	      ui.view = "shop";
 	      render();
