@@ -10,7 +10,7 @@
   const SAVE_VERSION = 2;
   const LEGEND_TIER = 6;
   const LEGEND_STAT_CAP = 340;
-  const ASSET_VERSION = "20260807-visual-swipe-all";
+  const ASSET_VERSION = "20260807-contract-visuals-all";
   const IMAGE_ASSETS = {
     home: "./assets/home-fight-legacy.png",
     press: "./assets/press-conference-fight-legacy.png",
@@ -6477,7 +6477,15 @@
     career.flags.cancelledFightId = null;
     career.pendingFightOptions = null;
     addNews(career, "Combat signe", `${career.name} affrontera ${fight.opponent.name} (${fight.opponent.record}) en ${ORGS[career.tier].label}.`, fight.risk === "high" ? "hot" : "neutral");
-    startTrainingBlock();
+    showDecisionResult(career, {
+      title: "Combat signe",
+      text: `${career.name} signe contre ${fight.opponent.name}. Le dossier est boucle: le camp peut demarrer autour de cette affiche.`,
+      effects: [],
+      hideEmptyEffects: true,
+      visual: "contractSigning",
+      nextAction: "to-training",
+      nextLabel: "Lancer le camp",
+    });
   }
 
   function adjustedStats(baseStats, plan, cap = 99) {
@@ -8997,15 +9005,16 @@
   function renderContractOffersBlock(career) {
     if (!career.pendingContracts?.length) return "";
     const nextYear = (career.year || 2026) + 1;
+    const visual = visualResultConfig("contractSigning");
+    preloadGameAssets("contractSigning");
     return `
       <div class="contract-offers-priority">
-        <div class="focus-panel">
-          <div>
-            <span>${iconOnly("file-pen-line", "C")} Contrats sur la table</span>
-            <h3>Signer la saison ${nextYear}</h3>
-	            <p>Choisir une carte valide l'offre, affiche la signature puis lance la saison suivante.</p>
-          </div>
-          <strong>Action requise</strong>
+        <div class="contract-signing-visual">
+          ${renderVisualResultCard(
+            visual,
+            `Signer la saison ${nextYear}`,
+            "Les offres sont sur la table. Choisis le cadre de ta prochaine annee: organisation, nombre de combats, prime et clause sportive."
+          )}
         </div>
         <div class="choice-grid contract-offer-grid mobile-option-stack">
           ${career.pendingContracts.map((offer, index) => `
@@ -9491,10 +9500,11 @@
       ? `${renderCampStatus(career)}${renderCampRiskWarning(career)}`
       : "";
     const visualResult = visualResultConfig(result.visual);
-    const effectsMarkup = (result.effects || []).map(effect => {
+    const renderedEffects = (result.effects || []).map(effect => {
       const good = effectIsGood(effect.key, effect.value);
       return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectText(effect.key, effect.value))}</span></span>`;
-    }).join("") || `<span class="effect">Aucun effet visible</span>`;
+    }).join("");
+    const effectsMarkup = renderedEffects || (result.hideEmptyEffects ? "" : `<span class="effect">Aucun effet visible</span>`);
     const nextButton = `<button class="btn btn-primary" data-action="${esc(result.nextAction)}">${iconText(result.nextAction === "to-life-event" ? "calendar-clock" : result.nextAction === "to-medical-rest" ? "heart-pulse" : "arrow-right", result.nextLabel, ">")}</button>`;
     renderShell(`
       <section class="game-screen decision-result-screen ${visualResult ? "visual-result-screen" : ""}">
@@ -9866,14 +9876,19 @@
 	      return;
 	    }
 	    const options = career.pendingFightOptions || [];
+    const visual = visualResultConfig("contractSigning");
+    preloadGameAssets("contractSigning");
 	    renderShell(`
 	      <section class="game-screen fight-offer-screen">
 	        ${fighterHeader(career)}
 	        ${seasonPanel(career)}
 	        ${renderMedicalAlert(career)}
-		        <div class="story-panel fight-offer-intro">
-		          <h3>Signer le prochain combat</h3>
-		          <p>Le manager pose trois dossiers sur la table. Une fois le combat signe, le camp commence autour de cet adversaire.</p>
+		        <div class="fight-offer-contract-visual">
+		          ${renderVisualResultCard(
+                visual,
+                "Signer le prochain combat",
+                "Le manager pose trois dossiers sur la table. Une fois le combat signe, le camp commence autour de cet adversaire."
+              )}
 		        </div>
 		        <div class="choice-grid fight-offer-grid">
 		          ${options.map((fight, index) => fightOptionButton(fight, index)).join("")}
@@ -12620,7 +12635,19 @@
   });
 
   preloadGameAssets("home");
-  const warmSecondaryAssets = () => preloadGameAssets("press", "doping", "podcast", "campDiet", "steakhouse", "medicalRest");
+  const warmSecondaryAssets = () => preloadGameAssets(
+    "press",
+    "doping",
+    "podcast",
+    "campDiet",
+    "steakhouse",
+    "medicalRest",
+    "stageGrappling",
+    "stageStriking",
+    "stageDaghestan",
+    "contractSigning",
+    "trainingInjury"
+  );
   if ("requestIdleCallback" in window) {
     window.requestIdleCallback(warmSecondaryAssets, { timeout: 1800 });
   } else {

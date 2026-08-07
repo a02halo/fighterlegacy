@@ -2560,6 +2560,17 @@ input:focus-visible {
   min-height: clamp(460px, 46vw, 680px);
 }
 
+.contract-signing-visual .visual-result-card,
+.fight-offer-contract-visual .visual-result-card {
+  margin-bottom: 18px;
+  min-height: clamp(430px, 44vw, 650px);
+}
+
+.contract-signing-visual + .contract-offer-grid,
+.fight-offer-contract-visual + .fight-offer-grid {
+  margin-top: 18px;
+}
+
 .medical-rest-screen.visual-result-screen .medical-protocol-intro {
   margin-top: 16px;
 }
