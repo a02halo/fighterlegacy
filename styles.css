@@ -2041,7 +2041,6 @@ input:focus-visible {
   align-items: end;
   background:
     linear-gradient(135deg, rgba(204, 66, 70, 0.22), transparent 42%),
-    var(--visual-image),
     #11100e;
   background-position: center;
   background-size: cover;
@@ -2093,7 +2092,6 @@ input:focus-visible {
 .doping-result-card {
   background:
     linear-gradient(135deg, rgba(62, 117, 184, 0.28), transparent 44%),
-    var(--visual-image),
     #08111a;
 }
 

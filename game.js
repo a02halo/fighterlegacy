@@ -8,6 +8,14 @@
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_c7QqKxM8m7jn3n41zPp8dQ_CHKF35Vk";
   const CURRENT_YEAR = 2026;
   const SAVE_VERSION = 2;
+  const LEGEND_TIER = 6;
+  const LEGEND_STAT_CAP = 340;
+  const ASSET_VERSION = "20260807-legend-assets";
+  const IMAGE_ASSETS = {
+    home: "./assets/home-fight-legacy.png",
+    press: "./assets/press-conference-fight-legacy.png",
+    doping: "./assets/doping-fight-legacy.png",
+  };
 
   const CREATOR_STEPS = [
     "country",
@@ -250,6 +258,7 @@
     { tier: 3, id: "ksw", label: "KSW", belt: "Ceinture KSW", threshold: 38, summary: "Organisation internationale tres europeenne. Opposition au-dessus du National, hype plus lente, bonnes bourses pour les champions.", purseScale: 1.15, hypeScale: 0.82 },
     { tier: 4, id: "pfl", label: "PFL", belt: "Ceinture PFL", threshold: 42, summary: "Organisation internationale plus riche et un peu plus dure que KSW. Grosses bourses, image moins explosive que l'UFC.", purseScale: 1.45, hypeScale: 0.9 },
     { tier: 5, id: "ufc", label: "UFC", belt: "Ceinture UFC", threshold: 58, summary: "Sommet mondial. Opposition elite, bourses de base plus petites, chaque victoire fait exploser hype et charisme.", purseScale: 0.92, hypeScale: 1.34, charismaWin: 1 },
+    { tier: 6, id: "legend", label: "Legende", belt: "Statut Legende", threshold: 90, summary: "Circuit mythique. Vous ne grimpez plus un ranking: vous affrontez des noms impossibles et vos stats peuvent depasser les limites humaines.", purseScale: 1.75, hypeScale: 1.55, charismaWin: 2 },
   ];
 
   const LEGACY_ORG_LABELS = {
@@ -277,6 +286,7 @@
     if (tier < 2) return [orgForTier(tier + 1)];
     if (tier === 2) return [orgForTier(3), orgForTier(4)];
     if (tier === 3 || tier === 4) return [orgForTier(5)];
+    if (tier === 5) return [orgForTier(LEGEND_TIER)];
     return [];
   }
 
@@ -287,7 +297,7 @@
   }
 
   function opponentBaseForTier(tier = 0) {
-    const baseByTier = [48, 55, 62, 68, 71, 82];
+    const baseByTier = [48, 55, 62, 68, 71, 82, 214];
     return baseByTier[clamp(Number(tier) || 0, 0, baseByTier.length - 1)] || 48;
   }
 
@@ -382,6 +392,41 @@
 	    { id: "paulo-varela", name: "Paulo Varela", country: "br", style: "bjj", age: 35, tier: 5, base: 86, record: "31-6", trait: "sol legendaire" },
 	    { id: "musa-diarra", name: "Musa Diarra", country: "ng", style: "wrestling", age: 31, tier: 5, base: 87, record: "25-0", trait: "athlete total" },
 	    { id: "zaur-kadyrov", name: "Zaur Kadyrov", country: "dag", style: "sambo", age: 29, tier: 5, base: 88, record: "26-0", trait: "controle absolu" },
+  ];
+
+  const LEGEND_BLUEPRINTS = [
+    { id: "rocco-balbo", name: "Rocco Balbo", country: "us", style: "boxing", age: 34, tier: LEGEND_TIER, base: 128, record: "57-24", trait: "coeur impossible" },
+    { id: "apollo-crowne", name: "Apollo Crowne", country: "us", style: "boxing", age: 33, tier: LEGEND_TIER, base: 136, record: "48-3", trait: "showman imperial" },
+    { id: "jax-dempsey", name: "Jax Dempsey", country: "us", style: "boxing", age: 36, tier: LEGEND_TIER, base: 144, record: "61-6", trait: "pression antique" },
+    { id: "bruno-li", name: "Bruno Li", country: "jp", style: "karate", age: 32, tier: LEGEND_TIER, base: 149, record: "29-0", trait: "vitesse irreelle" },
+    { id: "roy-gracia", name: "Roy Gracia", country: "br", style: "bjj", age: 35, tier: LEGEND_TIER, base: 153, record: "21-2", trait: "garde mystique" },
+    { id: "carlo-gracia", name: "Carlo Gracia", country: "br", style: "bjj", age: 38, tier: LEGEND_TIER, base: 159, record: "35-1", trait: "jiu-jitsu fondateur" },
+    { id: "oscar-delahoya", name: "Oscar Delahoya", country: "mx", style: "boxing", age: 34, tier: LEGEND_TIER, base: 164, record: "39-6", trait: "main gauche doree" },
+    { id: "jo-frazer", name: "Jo Frazer", country: "us", style: "boxing", age: 34, tier: LEGEND_TIER, base: 170, record: "32-4", trait: "crochet au foie" },
+    { id: "jerom-banneret", name: "Jerom Banneret", country: "fr", style: "kickboxing", age: 37, tier: LEGEND_TIER, base: 176, record: "86-22", trait: "guerre de ring" },
+    { id: "miran-crokop", name: "Miran Crokop", country: "ge", style: "kickboxing", age: 35, tier: LEGEND_TIER, base: 181, record: "38-11", trait: "high kick funeste" },
+    { id: "chuck-lidwell", name: "Chuck Lidwell", country: "us", style: "boxing", age: 36, tier: LEGEND_TIER, base: 186, record: "27-9", trait: "contre en bombe" },
+    { id: "wander-sileira", name: "Wander Sileira", country: "br", style: "muay", age: 35, tier: LEGEND_TIER, base: 191, record: "42-13", trait: "tempete au corps a corps" },
+    { id: "ray-leonardis", name: "Ray Leonardis", country: "us", style: "boxing", age: 32, tier: LEGEND_TIER, base: 198, record: "36-3", trait: "mains de sucre" },
+    { id: "george-foreland", name: "George Foreland", country: "us", style: "boxing", age: 40, tier: LEGEND_TIER, base: 204, record: "76-5", trait: "enclume souriante" },
+    { id: "mika-taison", name: "Mika Taison", country: "us", style: "boxing", age: 29, tier: LEGEND_TIER, base: 210, record: "50-6", trait: "peekaboo violent" },
+    { id: "muhsin-alee", name: "Muhsin Alee", country: "us", style: "boxing", age: 32, tier: LEGEND_TIER, base: 216, record: "56-5", trait: "jab et theatre" },
+    { id: "joris-saint-perrin", name: "Joris Saint-Perrin", country: "fr", style: "wrestling", age: 33, tier: LEGEND_TIER, base: 222, record: "26-2", trait: "athlete complet" },
+    { id: "floyd-weatherly", name: "Floyd Weatherly", country: "us", style: "boxing", age: 36, tier: LEGEND_TIER, base: 228, record: "50-0", trait: "defense intouchable" },
+    { id: "naoto-inari", name: "Naoto Inari", country: "jp", style: "boxing", age: 30, tier: LEGEND_TIER, base: 232, record: "31-0", trait: "precision atomique" },
+    { id: "anderson-silvera", name: "Anderson Silvera", country: "br", style: "muay", age: 36, tier: LEGEND_TIER, base: 238, record: "34-11", trait: "matrix debout" },
+    { id: "fedor-emelyan", name: "Fedor Emelyan", country: "ge", style: "sambo", age: 35, tier: LEGEND_TIER, base: 244, record: "40-7", trait: "calme glacial" },
+    { id: "kabir-nurali", name: "Kabir Nurali", country: "dag", style: "sambo", age: 31, tier: LEGEND_TIER, base: 250, record: "29-0", trait: "controle de montagne" },
+    { id: "john-boneson", name: "John Boneson", country: "us", style: "wrestling", age: 34, tier: LEGEND_TIER, base: 256, record: "27-1", trait: "coudes et portee" },
+    { id: "alek-pereiro", name: "Alek Pereiro", country: "br", style: "kickboxing", age: 35, tier: LEGEND_TIER, base: 262, record: "12-2", trait: "pierre dans les gants" },
+    { id: "ismael-adesani", name: "Ismael Adesani", country: "ng", style: "kickboxing", age: 33, tier: LEGEND_TIER, base: 268, record: "24-4", trait: "distance de sniper" },
+    { id: "riko-vermeer", name: "Riko Vermeer", country: "nl", style: "kickboxing", age: 34, tier: LEGEND_TIER, base: 274, record: "61-10", trait: "roi du kickboxing" },
+    { id: "ernest-hoste", name: "Ernest Hoste", country: "nl", style: "kickboxing", age: 36, tier: LEGEND_TIER, base: 280, record: "99-21", trait: "science du K-1" },
+    { id: "bader-hadi", name: "Bader Hadi", country: "ma", style: "kickboxing", age: 33, tier: LEGEND_TIER, base: 286, record: "106-17", trait: "orage instable" },
+    { id: "buak-khao", name: "Buak Khao", country: "th", style: "muay", age: 34, tier: LEGEND_TIER, base: 292, record: "240-24", trait: "genoux de beton" },
+    { id: "saen-chaiyut", name: "Saen Chaiyut", country: "th", style: "muay", age: 35, tier: LEGEND_TIER, base: 298, record: "315-43", trait: "angle impossible" },
+    { id: "dimitri-jonsson", name: "Dimitri Jonsson", country: "us", style: "wrestling", age: 32, tier: LEGEND_TIER, base: 306, record: "25-4", trait: "metronome total" },
+    { id: "lennox-luce", name: "Lennox Luce", country: "uk", style: "boxing", age: 36, tier: LEGEND_TIER, base: 315, record: "41-2", trait: "roi des lourds" },
   ];
 
   const GYMS = [
@@ -2178,6 +2223,24 @@
 	    return `${iconOnly(name, fallback)}<span>${esc(text)}</span>`;
 	  }
 
+  function assetUrl(key) {
+    const src = IMAGE_ASSETS[key] || key;
+    return `${src}?v=${ASSET_VERSION}`;
+  }
+
+  function preloadGameAssets(...keys) {
+    keys.forEach(key => {
+      const src = assetUrl(key);
+      if (!src || preloadGameAssets.seen?.has(src)) return;
+      preloadGameAssets.seen = preloadGameAssets.seen || new Set();
+      preloadGameAssets.seen.add(src);
+      const img = new Image();
+      img.decoding = "async";
+      img.loading = "eager";
+      img.src = src;
+    });
+  }
+
 	  function hydrateIcons() {
 	    if (window.lucide?.createIcons) {
 	      window.lucide.createIcons({
@@ -2548,6 +2611,10 @@
 			    career.flags.recentLifeEventIds = Array.isArray(career.flags.recentLifeEventIds) ? career.flags.recentLifeEventIds.slice(-8) : [];
 			    career.flags.recentDelayedLifeEventIds = Array.isArray(career.flags.recentDelayedLifeEventIds) ? career.flags.recentDelayedLifeEventIds.slice(-6) : [];
 			    career.flags.recentFightMomentIds = Array.isArray(career.flags.recentFightMomentIds) ? career.flags.recentFightMomentIds.slice(-8) : [];
+			    if (career.tier >= LEGEND_TIER || career.flags.legendMode) {
+			      career.flags.legendMode = true;
+			      career.potential = Math.max(career.potential || 0, LEGEND_STAT_CAP);
+			    }
 	    career.record = career.record || { w: 0, l: 0, d: 0, ko: 0, sub: 0, dec: 0 };
     career.titles = (career.titles || []).map(title => {
       const tier = clamp(Number(title.tier || 0), 0, ORGS.length - 1);
@@ -2940,6 +3007,11 @@
   }
 
   function rosterForTier(tier) {
+    if (Number(tier || 0) >= LEGEND_TIER) {
+      return LEGEND_BLUEPRINTS
+        .slice()
+        .sort((a, b) => b.base - a.base);
+    }
     return OPPONENT_BLUEPRINTS
       .filter(item => item.tier <= tier + 1 && item.tier >= Math.max(0, tier - 1))
       .sort((a, b) => b.base - a.base);
@@ -3011,10 +3083,18 @@
     return Math.max(min, Math.min(max, Math.round(value)));
   }
 
-  function applyStats(stats, mods = {}) {
+  function isLegendCareer(career) {
+    return Number(career?.tier || 0) >= LEGEND_TIER || Boolean(career?.flags?.legendMode);
+  }
+
+  function statCapForCareer(career) {
+    return isLegendCareer(career) ? LEGEND_STAT_CAP : 99;
+  }
+
+  function applyStats(stats, mods = {}, max = 99) {
     Object.entries(mods).forEach(([key, value]) => {
       if (stats[key] === undefined) stats[key] = 50;
-      stats[key] = clamp(stats[key] + value, 1, 99);
+      stats[key] = clamp(stats[key] + value, 1, max);
     });
   }
 
@@ -3043,9 +3123,12 @@
 
   function overall(career) {
     const avg = statAverage(career.stats);
-    const hypeBonus = Math.min(6, Math.floor((career.hype + career.rep) / 35));
+    const cap = statCapForCareer(career);
+    const hypeBonus = isLegendCareer(career)
+      ? Math.min(24, Math.floor((career.hype + career.rep) / 18))
+      : Math.min(6, Math.floor((career.hype + career.rep) / 35));
     const ageTax = career.age > 34 ? Math.floor((career.age - 34) * 1.2) : 0;
-    return clamp(avg + hypeBonus - ageTax, 1, 99);
+    return clamp(avg + hypeBonus - ageTax, 1, cap);
   }
 
   function getById(list, id) {
@@ -3116,15 +3199,32 @@
     return `Adversaire ${100 + Math.floor(nextRand(career) * 900)}`;
   }
 
+  function legendOpponentTargetBase(career, difficulty = 0) {
+    const legendWins = (career.fights || []).filter(fight => Number(fight.tier || 0) >= LEGEND_TIER && fight.result === "Victoire").length;
+    const target = Math.max(
+      128,
+      Math.min(
+        315,
+        overall(career) + 20 + legendWins * 9 + Math.max(0, career.streak || 0) * 3 + difficulty
+      )
+    );
+    return target;
+  }
+
   function blueprintToOpponent(career, blueprint, difficulty = 0) {
     const country = getById(COUNTRIES, blueprint.country) || COUNTRIES[0];
     const style = getById(STYLES, blueprint.style) || STYLES[0];
-    const base = blueprint.base + difficulty + Math.floor(nextRand(career) * 7 - 3);
+    const isLegend = Number(blueprint.tier || 0) >= LEGEND_TIER;
+    const variance = isLegend ? 25 : 7;
+    const base = blueprint.base + difficulty + Math.floor(nextRand(career) * variance - Math.floor(variance / 2));
+    const floor = isLegend ? Math.max(95, base - 42) : 24;
+    const ceiling = isLegend ? LEGEND_STAT_CAP : 97;
+    const spread = isLegend ? 54 : 14;
     const stats = newEmptyStats();
     Object.keys(stats).forEach(key => {
-      stats[key] = clamp(base + Math.floor(nextRand(career) * 14 - 6), 24, 97);
+      stats[key] = clamp(base + Math.floor(nextRand(career) * spread - Math.floor(spread / 2)), floor, ceiling);
     });
-    applyStats(stats, style.stats);
+    applyStats(stats, style.stats, isLegend ? LEGEND_STAT_CAP : 99);
     return {
       id: blueprint.id,
       name: blueprint.name,
@@ -3146,10 +3246,11 @@
     const style = STYLES.find(item => item.label === rival.style) || pick(career, STYLES);
     const base = (rival.base || 62) + difficulty + Math.min(4, rival.heat || 0);
     const stats = newEmptyStats();
+    const ceiling = isLegendCareer(career) ? LEGEND_STAT_CAP : 97;
     Object.keys(stats).forEach(key => {
-      stats[key] = clamp(base + Math.floor(nextRand(career) * 12 - 5), 24, 97);
+      stats[key] = clamp(base + Math.floor(nextRand(career) * 12 - 5), 24, ceiling);
     });
-    applyStats(stats, style.stats);
+    applyStats(stats, style.stats, isLegendCareer(career) ? LEGEND_STAT_CAP : 99);
     return {
       id: rival.id,
       name: rival.name,
@@ -4186,6 +4287,7 @@
 	      startFightSelection();
 	      return;
 	    }
+	    preloadGameAssets("press");
 	    if (hasMedicalRest(career)) {
 	      routeMedicalRest("La conference attendra le feu vert medical.");
 	      return;
@@ -4236,6 +4338,7 @@
 	      text: `Conference contre ${fight.opponent.name}: ${option.label}.`,
 	    });
 	    if (hasMedicalRest(career)) cancelPendingFightForMedical(career, "Incident en conference de presse.");
+	    preloadGameAssets("press");
 	    showDecisionResult(career, {
 	      title: "Conference de presse",
 	      text: resultText,
@@ -4283,7 +4386,7 @@
       : { money: special.purse, rep: -4, hype: 8, morale: -6, injuryRisk: 7, stats: { charisma: 2, cardio: -1 } }
     );
     const damage = Math.max(3, Math.round((won ? 5 : 9) + medical.injuryRisk / 18 + (special.pressChoice === "staredown-chaos" ? 1 : 0)));
-    career.stats.durability = clamp((career.stats.durability || 55) - damage, 1, 99);
+    career.stats.durability = clamp((career.stats.durability || 55) - damage, 1, statCapForCareer(career));
     career.condition = clamp((career.condition || 70) - damage - (won ? 4 : 8), 0, 100);
     effects = [
       ...effects,
@@ -4553,8 +4656,9 @@
       }
     });
     if (effects.stats) {
+      const statCap = statCapForCareer(career);
       Object.entries(effects.stats).forEach(([key, value]) => {
-        career.stats[key] = clamp((career.stats[key] || 50) + value, 1, 99);
+        career.stats[key] = clamp((career.stats[key] || 50) + value, 1, statCap);
         shown.push({ key, value });
       });
     }
@@ -4808,6 +4912,21 @@
     return STAT_LABELS[key] || VALUE_LABELS[key] || key;
   }
 
+  function formatEffectMoney(value) {
+    const abs = Math.abs(Math.round(value || 0));
+    if (abs >= 1000000) return formatMoney(abs);
+    return String(abs).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  }
+
+  function effectText(key, value) {
+    if (key === "money") {
+      return value < 0
+        ? `Cout = ${formatEffectMoney(value)}`
+        : `${effectLabel(key)} +${formatEffectMoney(value)}`;
+    }
+    return `${effectLabel(key)} ${value > 0 ? "+" : ""}${value}`;
+  }
+
 	  function effectIsGood(key, value) {
 		    if (["injuryRisk", "restWeeks", "scandal", "locked", "dopingRisk", "doping", "suspension", "credit"].includes(key)) return value < 0;
 	    return value >= 0;
@@ -4978,7 +5097,7 @@
     medical.injuries.unshift(injury);
     medical.injuries = medical.injuries.slice(0, 12);
     career.condition = clamp((career.condition || 70) - conditionLoss, 0, 100);
-    career.stats.durability = clamp((career.stats.durability || 70) - durabilityLoss, 1, 99);
+    career.stats.durability = clamp((career.stats.durability || 70) - durabilityLoss, 1, statCapForCareer(career));
     career.history.push({
       year: career.year,
       age: career.age,
@@ -5360,7 +5479,7 @@
     const baseDurabilityGain = Math.min(13, 2 + Math.ceil(weeks * 0.8));
     const baseMedicalCare = 18 + Math.round(weeks * 1.4);
     career.condition = clamp(Math.max(career.condition || 60, 60) + baseConditionGain, 0, 100);
-    career.stats.durability = clamp((career.stats.durability || 55) + baseDurabilityGain, 1, 99);
+    career.stats.durability = clamp((career.stats.durability || 55) + baseDurabilityGain, 1, statCapForCareer(career));
     medical.injuryRisk = clamp((medical.injuryRisk || 0) - baseMedicalCare, 0, 90);
     effects = [
       ...effects,
@@ -5758,6 +5877,15 @@
 
   function generateOpponent(career, difficulty = 0, blockedNames = []) {
     const blocked = [career.name, ...blockedNames].map(normalizeFighterName);
+    if (isLegendCareer(career)) {
+      const legendPool = LEGEND_BLUEPRINTS.filter(item => !blocked.includes(normalizeFighterName(item.name)));
+      if (legendPool.length) {
+        const targetBase = legendOpponentTargetBase(career, difficulty);
+        const sorted = legendPool.sort((a, b) => Math.abs((a.base + difficulty) - targetBase) - Math.abs((b.base + difficulty) - targetBase));
+        const pickIndex = Math.floor(nextRand(career) * Math.min(10, sorted.length));
+        return blueprintToOpponent(career, sorted[pickIndex], difficulty);
+      }
+    }
     const tierWindow = OPPONENT_BLUEPRINTS.filter(item => {
       if (blocked.includes(normalizeFighterName(item.name))) return false;
       return item.tier >= Math.max(0, career.tier - 1) && item.tier <= Math.min(5, career.tier + 1);
@@ -5834,6 +5962,7 @@
     const unbeatenRun = career.record.w >= 2 && career.record.l === 0;
     const internationalStep = career.tier === 2;
     const ufcStep = career.tier === 3 || career.tier === 4;
+    const legendStep = career.tier === 5;
     const activeContractBlock = (career.contract?.remainingFights || 0) > 0 && !clauseReady && !hasBelt;
     const winningRecord = career.record.w >= career.record.l || career.streak >= 3;
     const cageSuccess = winningRecord && (
@@ -5884,9 +6013,16 @@
       (cageSuccess && businessSuccess && visibilityAccess)
     );
     const ufcEligible = ufcStep && hasBelt && !missed && career.lastResult?.won;
+    const legendEligible = legendStep && hasBelt && !missed && career.lastResult?.won && (
+      perfectSeason ||
+      strongSeason ||
+      career.streak >= 3 ||
+      career.rank <= 1 ||
+      (currentTierTitle(career)?.defenses || 0) >= 1
+    );
     const cleanEnoughForPromotion = !reliabilityBlock && (!financialDrag || nationalPerfectOverride || clauseReady || hasBelt);
     const promotionEligible = Boolean(targets.length) && (
-      (!debtTrouble && (ufcStep ? ufcEligible : localEligible)) ||
+      (!debtTrouble && (legendStep ? legendEligible : ufcStep ? ufcEligible : localEligible)) ||
       (cleanEnoughForPromotion && localEligible)
     );
     const targetLabel = targets.map(org => org.label).join(" / ");
@@ -5906,6 +6042,8 @@
       nationalPerfectOverride,
       internationalStep,
       ufcStep,
+      legendStep,
+      legendEligible,
       hypeTarget,
       charismaTarget,
       activeContractBlock,
@@ -6043,9 +6181,9 @@
     startTrainingBlock();
   }
 
-  function adjustedStats(baseStats, plan) {
+  function adjustedStats(baseStats, plan, cap = 99) {
     const stats = { ...baseStats };
-    if (plan) applyStats(stats, plan.stats);
+    if (plan) applyStats(stats, plan.stats, cap);
     return stats;
   }
 
@@ -6557,7 +6695,7 @@
     const opponent = fight.opponent;
     const rounds = live.rounds || fightRoundsFor(career, fight);
     const round = clamp(live.round || 1, 1, rounds);
-    const fighterStats = adjustedStats(career.stats, plan);
+    const fighterStats = adjustedStats(career.stats, plan, statCapForCareer(career));
     const oppStats = opponent.stats;
     const fatigueImpact = campFatigueImpact(career);
     const effectiveCondition = clamp((career.condition ?? 70) - fatigueImpact.conditionLoss, 0, 100);
@@ -6657,7 +6795,7 @@
       career.hype = clamp(career.hype + fight.hype, 0, 160);
       career.money += fight.money;
       if (orgForTier(career.tier).charismaWin) {
-        career.stats.charisma = clamp((career.stats.charisma || 50) + orgForTier(career.tier).charismaWin, 1, 99);
+        career.stats.charisma = clamp((career.stats.charisma || 50) + orgForTier(career.tier).charismaWin, 1, statCapForCareer(career));
       }
       if (method === "KO" || method === "TKO") career.record.ko += 1;
       else if (method === "Soumission") career.record.sub += 1;
@@ -6699,7 +6837,7 @@
 
     const damage = Math.max(1, Math.round((opponent.overall / 18) + (won ? 1 : 5) + (fight.short ? 3 : 0) + momentDamage + pressDamage + fatigueImpact.damage - career.stats.chin / 35));
     const conditionLoss = Math.max(0, damage + (won ? 5 : 9) + (fight.short ? 4 : 0) + Math.ceil(fatigueImpact.conditionLoss * 0.55));
-    career.stats.durability = clamp(career.stats.durability - damage, 1, 99);
+    career.stats.durability = clamp(career.stats.durability - damage, 1, statCapForCareer(career));
     career.condition = clamp((career.condition || 70) - conditionLoss, 0, 100);
     if (fatigueImpact.injuryRisk) {
       const medical = ensureMedical(career);
@@ -6839,7 +6977,7 @@
     }
     const opponent = fight.opponent;
     const rounds = fightRoundsFor(career, fight);
-    const fighterStats = adjustedStats(career.stats, plan);
+    const fighterStats = adjustedStats(career.stats, plan, statCapForCareer(career));
     const oppStats = opponent.stats;
     const condition = career.condition ?? 70;
     const fatigueImpact = campFatigueImpact(career);
@@ -6937,7 +7075,7 @@
       career.hype = clamp(career.hype + fight.hype, 0, 160);
       career.money += fight.money;
       if (orgForTier(career.tier).charismaWin) {
-        career.stats.charisma = clamp((career.stats.charisma || 50) + orgForTier(career.tier).charismaWin, 1, 99);
+        career.stats.charisma = clamp((career.stats.charisma || 50) + orgForTier(career.tier).charismaWin, 1, statCapForCareer(career));
       }
       if (method === "KO" || method === "TKO") career.record.ko += 1;
       else if (method === "Soumission") career.record.sub += 1;
@@ -6979,7 +7117,7 @@
 
 	    const damage = Math.max(1, Math.round((opponent.overall / 18) + (won ? 1 : 5) + (fight.short ? 3 : 0) + momentDamage + pressDamage + fatigueImpact.damage - career.stats.chin / 35));
 	    const conditionLoss = Math.max(0, damage + (won ? 5 : 9) + (fight.short ? 4 : 0) + Math.ceil(fatigueImpact.conditionLoss * 0.55));
-    career.stats.durability = clamp(career.stats.durability - damage, 1, 99);
+    career.stats.durability = clamp(career.stats.durability - damage, 1, statCapForCareer(career));
     career.condition = clamp((career.condition || 70) - conditionLoss, 0, 100);
     if (fatigueImpact.injuryRisk) {
       const medical = ensureMedical(career);
@@ -7117,9 +7255,10 @@
     const keys = keysByPlan[plan.id] || keysByPlan.balanced;
     for (let i = 0; i < Math.max(1, points); i += 1) {
       const key = keys[Math.floor(nextRand(career) * keys.length)];
-      const cap = career.potential;
-      const gain = career.stats[key] >= cap ? 0 : 1;
-      career.stats[key] = clamp(career.stats[key] + gain, 1, 99);
+      const statCap = statCapForCareer(career);
+      const cap = isLegendCareer(career) ? statCap : career.potential;
+      const gain = career.stats[key] >= cap ? 0 : isLegendCareer(career) && career.stats[key] >= 120 ? 2 : 1;
+      career.stats[key] = clamp(career.stats[key] + gain, 1, statCap);
     }
   }
 
@@ -7133,6 +7272,23 @@
       fights: org.id === "ufc" ? 3 : 4,
       sponsor: org.id === "ufc" ? "Partenaires US prudents" : "Equipementier international",
     };
+    if (org.id === "legend") {
+      return {
+        ...common,
+        id: "move-legend",
+        label: "Entrer chez les Legendes",
+        tag: "Endgame",
+        summary: "Vous quittez le circuit normal: nouveaux adversaires mythiques, combats de prestige et plafond de stats ouvert au-dela de 100.",
+        money: Math.round((160000 + hype * 920 + rep * 620 + charisma * 420) / 1000) * 1000,
+        fights: 5,
+        purseBoost: 1.62,
+        titleClause: "Affiches de legende: chaque victoire compte au Pantheon",
+        contenderWinsRequired: 0,
+        entryRank: 1,
+        sponsor: "Partenaires Hall of Fame",
+        effects: { morale: 8, rep: 18, hype: 24, stats: { charisma: 3, iq: 2, discipline: 2 } },
+      };
+    }
     if (org.id === "ksw") {
       return {
         ...common,
@@ -7280,6 +7436,21 @@
     return false;
   }
 
+  function unlockLegendMode(career) {
+    career.flags = career.flags || {};
+    if (career.flags.legendModeUnlocked) return;
+    career.flags.legendMode = true;
+    career.flags.legendModeUnlocked = true;
+    career.potential = Math.max(career.potential || 0, LEGEND_STAT_CAP);
+    career.moments.push("Statut Legende debloque: le plafond de progression explose et un nouveau pool d'adversaires apparait.");
+    addNews(
+      career,
+      "Statut Legende",
+      `${career.name} entre dans le circuit des legendes. Les stats peuvent maintenant depasser 100 et les affiches deviennent historiques.`,
+      "good"
+    );
+  }
+
   function chooseContract(index) {
     const career = ui.career;
     const offer = career.pendingContracts[index];
@@ -7304,6 +7475,9 @@
     career.rank = offer.entryRank || (offer.tier > 0 && String(offer.id).startsWith("move") ? 18 : career.rank);
     career.flags.fastTrack = false;
     career.flags.contenderClauseReady = false;
+    if (org.id === "legend") {
+      unlockLegendMode(career);
+    }
     career.history.push({
       year: career.year,
       age: career.age,
@@ -7416,7 +7590,7 @@
 	      career.history.push({
 	        year: career.year,
 	        age: career.age,
-	        text: `${severe ? "Dette lourde" : "Dette"}: ${formatMoney(career.money)}. ${effects.map(effect => `${effectLabel(effect.key)} ${effect.value}`).join(", ")}.`,
+	        text: `${severe ? "Dette lourde" : "Dette"}: ${formatMoney(career.money)}. ${effects.map(effect => effectText(effect.key, effect.value)).join(", ")}.`,
 	      });
 	      return;
 	    }
@@ -7428,7 +7602,7 @@
 	      career.history.push({
 	        year: career.year,
 	        age: career.age,
-	        text: `Tresorerie solide: ${effects.map(effect => `${effectLabel(effect.key)} ${effect.value > 0 ? "+" : ""}${effect.value}`).join(", ")}.`,
+	        text: `Tresorerie solide: ${effects.map(effect => effectText(effect.key, effect.value)).join(", ")}.`,
 	      });
 	    }
 	  }
@@ -7546,9 +7720,10 @@
 	    applyFinancialPressure(career);
 	    career.flags.missedSeasonFights = 0;
 	    if (career.age > 33) {
-      career.stats.cardio = clamp(career.stats.cardio - 1, 1, 99);
-      career.stats.durability = clamp(career.stats.durability - 1, 1, 99);
-      career.stats.iq = clamp(career.stats.iq + 1, 1, 99);
+      const statCap = statCapForCareer(career);
+      career.stats.cardio = clamp(career.stats.cardio - 1, 1, statCap);
+      career.stats.durability = clamp(career.stats.durability - 1, 1, statCap);
+      career.stats.iq = clamp(career.stats.iq + 1, 1, statCap);
     }
     startSeason();
   }
@@ -7779,14 +7954,15 @@
 	  }
 
 	  function statBoard(career) {
+	    const cap = statCapForCareer(career);
 	    return `
 	      <div class="stat-board" aria-label="Statistiques">
 	        ${Object.entries(STAT_LABELS).map(([key, label]) => `
 	          <div class="stat-pill">
 	            <span>${iconOnly(statIcon(key), "#")} ${esc(label)}</span>
 	            <strong>${career.stats[key]}</strong>
-	            <div class="stat-bar"><i style="width: ${clamp(career.stats[key], 0, 100)}%"></i></div>
-	            <small>${esc(STAT_HELP[key])}</small>
+	            <div class="stat-bar"><i style="width: ${clamp(((career.stats[key] || 0) / cap) * 100, 0, 100)}%"></i></div>
+	            <small>${esc(STAT_HELP[key])}${cap > 99 ? ` Plafond Legende: ${cap}.` : ""}</small>
           </div>
         `).join("")}
       </div>
@@ -7862,7 +8038,7 @@
 	              ${hasCareer ? `<button class="btn btn-dark" data-action="continue-career">${iconText("play", "Continuer la carriere", ">")}</button>` : ""}
 	            </div>
             <figure class="fight-stage home-art">
-              <img src="./assets/home-fight-legacy.png" alt="Deux combattants de MMA dans la cage">
+              <img src="${assetUrl("home")}" alt="Deux combattants de MMA dans la cage" decoding="async" fetchpriority="high" loading="eager">
             </figure>
           </div>
         </div>
@@ -8021,9 +8197,9 @@
 	  function effectLine(effects = {}) {
 		    const direct = ["money", "rep", "hype", "morale", "condition", "injuryRisk", "medicalCare", "restWeeks", "scandal", "dopingRisk", "doping", "suspension", "rivalry", "locked", "doublePath", "credit"]
 		      .filter(key => effects[key])
-		      .map(key => `${effectLabel(key)} ${effects[key] > 0 ? "+" : ""}${effects[key]}`);
+		      .map(key => effectText(key, effects[key]));
     const stats = Object.entries(effects.stats || {})
-      .map(([key, value]) => `${effectLabel(key)} ${value > 0 ? "+" : ""}${value}`);
+      .map(([key, value]) => effectText(key, value));
     return [...direct, ...stats].join(" / ");
   }
 
@@ -8037,7 +8213,7 @@
 	      .map(effect => `
 	        <span class="effect-chip ${effectIsGood(effect.key, effect.value) ? "good" : "bad"}">
 	          ${iconOnly(effectIcon(effect.key, effect.value), effectIsGood(effect.key, effect.value) ? "+" : "-")}
-	          <span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span>
+	          <span>${esc(effectText(effect.key, effect.value))}</span>
 	        </span>
 		      `).join("");
 		  }
@@ -8966,14 +9142,14 @@
     const visualResults = {
       press: {
         className: "press-result-card",
-        image: "./assets/press-conference-fight-legacy.png",
+        image: assetUrl("press"),
         alt: "Conference de presse MMA stylisee",
         icon: "mic",
         kicker: "Conference de presse",
       },
       doping: {
         className: "doping-result-card",
-        image: "./assets/doping-fight-legacy.png",
+        image: assetUrl("doping"),
         alt: "Controle anti-dopage stylise",
         icon: "syringe",
         kicker: "Protocole anti-dopage",
@@ -8982,18 +9158,15 @@
     const visualResult = visualResults[result.visual] || null;
     const effectsMarkup = (result.effects || []).map(effect => {
       const good = effectIsGood(effect.key, effect.value);
-      return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
+      return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectText(effect.key, effect.value))}</span></span>`;
     }).join("") || `<span class="effect">Aucun effet visible</span>`;
     const nextButton = `<button class="btn btn-primary" data-action="${esc(result.nextAction)}">${iconText(result.nextAction === "to-life-event" ? "calendar-clock" : result.nextAction === "to-medical-rest" ? "heart-pulse" : "arrow-right", result.nextLabel, ">")}</button>`;
     renderShell(`
       <section class="game-screen decision-result-screen ${visualResult ? "visual-result-screen" : ""}">
         ${fighterHeader(career)}
-        ${seasonPanel(career)}
-        ${renderSeasonFocusPanel(career)}
-        ${campContext}
         ${visualResult ? `
           <div class="visual-result-card ${visualResult.className}" style="--visual-image: url('${esc(visualResult.image)}')">
-            <img src="${esc(visualResult.image)}" alt="${esc(visualResult.alt)}">
+            <img src="${esc(visualResult.image)}" alt="${esc(visualResult.alt)}" decoding="async" fetchpriority="high" loading="eager">
             <div class="visual-result-content">
               <span class="visual-result-kicker">${iconOnly(visualResult.icon, "V")} ${esc(visualResult.kicker)}</span>
               <div class="visual-result-copy">
@@ -9004,7 +9177,11 @@
               <div class="menu-actions visual-result-actions">${nextButton}</div>
             </div>
           </div>
-        ` : `
+        ` : ""}
+        ${seasonPanel(career)}
+        ${renderSeasonFocusPanel(career)}
+        ${campContext}
+        ${visualResult ? "" : `
           <div class="story-panel result-story">
             <h3>${esc(result.title)}</h3>
             <p>${esc(result.text)}</p>
@@ -9111,7 +9288,7 @@
         <div class="effect-list">
 	          ${effects.map(effect => {
 	            const good = effectIsGood(effect.key, effect.value);
-	            return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
+	            return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectText(effect.key, effect.value))}</span></span>`;
 	          }).join("") || `<span class="effect">Aucun effet visible</span>`}
 	        </div>
 	        <div class="menu-actions" style="margin-top: 22px">
@@ -9287,7 +9464,7 @@
 	          <div class="effect-list compact">
 	            ${(result.press.effects || []).map(effect => {
 	              const good = effectIsGood(effect.key, effect.value);
-	              return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
+	              return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectText(effect.key, effect.value))}</span></span>`;
 	            }).join("") || `<span class="effect">Aucun effet visible</span>`}
 	          </div>
 	        </div>
@@ -9325,7 +9502,7 @@
 	        <div class="effect-list">
 	          ${(result.effects || []).map(effect => {
 	            const good = effectIsGood(effect.key, effect.value);
-            return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
+            return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectText(effect.key, effect.value))}</span></span>`;
           }).join("")}
         </div>
 	        <div class="menu-actions" style="margin-top: 22px">
@@ -9557,7 +9734,7 @@
 	              <div class="effect-list compact">
 	                ${(moment.effects || []).map(effect => {
 	                  const good = effectIsGood(effect.key, effect.value);
-	                  return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
+	                  return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectText(effect.key, effect.value))}</span></span>`;
 	                }).join("") || `<span class="effect">Aucun effet visible</span>`}
 	              </div>
 	            </div>
@@ -9747,7 +9924,7 @@
           <div class="effect-list compact">
             ${(season.settlement.effects || []).map(effect => {
               const good = effectIsGood(effect.key, effect.value);
-              return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
+              return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectText(effect.key, effect.value))}</span></span>`;
             }).join("") || `<span class="effect">Aucun effet visible</span>`}
           </div>
         </div>
@@ -9760,7 +9937,7 @@
             <div class="effect-list compact">
               ${(item.effects || []).map(effect => {
                 const good = effectIsGood(effect.key, effect.value);
-                return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectLabel(effect.key))} ${effect.value > 0 ? "+" : ""}${esc(effect.value)}</span></span>`;
+                return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectText(effect.key, effect.value))}</span></span>`;
               }).join("")}
             </div>
           `).join("")}
@@ -10116,7 +10293,24 @@
 	    if (["online", "account", "onlineChallenge", "onlineChallengeResult", "menu", "hall"].includes(ui.view)) render();
 	  }
 
+  function waitForSupabaseClient(timeoutMs = 7000) {
+    if (window.supabase?.createClient) return Promise.resolve(true);
+    return new Promise(resolve => {
+      const started = Date.now();
+      const timer = window.setInterval(() => {
+        if (window.supabase?.createClient) {
+          window.clearInterval(timer);
+          resolve(true);
+        } else if (Date.now() - started >= timeoutMs) {
+          window.clearInterval(timer);
+          resolve(false);
+        }
+      }, 80);
+    });
+  }
+
 	  async function initOnline() {
+		    await waitForSupabaseClient();
 		    const client = onlineClient();
 		    if (!client) {
 		      ui.online.error = "Service multijoueur indisponible. Rechargez la page ou reessayez plus tard.";
@@ -12068,6 +12262,14 @@
 	      showToast(error?.message || "Action impossible.");
 	    }
   });
+
+  preloadGameAssets("home");
+  const warmSecondaryAssets = () => preloadGameAssets("press", "doping");
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(warmSecondaryAssets, { timeout: 1800 });
+  } else {
+    window.setTimeout(warmSecondaryAssets, 700);
+  }
 
   render();
   initOnline();
