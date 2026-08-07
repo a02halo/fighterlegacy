@@ -10,7 +10,7 @@
   const SAVE_VERSION = 2;
   const LEGEND_TIER = 6;
   const LEGEND_STAT_CAP = 340;
-  const ASSET_VERSION = "20260807-flc-radar-visuals";
+  const ASSET_VERSION = "20260807-visual-swipe-all";
   const IMAGE_ASSETS = {
     home: "./assets/home-fight-legacy.png",
     press: "./assets/press-conference-fight-legacy.png",
@@ -5608,6 +5608,11 @@
     return null;
   }
 
+  function eventDecisionVisual(event) {
+    const visual = eventResultVisual(event);
+    return visual === "doping" ? visual : null;
+  }
+
   function campOpportunityVisualKey(opportunity) {
     if (!opportunity) return null;
     if (opportunity.id === "bjj-seminar") return "stageGrappling";
@@ -6029,13 +6034,14 @@
 		              ? "Conference de presse"
 		              : "Choisir un combat";
     career.pendingEvent = null;
+    const resultVisual = eventResultVisual(event);
     showDecisionResult(career, {
       title: event.title,
       text: resultText,
       effects,
       nextAction,
       nextLabel,
-      visual: eventResultVisual(event),
+      visual: resultVisual === "doping" ? null : resultVisual,
     });
   }
 
@@ -9396,7 +9402,7 @@
 		    const opportunityVisual = campOpportunityVisualKey(opportunity);
 		    if (opportunityVisual) preloadGameAssets(opportunityVisual);
 			    renderShell(`
-				      <section class="game-screen training-screen ${opportunity ? "quick-choice-screen camp-stage-choice-screen" : ""}">
+				      <section class="game-screen training-screen ${opportunity ? "quick-choice-screen camp-stage-choice-screen" : ""} ${opportunityVisual ? "visual-swipe-screen" : ""}">
 		        ${campPrepPanel(career)}
 		        ${renderCampStatus(career)}
 		        ${renderCampRiskWarning(career)}
@@ -9524,13 +9530,21 @@
       action: "event-option",
 	      attrs: { index },
 	    }));
+	    const decisionVisualKey = eventDecisionVisual(event);
+	    const decisionVisual = visualResultConfig(decisionVisualKey);
+	    if (decisionVisualKey) preloadGameAssets(decisionVisualKey);
 	    renderShell(`
-	      <section class="game-screen ${quickChoice ? "quick-choice-screen life-choice-screen" : ""}">
+	      <section class="game-screen ${quickChoice ? "quick-choice-screen life-choice-screen" : ""} ${decisionVisualKey ? "visual-swipe-screen" : ""}">
 	        ${fighterHeader(career)}
-	        <div class="story-panel">
+	        ${decisionVisual ? "" : `<div class="story-panel">
 	          <h3>${esc(event.title)}</h3>
 	          <p>${esc(event.text)}</p>
-        </div>
+	        </div>`}
+	        ${decisionVisual ? `
+	          <div class="decision-choice-visual">
+	            ${renderVisualResultCard(decisionVisual, event.title, event.text)}
+	          </div>
+	        ` : ""}
         <div class="choice-grid ${event.options.length === 2 ? "binary-choice-grid" : "mobile-option-stack"}">
 	          ${event.options.map((option, index) => `
 	            <button class="choice-btn" data-action="event-option" data-index="${index}">
@@ -9545,6 +9559,7 @@
           kicker: "Vie de combattant",
           title: event.title,
           summary: event.text,
+          visual: decisionVisualKey,
         })}
       </section>
     `);
@@ -9565,13 +9580,21 @@
       action: "event-option",
 	      attrs: { index },
 	    }));
+	    const decisionVisualKey = eventDecisionVisual(event);
+	    const decisionVisual = visualResultConfig(decisionVisualKey);
+	    if (decisionVisualKey) preloadGameAssets(decisionVisualKey);
 	    renderShell(`
-	      <section class="game-screen ${quickChoice ? "quick-choice-screen life-choice-screen" : ""}">
+	      <section class="game-screen ${quickChoice ? "quick-choice-screen life-choice-screen" : ""} ${decisionVisualKey ? "visual-swipe-screen" : ""}">
 	        ${fighterHeader(career)}
-	        <div class="story-panel">
+	        ${decisionVisual ? "" : `<div class="story-panel">
 	          <h3>${esc(event.title)}</h3>
           <p>${esc(event.text)}</p>
-        </div>
+	        </div>`}
+	        ${decisionVisual ? `
+	          <div class="decision-choice-visual">
+	            ${renderVisualResultCard(decisionVisual, event.title, event.text)}
+	          </div>
+	        ` : ""}
         <div class="choice-grid ${event.options.length === 2 ? "binary-choice-grid" : "mobile-option-stack"}">
 	          ${event.options.map((option, index) => `
 	            <button class="choice-btn" data-action="event-option" data-index="${index}">
@@ -9586,6 +9609,7 @@
           kicker: "Fight week",
           title: event.title,
           summary: event.text,
+          visual: decisionVisualKey,
         })}
       </section>
     `);
@@ -10130,41 +10154,45 @@
       : "La commission ou le staff impose une coupure. Pas de camp, pas de signature: on soigne, on teste, puis on reprend.";
     const restVisual = visualResultConfig(medicalRestVisualKey(career));
     const restRiskGood = medical.injuryRisk < 35;
-    const restVisualEffects = restVisual ? [
-      `<span class="effect bad">${iconOnly("calendar-clock", "-")}<span>Repos ${esc(formatRestWeeks(medical.restWeeks))}</span></span>`,
-      `<span class="effect ${restRiskGood ? "good" : "bad"}">${iconOnly("activity", restRiskGood ? "+" : "-")}<span>Risque ${medical.injuryRisk}/90</span></span>`,
-      `<span class="effect good">${iconOnly("heart", "+")}<span>Sante ${career.stats.durability}/99</span></span>`,
-    ].join("") : "";
-    renderShell(`
-      <section class="game-screen medical-rest-screen ${restVisual ? "visual-result-screen" : ""}">
-        ${fighterHeader(career)}
-        ${renderVisualResultCard(restVisual, "Repos medical", restText, restVisualEffects)}
-        ${seasonPanel(career)}
-        ${renderSeasonFocusPanel(career)}
-        ${restVisual ? "" : `<div class="story-panel">
-          <h3>Repos medical</h3>
-          <p>${esc(restText)}</p>
+	    const restVisualEffects = restVisual ? [
+	      `<span class="effect bad">${iconOnly("calendar-clock", "-")}<span>Repos ${esc(formatRestWeeks(medical.restWeeks))}</span></span>`,
+	      `<span class="effect ${restRiskGood ? "good" : "bad"}">${iconOnly("activity", restRiskGood ? "+" : "-")}<span>Risque ${medical.injuryRisk}/90</span></span>`,
+	      `<span class="effect good">${iconOnly("heart", "+")}<span>Sante ${career.stats.durability}/99</span></span>`,
+	    ].join("") : "";
+	    const medicalProtocolChoices = `
+	      <div class="story-panel slim medical-protocol-intro">
+	        <h3>Choisir la recuperation</h3>
+	        <p>Le repos passe quoi qu'il arrive, mais la maniere de revenir change le risque residuel, la forme, la sante et l'argent disponible.</p>
+	      </div>
+	      <div class="choice-grid two medical-protocols">
+	        ${MEDICAL_PROTOCOLS.map(protocol => `
+	          <button class="choice-btn protocol-choice" data-action="choose-medical-protocol" data-id="${protocol.id}">
+	            <span class="choice-icon">${iconOnly(protocolIcon(protocol.id), "M")}</span>
+	            <strong>${esc(protocol.label)}</strong>
+	            <span class="choice-summary">${esc(protocol.summary)}</span>
+	            <small>${esc(effectLine(protocol.effects))}</small>
+	          </button>
+	        `).join("")}
+	      </div>
+	    `;
+	    renderShell(`
+	      <section class="game-screen medical-rest-screen ${restVisual ? "visual-result-screen" : ""}">
+	        ${fighterHeader(career)}
+	        ${renderVisualResultCard(restVisual, "Repos medical", restText, restVisualEffects)}
+	        ${restVisual ? medicalProtocolChoices : ""}
+	        ${seasonPanel(career)}
+	        ${renderSeasonFocusPanel(career)}
+	        ${restVisual ? "" : `<div class="story-panel">
+	          <h3>Repos medical</h3>
+	          <p>${esc(restText)}</p>
         </div>`}
 	        <div class="summary-grid">
 	          <div class="summary-item"><span>${iconOnly("calendar-clock", "R")} Repos</span><strong>${formatRestWeeks(medical.restWeeks)}</strong></div>
 	          <div class="summary-item"><span>${iconOnly("activity", "B")} Risque</span><strong>${medical.injuryRisk}/90</strong></div>
-	          <div class="summary-item"><span>${iconOnly("heart-pulse", "F")} Forme</span><strong>${career.condition}/100</strong></div>
-	          <div class="summary-item"><span>${iconOnly("heart", "S")} Sante</span><strong>${career.stats.durability}/99</strong></div>
-	        </div>
-	        <div class="story-panel slim">
-	          <h3>Choisir la recuperation</h3>
-	          <p>Le repos passe quoi qu'il arrive, mais la maniere de revenir change le risque residuel, la forme, la sante et l'argent disponible.</p>
-	        </div>
-	        <div class="choice-grid two medical-protocols">
-          ${MEDICAL_PROTOCOLS.map(protocol => `
-            <button class="choice-btn protocol-choice" data-action="choose-medical-protocol" data-id="${protocol.id}">
-              <span class="choice-icon">${iconOnly(protocolIcon(protocol.id), "M")}</span>
-              <strong>${esc(protocol.label)}</strong>
-              <span class="choice-summary">${esc(protocol.summary)}</span>
-              <small>${esc(effectLine(protocol.effects))}</small>
-	            </button>
-	          `).join("")}
-	        </div>
+		          <div class="summary-item"><span>${iconOnly("heart-pulse", "F")} Forme</span><strong>${career.condition}/100</strong></div>
+		          <div class="summary-item"><span>${iconOnly("heart", "S")} Sante</span><strong>${career.stats.durability}/99</strong></div>
+		        </div>
+		        ${restVisual ? "" : medicalProtocolChoices}
 	        <div class="context-grid medical-rest-details">
 	          ${renderMedicalPanel(career)}
 	          ${renderNewsPanel(career, 4)}
@@ -12238,8 +12266,8 @@
 		    return window.matchMedia?.("(max-width: 620px)").matches || window.innerWidth <= 620;
 		  }
 
-		  function mobileSwipeEnabled() {
-		    return mobileViewport();
+		  function mobileSwipeEnabled(card = null) {
+		    return mobileViewport() || Boolean(card?.classList?.contains("has-swipe-visual"));
 		  }
 
 		  function syncMobileNavState() {
@@ -12264,7 +12292,7 @@
 
 	  app.addEventListener("pointerdown", event => {
 	    const card = event.target.closest?.("[data-swipe-card]");
-	    if (!card || !mobileSwipeEnabled()) return;
+	    if (!card || !mobileSwipeEnabled(card)) return;
 	    activeSwipe = {
 	      card,
 	      deck: card.closest("[data-swipe-deck]"),

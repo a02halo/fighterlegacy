@@ -1144,6 +1144,256 @@ input:focus-visible {
   display: none;
 }
 
+.visual-swipe-screen .stage-choice-visual,
+.visual-swipe-screen .decision-choice-visual,
+.visual-swipe-screen .choice-grid.binary-choice-grid {
+  display: none;
+}
+
+.visual-swipe-screen .swipe-choice-deck {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0 18px;
+}
+
+.visual-swipe-screen .swipe-choice-card.has-swipe-visual {
+  background: #11100e;
+  border: 1px solid rgba(214, 165, 59, 0.52);
+  border-radius: var(--radius);
+  box-shadow: 0 24px 52px rgba(23, 19, 15, 0.24);
+  color: var(--paper);
+  display: grid;
+  gap: 18px;
+  min-height: clamp(500px, 48vw, 740px);
+  overflow: hidden;
+  padding: clamp(22px, 4vw, 44px);
+  position: relative;
+  touch-action: pan-y;
+  transition: transform 170ms ease, border-color 170ms ease, box-shadow 170ms ease;
+  user-select: none;
+}
+
+.visual-swipe-screen .swipe-card-visual,
+.visual-swipe-screen .swipe-card-visual-shade {
+  inset: 0;
+  position: absolute;
+}
+
+.visual-swipe-screen .swipe-card-visual {
+  block-size: 100%;
+  inline-size: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.96;
+  transform: scale(1.01);
+  transition: transform 170ms ease, filter 170ms ease;
+  z-index: 0;
+}
+
+.visual-swipe-screen .stage-daghestan-result-card .swipe-card-visual {
+  object-position: center 46%;
+}
+
+.visual-swipe-screen .stage-striking-result-card .swipe-card-visual,
+.visual-swipe-screen .stage-grappling-result-card .swipe-card-visual,
+.visual-swipe-screen .doping-result-card .swipe-card-visual {
+  object-position: center 42%;
+}
+
+.visual-swipe-screen .swipe-card-visual-shade {
+  background:
+    linear-gradient(180deg, rgba(13, 10, 8, 0.18) 0%, rgba(13, 10, 8, 0.48) 48%, rgba(13, 10, 8, 0.88) 100%),
+    linear-gradient(110deg, rgba(130, 35, 39, 0.34), rgba(8, 24, 22, 0.12) 52%, rgba(8, 24, 22, 0.42));
+  transition: background 170ms ease;
+  z-index: 1;
+}
+
+.visual-swipe-screen .swipe-card-top,
+.visual-swipe-screen .swipe-card-options {
+  position: relative;
+  z-index: 2;
+}
+
+.visual-swipe-screen .swipe-card-top {
+  display: grid;
+  gap: 10px;
+  max-width: 900px;
+  padding-top: 10px;
+}
+
+.visual-swipe-screen .swipe-card-top span {
+  align-items: center;
+  color: var(--gold);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 950;
+  gap: 7px;
+  text-transform: uppercase;
+}
+
+.visual-swipe-screen .swipe-card-top strong {
+  color: var(--paper);
+  font-size: clamp(38px, 5.8vw, 82px);
+  font-weight: 950;
+  line-height: 0.92;
+  overflow-wrap: anywhere;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.72);
+  text-transform: uppercase;
+}
+
+.visual-swipe-screen .swipe-card-top p {
+  color: rgba(255, 250, 240, 0.92);
+  font-size: clamp(16px, 2vw, 24px);
+  font-weight: 760;
+  line-height: 1.34;
+  margin: 0;
+  max-width: 900px;
+  text-shadow: 0 3px 18px rgba(0, 0, 0, 0.72);
+}
+
+.visual-swipe-screen .swipe-card-options {
+  align-self: end;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: auto;
+}
+
+.visual-swipe-screen .swipe-card-options div {
+  background: rgba(255, 250, 240, 0.1);
+  border: 1px solid rgba(255, 250, 240, 0.18);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 7px;
+  min-height: 126px;
+  padding: 14px;
+}
+
+.visual-swipe-screen .swipe-card-options div:first-child {
+  border-color: rgba(215, 52, 56, 0.44);
+}
+
+.visual-swipe-screen .swipe-card-options div:last-child {
+  border-color: rgba(11, 157, 136, 0.44);
+  text-align: right;
+}
+
+.visual-swipe-screen .swipe-card-options em {
+  align-items: center;
+  color: var(--gold);
+  display: inline-flex;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 950;
+  gap: 5px;
+  text-transform: uppercase;
+}
+
+.visual-swipe-screen .swipe-card-options div:last-child em {
+  justify-content: flex-end;
+}
+
+.visual-swipe-screen .swipe-card-options b {
+  color: var(--paper);
+  font-size: clamp(16px, 1.8vw, 24px);
+  font-weight: 950;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.visual-swipe-screen .swipe-card-options small {
+  color: rgba(255, 250, 240, 0.82);
+  font-size: clamp(12px, 1.2vw, 15px);
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+.visual-swipe-screen .swipe-choice-actions {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.visual-swipe-screen .swipe-choice-card::before,
+.visual-swipe-screen .swipe-choice-card::after {
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
+  font-size: 12px;
+  font-weight: 950;
+  max-width: calc(50% - 24px);
+  opacity: 0;
+  overflow: hidden;
+  padding: 9px 12px;
+  position: absolute;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  top: 14px;
+  transform: scale(1);
+  transition: opacity 120ms ease, transform 120ms ease, background 120ms ease;
+  white-space: nowrap;
+  z-index: 4;
+}
+
+.visual-swipe-screen .swipe-choice-card::before {
+  background: rgba(215, 52, 56, 0.2);
+  color: #ffb0b0;
+  content: attr(data-left-label);
+  left: 14px;
+}
+
+.visual-swipe-screen .swipe-choice-card::after {
+  background: rgba(11, 157, 136, 0.2);
+  color: #9fe6d3;
+  content: attr(data-right-label);
+  right: 14px;
+}
+
+.visual-swipe-screen .swipe-choice-card.is-dragging {
+  transition: none;
+}
+
+.visual-swipe-screen .swipe-choice-card.swipe-left {
+  border-color: rgba(215, 52, 56, 0.88);
+  box-shadow: -18px 22px 46px rgba(144, 30, 37, 0.3), 0 0 0 3px rgba(215, 52, 56, 0.12);
+}
+
+.visual-swipe-screen .swipe-choice-card.swipe-right {
+  border-color: rgba(11, 157, 136, 0.88);
+  box-shadow: 18px 22px 46px rgba(11, 157, 136, 0.28), 0 0 0 3px rgba(11, 157, 136, 0.12);
+}
+
+.visual-swipe-screen .swipe-choice-card.swipe-left .swipe-card-visual-shade {
+  background:
+    linear-gradient(180deg, rgba(13, 10, 8, 0.24) 0%, rgba(13, 10, 8, 0.6) 50%, rgba(13, 10, 8, 0.9) 100%),
+    linear-gradient(100deg, rgba(215, 52, 56, 0.58), rgba(36, 17, 17, 0.48) 55%, rgba(13, 10, 8, 0.54));
+}
+
+.visual-swipe-screen .swipe-choice-card.swipe-right .swipe-card-visual-shade {
+  background:
+    linear-gradient(180deg, rgba(13, 10, 8, 0.22) 0%, rgba(13, 10, 8, 0.58) 50%, rgba(13, 10, 8, 0.88) 100%),
+    linear-gradient(260deg, rgba(11, 157, 136, 0.58), rgba(18, 48, 42, 0.5) 55%, rgba(13, 10, 8, 0.54));
+}
+
+.visual-swipe-screen .swipe-choice-card.swipe-left .swipe-card-visual,
+.visual-swipe-screen .swipe-choice-card.swipe-right .swipe-card-visual {
+  filter: saturate(1.08) contrast(1.05);
+  transform: scale(1.035);
+}
+
+.visual-swipe-screen .swipe-choice-card.swipe-left::before,
+.visual-swipe-screen .swipe-choice-card.swipe-right::after {
+  opacity: 1;
+  transform: scale(1.06);
+}
+
+.visual-swipe-screen .swipe-choice-card.swipe-left .swipe-card-options div:first-child,
+.visual-swipe-screen .swipe-choice-card.swipe-right .swipe-card-options div:last-child {
+  background: rgba(255, 250, 240, 0.18);
+  border-color: currentColor;
+}
+
 .contract-offer-card {
   align-content: start;
 }
@@ -2303,6 +2553,15 @@ input:focus-visible {
 .stage-choice-visual .visual-result-card {
   margin: 12px 0 16px;
   min-height: clamp(470px, 48vw, 690px);
+}
+
+.decision-choice-visual .visual-result-card {
+  margin: 12px 0 16px;
+  min-height: clamp(460px, 46vw, 680px);
+}
+
+.medical-rest-screen.visual-result-screen .medical-protocol-intro {
+  margin-top: 16px;
 }
 
 .visual-result-content {
@@ -4494,7 +4753,8 @@ input:focus-visible {
 
 	  .life-choice-screen .story-panel,
 	  .life-choice-screen .season-panel,
-	  .life-choice-screen .focus-panel {
+	  .life-choice-screen .focus-panel,
+	  .life-choice-screen .decision-choice-visual {
 	    display: none;
 	  }
 
@@ -4678,6 +4938,11 @@ input:focus-visible {
   .swipe-choice-card.has-swipe-visual {
     background: #11100e;
     min-height: clamp(380px, 62svh, 560px);
+  }
+
+  .visual-swipe-screen .swipe-choice-card.has-swipe-visual {
+    min-height: clamp(380px, 62svh, 560px);
+    padding: 14px;
   }
 
   .swipe-card-visual,
