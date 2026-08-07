@@ -1173,6 +1173,10 @@ input:focus-visible {
   user-select: none;
 }
 
+.camp-stage-choice-screen.visual-swipe-screen .swipe-choice-card.has-swipe-visual {
+  min-height: min(90vh, 900px);
+}
+
 .visual-swipe-screen .swipe-card-visual,
 .visual-swipe-screen .swipe-card-visual-shade {
   inset: 0;
@@ -1190,11 +1194,13 @@ input:focus-visible {
   z-index: 0;
 }
 
-.visual-swipe-screen .stage-daghestan-result-card .swipe-card-visual {
+.visual-swipe-screen .stage-daghestan-result-card .swipe-card-visual,
+.visual-swipe-screen .stage-daghestan-alt-result-card .swipe-card-visual {
   object-position: center 46%;
 }
 
 .visual-swipe-screen .stage-striking-result-card .swipe-card-visual,
+.visual-swipe-screen .stage-striking-alt-result-card .swipe-card-visual,
 .visual-swipe-screen .stage-grappling-result-card .swipe-card-visual,
 .visual-swipe-screen .doping-result-card .swipe-card-visual {
   object-position: center 42%;
@@ -2473,8 +2479,36 @@ input:focus-visible {
     linear-gradient(180deg, rgba(4, 10, 18, 0.02) 0%, rgba(4, 10, 18, 0.13) 42%, rgba(4, 10, 18, 0.8) 100%);
 }
 
+.press-result-card,
+.press-pique-result-card,
+.press-brawl-result-card {
+  background:
+    linear-gradient(135deg, rgba(94, 76, 214, 0.22), transparent 42%),
+    #0b0b10;
+}
+
+.press-result-card img,
+.press-pique-result-card img,
+.press-brawl-result-card img {
+  object-position: center 42%;
+  opacity: 0.94;
+}
+
+.press-brawl-result-card img {
+  object-position: center 48%;
+}
+
+.press-result-card::before,
+.press-pique-result-card::before,
+.press-brawl-result-card::before {
+  background:
+    linear-gradient(90deg, rgba(8, 7, 11, 0.78) 0%, rgba(8, 7, 11, 0.44) 46%, rgba(8, 7, 11, 0.08) 100%),
+    linear-gradient(180deg, rgba(8, 7, 11, 0.02) 0%, rgba(8, 7, 11, 0.13) 40%, rgba(8, 7, 11, 0.78) 100%);
+}
+
 .stage-grappling-result-card,
 .stage-striking-result-card,
+.stage-striking-alt-result-card,
 .training-injury-result-card {
   background:
     linear-gradient(135deg, rgba(214, 165, 59, 0.22), transparent 42%),
@@ -2486,7 +2520,8 @@ input:focus-visible {
   opacity: 0.94;
 }
 
-.stage-striking-result-card img {
+.stage-striking-result-card img,
+.stage-striking-alt-result-card img {
   object-position: center 40%;
   opacity: 0.94;
 }
@@ -2498,41 +2533,48 @@ input:focus-visible {
 
 .stage-grappling-result-card::before,
 .stage-striking-result-card::before,
+.stage-striking-alt-result-card::before,
 .training-injury-result-card::before {
   background:
     linear-gradient(90deg, rgba(13, 12, 10, 0.82) 0%, rgba(13, 12, 10, 0.48) 45%, rgba(13, 12, 10, 0.08) 100%),
     linear-gradient(180deg, rgba(13, 12, 10, 0.02) 0%, rgba(13, 12, 10, 0.14) 38%, rgba(13, 12, 10, 0.82) 100%);
 }
 
-.stage-daghestan-result-card {
+.stage-daghestan-result-card,
+.stage-daghestan-alt-result-card {
   background:
     linear-gradient(135deg, rgba(106, 139, 156, 0.26), transparent 44%),
     #10151a;
 }
 
-.stage-daghestan-result-card img {
+.stage-daghestan-result-card img,
+.stage-daghestan-alt-result-card img {
   object-position: center 47%;
   opacity: 0.92;
 }
 
-.stage-daghestan-result-card::before {
+.stage-daghestan-result-card::before,
+.stage-daghestan-alt-result-card::before {
   background:
     linear-gradient(90deg, rgba(8, 11, 12, 0.76) 0%, rgba(8, 11, 12, 0.44) 48%, rgba(8, 11, 12, 0.08) 100%),
     linear-gradient(180deg, rgba(8, 11, 12, 0.06) 0%, rgba(8, 11, 12, 0.22) 42%, rgba(8, 11, 12, 0.82) 100%);
 }
 
-.contract-signing-result-card {
+.contract-signing-result-card,
+.contract-signing-alt-result-card {
   background:
     linear-gradient(135deg, rgba(226, 155, 54, 0.3), transparent 42%),
     #1a1009;
 }
 
-.contract-signing-result-card img {
+.contract-signing-result-card img,
+.contract-signing-alt-result-card img {
   object-position: center 47%;
   opacity: 0.94;
 }
 
-.contract-signing-result-card::before {
+.contract-signing-result-card::before,
+.contract-signing-alt-result-card::before {
   background:
     linear-gradient(90deg, rgba(19, 11, 5, 0.82) 0%, rgba(19, 11, 5, 0.5) 46%, rgba(19, 11, 5, 0.1) 100%),
     linear-gradient(180deg, rgba(19, 11, 5, 0.02) 0%, rgba(19, 11, 5, 0.16) 42%, rgba(19, 11, 5, 0.82) 100%);
@@ -2553,6 +2595,11 @@ input:focus-visible {
 .stage-choice-visual .visual-result-card {
   margin: 12px 0 16px;
   min-height: clamp(470px, 48vw, 690px);
+}
+
+.press-choice-visual .visual-result-card {
+  margin: 0 0 18px;
+  min-height: clamp(500px, 46vw, 720px);
 }
 
 .decision-choice-visual .visual-result-card {
@@ -4956,6 +5003,10 @@ input:focus-visible {
     padding: 14px;
   }
 
+  .camp-stage-choice-screen.visual-swipe-screen .swipe-choice-card.has-swipe-visual {
+    min-height: min(90svh, 760px);
+  }
+
   .swipe-card-visual,
   .swipe-card-visual-shade {
     inset: 0;
@@ -4973,17 +5024,20 @@ input:focus-visible {
     z-index: 0;
   }
 
-  .stage-daghestan-result-card .swipe-card-visual {
+  .stage-daghestan-result-card .swipe-card-visual,
+  .stage-daghestan-alt-result-card .swipe-card-visual {
     object-position: center 46%;
   }
 
   .stage-striking-result-card .swipe-card-visual,
+  .stage-striking-alt-result-card .swipe-card-visual,
   .stage-grappling-result-card .swipe-card-visual,
   .training-injury-result-card .swipe-card-visual {
     object-position: center 42%;
   }
 
   .contract-signing-result-card .swipe-card-visual,
+  .contract-signing-alt-result-card .swipe-card-visual,
   .steakhouse-result-card .swipe-card-visual,
   .camp-diet-result-card .swipe-card-visual {
     object-position: center 48%;
@@ -5335,7 +5389,8 @@ input:focus-visible {
 
 		  .camp-diet-result-card::before,
 		  .steakhouse-result-card::before,
-		  .contract-signing-result-card::before {
+		  .contract-signing-result-card::before,
+		  .contract-signing-alt-result-card::before {
 		    background:
 		      linear-gradient(180deg, rgba(18, 9, 4, 0.02) 0%, rgba(18, 9, 4, 0.08) 34%, rgba(18, 9, 4, 0.58) 68%, rgba(18, 9, 4, 0.92) 100%),
 		      linear-gradient(90deg, rgba(18, 9, 4, 0.12), rgba(18, 9, 4, 0.04));
@@ -5343,13 +5398,15 @@ input:focus-visible {
 
 		  .stage-grappling-result-card::before,
 		  .stage-striking-result-card::before,
+		  .stage-striking-alt-result-card::before,
 		  .training-injury-result-card::before {
 		    background:
 		      linear-gradient(180deg, rgba(10, 10, 10, 0.02) 0%, rgba(10, 10, 10, 0.08) 32%, rgba(10, 10, 10, 0.58) 68%, rgba(10, 10, 10, 0.92) 100%),
 		      linear-gradient(90deg, rgba(36, 18, 10, 0.16), rgba(10, 10, 10, 0.04));
 		  }
 
-		  .stage-daghestan-result-card::before {
+		  .stage-daghestan-result-card::before,
+		  .stage-daghestan-alt-result-card::before {
 		    background:
 		      linear-gradient(180deg, rgba(15, 18, 20, 0.08) 0%, rgba(15, 18, 20, 0.16) 35%, rgba(15, 18, 20, 0.62) 70%, rgba(15, 18, 20, 0.92) 100%),
 		      linear-gradient(90deg, rgba(15, 18, 20, 0.2), rgba(15, 18, 20, 0.05));

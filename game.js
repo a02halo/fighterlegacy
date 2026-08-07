@@ -10,10 +10,12 @@
   const SAVE_VERSION = 2;
   const LEGEND_TIER = 6;
   const LEGEND_STAT_CAP = 340;
-  const ASSET_VERSION = "20260807-contract-visuals-all";
+  const ASSET_VERSION = "20260807-press-stage-variants";
   const IMAGE_ASSETS = {
     home: "./assets/home-fight-legacy.png",
     press: "./assets/press-conference-fight-legacy.png",
+    pressPique: "./assets/confpresse-pique-9-16.png",
+    pressBrawl: "./assets/confpresse-brawl-9-16.png",
     doping: "./assets/doping-fight-legacy.png",
     podcast: "./assets/podcastcousin-9-16.png",
     medicalRest: "./assets/reposmedical-9-16.png",
@@ -21,8 +23,11 @@
     steakhouse: "./assets/steackhouse-fight.png",
     stageGrappling: "./assets/stage-sol-9-16.png",
     stageStriking: "./assets/stage-striking-9-16.png",
+    stageStrikingAlt: "./assets/stage-striking-2-9-16.png",
     stageDaghestan: "./assets/stage-daghestan-9-16.png",
+    stageDaghestanAlt: "./assets/stage-daghestan-2-9-16.png",
     contractSigning: "./assets/signaturecontrats-9-16.png",
+    contractSigningAlt: "./assets/signaturecontrats-2-9-16.png",
     trainingInjury: "./assets/blessureentrainement.png",
   };
 
@@ -281,6 +286,7 @@
     "Ceinture internationale",
     "Titre majeur",
     "Champion du monde",
+    "Ceinture FLC",
     "Ceinture UFC",
   ]);
 
@@ -1969,19 +1975,19 @@
       text: "Un coach de pieds-poings propose une semaine entiere de pads, low kicks et sparring leger. Le sol attendra.",
       campOnly: true,
       options: [
-        { label: "Prendre la semaine debout", tag: "Striking", result: "Votre distance devient plus nette et les entrees adverses se paient plus cher. Le grappling perd du volume.", load: 2, risk: 6, effects: { money: -5000, condition: -3, stats: { striking: 5, power: 1, grappling: -1 } } },
-        { label: "Refuser le stage", tag: "Refus", result: "Vous ne partez pas sur ce tunnel debout. Le camp reprend son fil normal: choisissez l'entrainement de la semaine.", load: 0, risk: 0, effects: {}, skipOpportunity: true },
+        { label: "Prendre la semaine debout", tag: "Striking", result: "Votre distance devient plus nette et les entrees adverses se paient plus cher.", load: 2, risk: 6, effects: { money: -5000, condition: -3, stats: { striking: 5, power: 1, grappling: -1 } } },
+        { label: "Refuser le stage", tag: "Refus", result: "Vous ne partez pas sur ce tunnel debout. Le camp reprend son fil normal: choisissez l'entrainement de la semaine.", summary: "Aucun effet immediat.", load: 0, risk: 0, effects: {}, skipOpportunity: true },
       ],
     },
     {
       id: "dagestan-years",
       title: "Deux ou trois ans au Daghestan",
-      text: "Un coach de sambo vous vend une immersion de montagne: lutte, sorties de cage, controle au sol. Version acceleree, douleur incluse.",
+      text: "Un coach de sambo vous propose une immersion de montagne: lutte, sorties de cage et controle au sol.",
       campOnly: true,
       minTier: 1,
       options: [
-	        { label: "Accepter la montagne", tag: "Sambo", result: "Le corps prend cher, mais votre controle cage-sol change de densite. Debout, une semaine disparait.", load: 4, risk: 13, effects: { money: -14000, morale: -3, condition: -8, injuryRisk: 5, stats: { wrestling: 5, grappling: 4, discipline: 2, striking: -2, charisma: -1 } } },
-	        { label: "Refuser le stage", tag: "Refus", result: "Vous refusez l'immersion. Pas de compromis bizarre: le camp reprend son fil normal et vous choisissez l'entrainement de la semaine.", load: 0, risk: 0, effects: {}, skipOpportunity: true },
+	        { label: "Accepter la montagne", tag: "Sambo", result: "Le corps prend cher, mais votre controle cage-sol change de densite.", load: 4, risk: 13, effects: { money: -14000, morale: -3, condition: -8, injuryRisk: 5, stats: { wrestling: 5, grappling: 4, discipline: 2, striking: -2 } } },
+	        { label: "Refuser le stage", tag: "Refus", result: "Vous refusez l'immersion. Le camp reprend son fil normal.", summary: "Aucun cout. Aucun effet immediat.", load: 0, risk: 0, effects: {}, skipOpportunity: true },
 	      ],
 	    },
     {
@@ -2049,8 +2055,9 @@
     {
       id: "move-up",
       title: "Double champion ?",
-      text: "La categorie du dessus manque de stars. Votre manager voit une legende en deux ceintures.",
-      minTier: 3,
+      text: "Votre ceinture FLC attire une autre categorie. Votre manager voit une legende en deux ceintures.",
+      minTier: 5,
+      requiresCurrentTitle: true,
       options: [
         { label: "Monter chercher l'histoire", tag: "Legacy", result: "Les affiches sont enormes. Les adversaires aussi.", effects: { hype: 12, rep: 6, stats: { power: 1, cardio: -2, chin: -1 }, doublePath: 1 } },
         { label: "Defendre votre territoire", tag: "Dynastie", result: "Vous choisissez le regne plutot que le vertige.", effects: { rep: 4, stats: { discipline: 3, durability: 1 } } },
@@ -2272,6 +2279,12 @@
       img.loading = "eager";
       img.src = src;
     });
+  }
+
+  function visualVariantKey(baseKey, variants = [], seed = "") {
+    const keys = [baseKey, ...variants].filter(Boolean);
+    if (keys.length <= 1) return keys[0] || baseKey;
+    return keys[hashSeed(String(seed || baseKey)) % keys.length];
   }
 
 	  function hydrateIcons() {
@@ -3459,6 +3472,7 @@
 	    if (event.minAge && career.age < event.minAge) return false;
 	    if (event.maxAge && career.age > event.maxAge) return false;
 	    if (event.minTier && career.tier < event.minTier) return false;
+	    if (event.requiresCurrentTitle && !hasCurrentTierTitle(career)) return false;
 	    if (event.minHype && career.hype < event.minHype) return false;
 	    if (event.minRep && career.rep < event.minRep) return false;
 	    if (event.requiresRecentLoss && career.lastResult?.won !== false) return false;
@@ -4331,7 +4345,7 @@
 	      startFightSelection();
 	      return;
 	    }
-	    preloadGameAssets("press");
+	    preloadGameAssets("press", "pressPique", "pressBrawl");
 	    if (hasMedicalRest(career)) {
 	      routeMedicalRest("La conference attendra le feu vert medical.");
 	      return;
@@ -4382,12 +4396,13 @@
 	      text: `Conference contre ${fight.opponent.name}: ${option.label}.`,
 	    });
 	    if (hasMedicalRest(career)) cancelPendingFightForMedical(career, "Incident en conference de presse.");
-	    preloadGameAssets("press");
+	    const pressVisual = pressVisualKeyForOption(option);
+	    preloadGameAssets("press", "pressPique", "pressBrawl");
 	    showDecisionResult(career, {
 	      title: "Conference de presse",
 	      text: resultText,
 	      effects,
-	      visual: "press",
+	      visual: pressVisual,
 	      nextAction: hasMedicalRest(career) ? "to-medical-rest" : "to-fight-plan",
 	      nextLabel: hasMedicalRest(career) ? "Repos medical" : "Plan de coin",
 	    });
@@ -5613,12 +5628,38 @@
     return visual === "doping" ? visual : null;
   }
 
-  function campOpportunityVisualKey(opportunity) {
+  function pressVisualKeyForOption(option) {
+    if (option?.id === "personal-trash") return "pressPique";
+    if (option?.id === "staredown-push") return "pressBrawl";
+    return "press";
+  }
+
+  function campOpportunityVisualKey(opportunity, career = ui.career) {
     if (!opportunity) return null;
     if (opportunity.id === "bjj-seminar") return "stageGrappling";
-    if (opportunity.id === "striking-seminar") return "stageStriking";
-    if (opportunity.id === "dagestan-years") return "stageDaghestan";
+    if (opportunity.id === "striking-seminar") {
+      return visualVariantKey(
+        "stageStriking",
+        ["stageStrikingAlt"],
+        `${career?.seed || ""}|${career?.year || ""}|${career?.pendingFight?.opponent?.name || ""}|${career?.camp?.week || ""}|${opportunity.id}`
+      );
+    }
+    if (opportunity.id === "dagestan-years") {
+      return visualVariantKey(
+        "stageDaghestan",
+        ["stageDaghestanAlt"],
+        `${career?.seed || ""}|${career?.year || ""}|${career?.pendingFight?.opponent?.name || ""}|${career?.camp?.week || ""}|${opportunity.id}`
+      );
+    }
     return null;
+  }
+
+  function contractSigningVisualKey(career = ui.career, context = "") {
+    return visualVariantKey(
+      "contractSigning",
+      ["contractSigningAlt"],
+      `${career?.seed || ""}|${career?.year || ""}|${career?.season?.fightsDone || 0}|${context}`
+    );
   }
 
   function medicalRestVisualKey(career) {
@@ -5635,6 +5676,20 @@
         alt: "Conference de presse MMA stylisee",
         icon: "mic",
         kicker: "Conference de presse",
+      },
+      pressPique: {
+        className: "press-pique-result-card",
+        image: assetUrl("pressPique"),
+        alt: "Conference de presse tendue apres une attaque personnelle",
+        icon: "message-circle-warning",
+        kicker: "Attaque personnelle",
+      },
+      pressBrawl: {
+        className: "press-brawl-result-card",
+        image: assetUrl("pressBrawl"),
+        alt: "Bousculade pendant un face-off de conference de presse",
+        icon: "shield-alert",
+        kicker: "Face-off sous tension",
       },
       doping: {
         className: "doping-result-card",
@@ -5685,6 +5740,13 @@
         icon: "target",
         kicker: "Stage striking",
       },
+      stageStrikingAlt: {
+        className: "stage-striking-alt-result-card",
+        image: assetUrl("stageStrikingAlt"),
+        alt: "Stage de striking MMA alternatif",
+        icon: "target",
+        kicker: "Stage striking",
+      },
       stageDaghestan: {
         className: "stage-daghestan-result-card",
         image: assetUrl("stageDaghestan"),
@@ -5692,10 +5754,24 @@
         icon: "mountain-snow",
         kicker: "Stage au Daghestan",
       },
+      stageDaghestanAlt: {
+        className: "stage-daghestan-alt-result-card",
+        image: assetUrl("stageDaghestanAlt"),
+        alt: "Stage de sambo et lutte en montagne",
+        icon: "mountain-snow",
+        kicker: "Stage au Daghestan",
+      },
       contractSigning: {
         className: "contract-signing-result-card",
         image: assetUrl("contractSigning"),
         alt: "Signature de contrats MMA",
+        icon: "file-pen-line",
+        kicker: "Signature de contrat",
+      },
+      contractSigningAlt: {
+        className: "contract-signing-alt-result-card",
+        image: assetUrl("contractSigningAlt"),
+        alt: "Negociation et signature de contrat MMA",
         icon: "file-pen-line",
         kicker: "Signature de contrat",
       },
@@ -5739,11 +5815,18 @@
 	  }
 
 	  function campOpportunityChoiceSummary(option = {}) {
+	    if (option.summary) return option.summary;
 	    if (option.skipOpportunity) return "Gratuit. La semaine reste disponible pour un entrainement classique.";
 	    const load = option.load || 0;
 	    const fatigueText = `Fatigue ${load > 0 ? "+" : ""}${load}`;
 	    const effects = effectLine(option.effects) || "Aucun effet visible";
 	    return `${fatigueText}. ${effects}`;
+	  }
+
+	  function campOpportunitySwipeSummary(opportunity, career = ui.career) {
+	    if (!opportunity) return "";
+	    if (opportunity.id === "dagestan-years") return opportunity.text;
+	    return `${opportunity.text} Banque: ${formatMoney(career.money)}.`;
 	  }
 
 		  function campOpportunityBinaryChoices(opportunity) {
@@ -6085,11 +6168,86 @@
   }
 
   function currentTierTitle(career) {
-    return (career?.titles || []).find(title => title.tier === career.tier && !title.lost) || null;
+    const currentWeight = career?.weight?.id || "";
+    return (career?.titles || []).find(title => {
+      if (title.tier !== career.tier || title.lost) return false;
+      const titleWeight = title.weightId || title.weight?.id || "";
+      if (!titleWeight) return true;
+      return !currentWeight || titleWeight === currentWeight;
+    }) || null;
   }
 
   function hasCurrentTierTitle(career) {
     return Boolean(currentTierTitle(career));
+  }
+
+  function activeTitleCategories(career, minTier = 5) {
+    const seen = new Set();
+    (career?.titles || []).forEach((title, index) => {
+      if (title.lost || Number(title.tier || 0) < minTier) return;
+      const weightKey = title.weightId || title.weight?.id || title.weightLabel || `legacy-${index}`;
+      seen.add(`${title.tier}:${weightKey}`);
+    });
+    return seen.size;
+  }
+
+  function tagActiveCurrentTitlesWithWeight(career) {
+    const weight = career?.weight || WEIGHTS[2];
+    (career?.titles || []).forEach(title => {
+      if (title.tier === career.tier && !title.lost && !title.weightId) {
+        title.weightId = weight.id;
+        title.weightLabel = weight.label;
+      }
+    });
+  }
+
+  function weightMoveOptions(career) {
+    const currentId = career?.weight?.id || WEIGHTS[2].id;
+    const index = Math.max(0, WEIGHTS.findIndex(weight => weight.id === currentId));
+    return [
+      { offset: -1, label: "Descendre", weight: WEIGHTS[index - 1] },
+      { offset: 1, label: "Monter", weight: WEIGHTS[index + 1] },
+    ].filter(item => item.weight);
+  }
+
+  function titleRecordForCurrentCareer(career, belt) {
+    return {
+      tier: career.tier,
+      label: belt,
+      year: career.year,
+      defenses: 0,
+      lost: false,
+      weightId: career.weight?.id || "",
+      weightLabel: career.weight?.label || "",
+    };
+  }
+
+  function handleTitleWin(career, fight, opponent, heldTitleBefore) {
+    if (!fight.title) return;
+    const belt = ORGS[career.tier]?.belt || "Ceinture";
+    if (heldTitleBefore) {
+      heldTitleBefore.defenses = (heldTitleBefore.defenses || 0) + 1;
+      heldTitleBefore.lastDefense = career.year;
+      career.moments.push(`${belt} defendue contre ${opponent.name}.`);
+      addNews(career, "Ceinture defendue", `${career.name} conserve ${belt} contre ${opponent.name}.`, "good");
+    } else {
+      career.titles.push(titleRecordForCurrentCareer(career, belt));
+      career.moments.push(`${belt} remportee contre ${opponent.name}.`);
+    }
+    if (career.tier === 5 && career.flags?.doublePath && activeTitleCategories(career, 5) >= 2) {
+      if (!career.flags.doubleChamp) {
+        career.flags.doubleChamp = true;
+        career.moments.push("Double champion FLC: deux categories, deux ceintures.");
+        addNews(
+          career,
+          "Double champion FLC",
+          `${career.name} possede maintenant deux ceintures FLC. Le statut Legende est ouvert.`,
+          "good"
+        );
+        career.flags.legendUnlockedThisFight = true;
+      }
+      unlockLegendMode(career);
+    }
   }
 
   function contenderClauseReady(career) {
@@ -6141,6 +6299,12 @@
     const ufcStep = career.tier === 3 || career.tier === 4;
     const legendStep = career.tier === 5;
     const activeContractBlock = (career.contract?.remainingFights || 0) > 0 && !clauseReady && !hasBelt;
+    const internationalDominance = ufcStep && !missed && career.lastResult?.won && (
+      perfectSeason ||
+      (strongSeason && career.streak >= 4) ||
+      career.streak >= 5 ||
+      hasBelt
+    );
     const nationalBreakout = internationalStep && !missed && career.lastResult?.won && (
       perfectSeason ||
       strongSeason ||
@@ -6148,7 +6312,7 @@
       career.streak >= 3 ||
       (career.record.w >= 4 && career.record.l <= 1) ||
       wins >= 3 ||
-      career.rank <= 6 ||
+      career.rank <= 10 ||
       hasBelt ||
       clauseReady
     );
@@ -6186,7 +6350,7 @@
     const hardFinancialDrag = severeMoneyDebt || debtSeasons >= 2 || lockedContracts >= 2 || scandalLevel >= 30 || suspensionFights > 0;
     const financialDrag = hardFinancialDrag && !(perfectCleanSeason && (career.money || 0) >= -12000 && scandalLevel < 30 && suspensionFights <= 0);
     const financialWarning = !financialDrag && ((career.money || 0) < 0 || debtSeasons > 0 || lockedContracts > 0 || scandalLevel >= 12);
-    const reliabilityBlock = missed > 0 || (activeContractBlock && !nationalPerfectOverride);
+    const reliabilityBlock = missed > 0 || (activeContractBlock && !nationalPerfectOverride && !internationalDominance);
     const debtTrouble = financialDrag || reliabilityBlock;
     const threshold = targets.length ? Math.min(...targets.map(org => org.threshold || 0)) : 0;
     const visibilityAccess = (
@@ -6212,11 +6376,26 @@
     );
     const titleDefenses = currentTierTitle(career)?.defenses || 0;
     const ufcBreakout = ufcStep && !hasBelt && !missed && career.lastResult?.won && (
-      (perfectSeason && (career.rank <= 3 || career.hype >= 70 || career.rep >= 65)) ||
-      (strongSeason && career.streak >= 4 && career.rank <= 5)
+      perfectSeason ||
+      (strongSeason && career.streak >= 4) ||
+      career.streak >= 5 ||
+      career.rank <= 3 ||
+      career.hype >= 82 ||
+      career.rep >= 72
     );
     const ufcEligible = ufcStep && !missed && career.lastResult?.won && (hasBelt || ufcBreakout);
-    const legendOvrReady = overall(career) >= 99;
+    const flcTitleCategories = activeTitleCategories(career, 5);
+    const doubleChampionReady = Boolean(career.flags?.doubleChamp) || flcTitleCategories >= 2;
+    const doubleCategoryMoves = weightMoveOptions(career);
+    const doubleCategoryEligible = legendStep && hasBelt && !doubleChampionReady && !missed && career.lastResult?.won && doubleCategoryMoves.length > 0 && (
+      titleDefenses >= 1 ||
+      perfectSeason ||
+      (strongSeason && career.streak >= 4) ||
+      career.streak >= 5 ||
+      ufcWins >= 4 ||
+      career.rank <= 1
+    );
+    const legendOvrReady = overall(career) >= 99 || doubleChampionReady;
     const ufcDominance = (
       perfectSeason ||
       strongSeason ||
@@ -6225,7 +6404,7 @@
       career.rank <= 1 ||
       titleDefenses >= 2
     );
-    const legendAccess = hasBelt || career.rank <= 1 || ufcWins >= 7;
+    const legendAccess = doubleChampionReady || (hasBelt && career.rank <= 1 && ufcWins >= 7);
     const legendEligible = legendStep && legendOvrReady && legendAccess && !missed && career.lastResult?.won && ufcDominance;
     const cleanEnoughForPromotion = !reliabilityBlock && (!financialDrag || nationalPerfectOverride || clauseReady || hasBelt);
     const promotionEligible = Boolean(targets.length) && (
@@ -6246,6 +6425,7 @@
       perfectSeason,
       strongSeason,
       unbeatenRun,
+      internationalDominance,
       nationalBreakout,
       nationalPerfectOverride,
       internationalStep,
@@ -6255,6 +6435,11 @@
       legendOvrReady,
       ufcDominance,
       legendAccess,
+      flcTitleCategories,
+      doubleChampionReady,
+      doubleCategoryEligible,
+      doubleCategoryMoves,
+      titleDefenses,
       ufcWins,
       ufcBreakout,
       hypeTarget,
@@ -6290,7 +6475,8 @@
     if (!season || !career.lastResult?.won) return null;
     const done = Math.max(0, season.fightsDone || 0);
     const target = Math.max(1, season.fightsTarget || 1);
-    if (done < Math.min(3, target) || done >= target) return null;
+    const radarPoint = target <= 3 ? 2 : 3;
+    if (done < Math.min(radarPoint, target) || done >= target) return null;
     const status = promotionStatus(career);
     if (status.missed > 0) return null;
     const cleanPoint = status.financialDrag
@@ -6302,9 +6488,19 @@
     if (status.internationalStep && (status.nationalBreakout || status.strongSeason || status.perfectSeason || career.streak >= 3)) {
       return {
         id: `international-${season.year}`,
-        title: "Organisation internationale interessee",
-        text: "Une organisation internationale a les yeux sur toi. Termine la saison sans forfait et garde une fiche gagnante: une offre KSW ou PFL peut tomber au bilan.",
-        checks: ["Encore une victoire marquee", "Aucun forfait sur la saison", cleanPoint],
+        title: "KSW/PFL surveille ton profil",
+        text: "Une organisation internationale a les yeux sur toi. Si tu termines la saison avec au moins 3 victoires propres, ou invaincu, KSW/PFL peut arriver au bilan.",
+        checks: ["3 victoires propres ou saison invaincue", "Aucun forfait sur la saison", cleanPoint],
+        tone: "hot",
+      };
+    }
+
+    if (status.legendStep && status.doubleCategoryEligible) {
+      return {
+        id: `double-belt-${season.year}`,
+        title: "Deuxieme ceinture en vue",
+        text: "Ton regne FLC ouvre une bascule de categorie. Au bilan, ton manager pourra viser une deuxieme ceinture sans effacer ta carriere actuelle.",
+        checks: ["Choisir monter ou descendre", "Gagner le title shot rapide", cleanPoint],
         tone: "hot",
       };
     }
@@ -6312,15 +6508,15 @@
     if (status.ufcStep && (status.hasBelt || status.strongSeason || career.streak >= 3 || career.rank <= 6)) {
       const title = status.hasBelt ? "Le FLC regarde ta ceinture" : "Le FLC observe ton profil";
       const text = status.hasBelt
-        ? "Le FLC veut une preuve de champion: belle defense de titre, dossier propre et victoire au prochain bilan."
-        : "Le FLC commence a regarder, mais il veut une preuve claire: prendre la ceinture KSW/PFL ou finir la saison parfaite avec un rang elite.";
+        ? "Le FLC veut une preuve de champion: defends la ceinture ou termine fort, sans forfait ni scandale majeur."
+        : "Le FLC commence a regarder. Une saison invaincue, une grosse serie ou une ceinture KSW/PFL peut declencher une offre au bilan.";
       return {
         id: `flc-${season.year}`,
         title,
         text,
         checks: status.hasBelt
-          ? ["Defendre la ceinture", "Rester gagnant", cleanPoint]
-          : ["Prendre la ceinture KSW/PFL", "Finir fort ou invaincu", cleanPoint],
+          ? ["Defense ou saison dominante", "Rester gagnant", cleanPoint]
+          : ["Saison invaincue ou grosse serie", "Aucun forfait sur la saison", cleanPoint],
         tone: "hot",
       };
     }
@@ -6482,7 +6678,7 @@
       text: `${career.name} signe contre ${fight.opponent.name}. Le dossier est boucle: le camp peut demarrer autour de cette affiche.`,
       effects: [],
       hideEmptyEffects: true,
-      visual: "contractSigning",
+      visual: contractSigningVisualKey(career, `fight-${fight.opponent?.name || ""}`),
       nextAction: "to-training",
       nextLabel: "Lancer le camp",
     });
@@ -7085,6 +7281,8 @@
     const round = finish ? finish.round : rounds;
     const scoreText = finish ? `${method} R${round}` : `${fighterScore}-${opponentScore}`;
     const heldTitleBefore = currentTierTitle(career);
+    const fightOrg = orgForTier(career.tier);
+    const fightOrgLabel = fightOrg.label || career.org?.label || "";
     const momentContexts = Array.isArray(career.fightMomentChoices) ? career.fightMomentChoices : [];
     const fatigueImpact = campFatigueImpact(career);
     const effectiveCondition = clamp((career.condition ?? 70) - fatigueImpact.conditionLoss, 0, 100);
@@ -7101,25 +7299,13 @@
       career.rep = clamp(career.rep + fight.hype * 0.7 + (fight.title ? 8 : 1), 0, 160);
       career.hype = clamp(career.hype + fight.hype, 0, 160);
       career.money += fight.money;
-      if (orgForTier(career.tier).charismaWin) {
-        career.stats.charisma = clamp((career.stats.charisma || 50) + orgForTier(career.tier).charismaWin, 1, statCapForCareer(career));
+      if (fightOrg.charismaWin) {
+        career.stats.charisma = clamp((career.stats.charisma || 50) + fightOrg.charismaWin, 1, statCapForCareer(career));
       }
       if (method === "KO" || method === "TKO") career.record.ko += 1;
       else if (method === "Soumission") career.record.sub += 1;
       else career.record.dec += 1;
-      if (fight.title) {
-        const belt = ORGS[career.tier]?.belt || "Ceinture";
-        if (heldTitleBefore) {
-          heldTitleBefore.defenses = (heldTitleBefore.defenses || 0) + 1;
-          heldTitleBefore.lastDefense = career.year;
-          career.moments.push(`${belt} defendue contre ${opponent.name}.`);
-          addNews(career, "Ceinture defendue", `${career.name} conserve ${belt} contre ${opponent.name}.`, "good");
-        } else {
-          career.titles.push({ tier: career.tier, label: belt, year: career.year, defenses: 0, lost: false });
-          career.moments.push(`${belt} remportee contre ${opponent.name}.`);
-        }
-        if (career.flags.doublePath && career.titles.filter(t => t.tier >= 4).length >= 2) career.flags.doubleChamp = true;
-      }
+      handleTitleWin(career, fight, opponent, heldTitleBefore);
       {
         const threshold = nextPromotionThreshold(career);
         if (fight.short && threshold !== null && career.rep >= threshold - 8) {
@@ -7155,8 +7341,15 @@
     growCareer(career, growthBase + ageSlow, plan);
     career.morale = clamp(career.morale + (won ? 4 : -4), 0, 100);
     let analysis = buildFightAnalysis(career, opponent, plan, won, method, edge, effectiveCondition, damage);
-    if (won && orgForTier(career.tier).charismaWin) {
-      analysis = [`Victoire FLC: charisme +${orgForTier(career.tier).charismaWin}, la lumiere media change d'echelle.`, ...analysis].slice(0, 5);
+    if (won && fightOrg.charismaWin) {
+      analysis = [`Victoire FLC: charisme +${fightOrg.charismaWin}, la lumiere media change d'echelle.`, ...analysis].slice(0, 5);
+    }
+    if (career.flags?.legendUnlockedThisFight) {
+      analysis = [
+        "Legende de l'octogone: nouveau panel de combattants, nouveaux defis et plafond de stats ouvert.",
+        ...analysis,
+      ].slice(0, 5);
+      career.flags.legendUnlockedThisFight = false;
     }
     if (fatigueImpact.fatigue <= 2 || fatigueImpact.fatigue >= 6) {
       analysis = [
@@ -7233,7 +7426,7 @@
       method,
       round,
       title: fight.title,
-      org: ORGS[career.tier].label,
+      org: fightOrgLabel,
     });
     if (career.contract?.remainingFights > 0) {
       career.contract.remainingFights = Math.max(0, career.contract.remainingFights - 1);
@@ -7374,6 +7567,8 @@
     const round = finish ? finish.round : rounds;
     const scoreText = finish ? `${method} R${round}` : `${fighterScore}-${opponentScore}`;
     const heldTitleBefore = currentTierTitle(career);
+    const fightOrg = orgForTier(career.tier);
+    const fightOrgLabel = fightOrg.label || career.org?.label || "";
 
     if (won) {
       career.record.w += 1;
@@ -7382,25 +7577,13 @@
       career.rep = clamp(career.rep + fight.hype * 0.7 + (fight.title ? 8 : 1), 0, 160);
       career.hype = clamp(career.hype + fight.hype, 0, 160);
       career.money += fight.money;
-      if (orgForTier(career.tier).charismaWin) {
-        career.stats.charisma = clamp((career.stats.charisma || 50) + orgForTier(career.tier).charismaWin, 1, statCapForCareer(career));
+      if (fightOrg.charismaWin) {
+        career.stats.charisma = clamp((career.stats.charisma || 50) + fightOrg.charismaWin, 1, statCapForCareer(career));
       }
       if (method === "KO" || method === "TKO") career.record.ko += 1;
       else if (method === "Soumission") career.record.sub += 1;
       else career.record.dec += 1;
-      if (fight.title) {
-        const belt = ORGS[career.tier]?.belt || "Ceinture";
-        if (heldTitleBefore) {
-          heldTitleBefore.defenses = (heldTitleBefore.defenses || 0) + 1;
-          heldTitleBefore.lastDefense = career.year;
-          career.moments.push(`${belt} defendue contre ${opponent.name}.`);
-          addNews(career, "Ceinture defendue", `${career.name} conserve ${belt} contre ${opponent.name}.`, "good");
-        } else {
-          career.titles.push({ tier: career.tier, label: belt, year: career.year, defenses: 0, lost: false });
-          career.moments.push(`${belt} remportee contre ${opponent.name}.`);
-        }
-        if (career.flags.doublePath && career.titles.filter(t => t.tier >= 4).length >= 2) career.flags.doubleChamp = true;
-      }
+      handleTitleWin(career, fight, opponent, heldTitleBefore);
       {
         const threshold = nextPromotionThreshold(career);
         if (fight.short && threshold !== null && career.rep >= threshold - 8) {
@@ -7436,8 +7619,15 @@
     growCareer(career, growthBase + ageSlow, plan);
     career.morale = clamp(career.morale + (won ? 4 : -4), 0, 100);
     let analysis = buildFightAnalysis(career, opponent, plan, won, method, edge, effectiveCondition, damage);
-    if (won && orgForTier(career.tier).charismaWin) {
-      analysis = [`Victoire FLC: charisme +${orgForTier(career.tier).charismaWin}, la lumiere media change d'echelle.`, ...analysis].slice(0, 5);
+    if (won && fightOrg.charismaWin) {
+      analysis = [`Victoire FLC: charisme +${fightOrg.charismaWin}, la lumiere media change d'echelle.`, ...analysis].slice(0, 5);
+    }
+    if (career.flags?.legendUnlockedThisFight) {
+      analysis = [
+        "Legende de l'octogone: nouveau panel de combattants, nouveaux defis et plafond de stats ouvert.",
+        ...analysis,
+      ].slice(0, 5);
+      career.flags.legendUnlockedThisFight = false;
     }
     if (fatigueImpact.fatigue <= 2 || fatigueImpact.fatigue >= 6) {
       analysis = [
@@ -7514,7 +7704,7 @@
       method,
       round,
       title: fight.title,
-	      org: ORGS[career.tier].label,
+	      org: fightOrgLabel,
 	    });
 	    if (career.contract?.remainingFights > 0) {
 	      career.contract.remainingFights = Math.max(0, career.contract.remainingFights - 1);
@@ -7651,7 +7841,9 @@
       id: "move-ufc",
       label: "Signer au FLC",
       tag: "Sommet mondial",
-      summary: "La ceinture KSW/PFL ouvre la porte. Bourse de base plus basse, mais chaque victoire FLC fait bondir hype et charisme.",
+      summary: status.hasBelt
+        ? "Votre ceinture internationale ouvre la porte. Bourse de base plus basse, mais chaque victoire FLC fait bondir hype et charisme."
+        : "Votre domination en KSW/PFL force le contact. Bourse de base plus basse, mais chaque victoire FLC fait bondir hype et charisme.",
       money: Math.round((46000 + hype * 360 + charisma * 180) / 1000) * 1000,
       purseBoost: 0.96,
       titleClause: status.hasBelt ? "Champion international signe: top 15 a meriter" : "Top 15 a meriter",
@@ -7662,10 +7854,49 @@
     };
   }
 
+  function doubleCategoryContractOffer(career, move, status) {
+    const hype = career.hype || 0;
+    const rep = career.rep || 0;
+    const charisma = career.stats.charisma || 50;
+    const weight = move.weight;
+    const directionLabel = move.offset > 0 ? "Monter" : "Descendre";
+    return {
+      id: `flc-double-${move.offset > 0 ? "up" : "down"}`,
+      label: `${directionLabel} en ${weight.label}`,
+      tag: "Double ceinture",
+      summary: `Votre regne FLC ouvre une deuxieme categorie. Votre carriere actuelle reste intacte: vous partez chercher une nouvelle ceinture en ${weight.label}.`,
+      tier: 5,
+      orgId: "ufc",
+      money: Math.round((98000 + hype * 520 + rep * 360 + charisma * 160) / 1000) * 1000,
+      fights: 3,
+      purseBoost: 1.08,
+      titleClause: "Route double champion: title shot rapide",
+      contenderWinsRequired: 0,
+      entryRank: 3,
+      sponsor: "Partenaires FLC legacy",
+      effects: {
+        morale: 4,
+        rep: 7,
+        hype: 10,
+        stats: move.offset > 0
+          ? { power: 1, chin: 1, cardio: -1, discipline: 1 }
+          : { cardio: 1, iq: 1, power: -1, discipline: 1 },
+      },
+      weightId: weight.id,
+      weightLabel: weight.label,
+      weightMoveOffset: move.offset,
+      doubleCategory: true,
+    };
+  }
+
 			  function buildContractOffers() {
 			    const career = ui.career;
 			    const status = promotionStatus(career);
-			    if (status.activeContractBlock && !(status.internationalStep && (status.perfectSeason || status.nationalBreakout))) return [];
+			    if (
+			      status.activeContractBlock &&
+			      !(status.internationalStep && (status.perfectSeason || status.nationalBreakout)) &&
+			      !(status.ufcStep && (status.internationalDominance || status.ufcBreakout || status.hasBelt))
+			    ) return [];
 			    if (!contractNegotiationReady(career, status)) return [];
 	    const debtTrouble = status.debtTrouble;
 	    const promotionEligible = status.promotionEligible;
@@ -7708,6 +7939,11 @@
 	        offers.push(promotionContractOffer(career, org, status));
 	      });
 	    }
+	    if (status.doubleCategoryEligible) {
+	      status.doubleCategoryMoves.forEach(move => {
+	        offers.push(doubleCategoryContractOffer(career, move, status));
+	      });
+	    }
 	    if (sponsorEligible) {
 	      offers.push({
 	        id: "sponsor",
@@ -7734,6 +7970,10 @@
 	    if (!offers.length) return true;
 	    const hasTrustOffer = offers.some(offer => /confiance/i.test(offer.titleClause || ""));
 	    if (hasTrustOffer && !status.debtTrouble) return true;
+	    if (status.doubleCategoryEligible) {
+	      const expectedDoubleIds = (status.doubleCategoryMoves || []).map(move => `flc-double-${move.offset > 0 ? "up" : "down"}`);
+	      if (expectedDoubleIds.some(id => !offers.some(offer => offer.id === id))) return true;
+	    }
 	    if (!status.promotionEligible) return false;
     const expectedMoveIds = (status.targets || []).map(org => `move-${org.id}`);
     return expectedMoveIds.some(id => !offers.some(offer => offer.id === id));
@@ -7749,15 +7989,33 @@
 
   function unlockLegendMode(career) {
     career.flags = career.flags || {};
-    if (career.flags.legendModeUnlocked) return;
+    const alreadyUnlocked = Boolean(career.flags.legendModeUnlocked);
     career.flags.legendMode = true;
     career.flags.legendModeUnlocked = true;
     career.potential = Math.max(career.potential || 0, LEGEND_STAT_CAP);
-    career.moments.push("Statut Legende debloque: le plafond de progression explose et un nouveau pool d'adversaires apparait.");
+    if (career.tier < LEGEND_TIER) {
+      const legendOrg = orgForTier(LEGEND_TIER);
+      career.tier = LEGEND_TIER;
+      career.org = { id: legendOrg.id, label: legendOrg.label, org: legendOrg.tier, summary: legendOrg.summary, stats: {} };
+      career.rank = 1;
+      if (career.contract && Number(career.contract.tier || 0) < LEGEND_TIER) {
+        career.contract = {
+          ...career.contract,
+          org: legendOrg.label,
+          orgId: legendOrg.id,
+          tier: legendOrg.tier,
+          titleClause: "Statut Legende: affiches mythiques",
+          sponsor: "Partenaires Hall of Fame",
+          purseBoost: Math.max(career.contract.purseBoost || 1, 1.35),
+        };
+      }
+    }
+    if (alreadyUnlocked) return;
+    career.moments.push("Vous etes desormais une Legende de l'octogone: nouveau panel d'adversaires et de defis.");
     addNews(
       career,
-      "Statut Legende",
-      `${career.name} entre dans le circuit des legendes. Les stats peuvent maintenant depasser 100 et les affiches deviennent historiques.`,
+      "Legende de l'octogone",
+      `${career.name} est desormais une legende de l'octogone. Un nouveau panel de combattants et de defis est disponible, avec des stats qui peuvent depasser 100.`,
       "good"
     );
   }
@@ -7767,8 +8025,21 @@
     const offer = career.pendingContracts[index];
     if (!offer) return;
     const org = orgForTier(offer.tier);
+    const oldWeight = career.weight;
+    if (offer.doubleCategory) {
+      tagActiveCurrentTitlesWithWeight(career);
+      career.flags.doublePath = true;
+      career.flags.doubleCategoryFrom = oldWeight?.label || "";
+    }
     career.tier = offer.tier;
     career.org = { id: offer.orgId || org.id, label: org.label, org: org.tier, summary: org.summary, stats: {} };
+    if (offer.weightId) {
+      const nextWeight = getById(WEIGHTS, offer.weightId);
+      if (nextWeight) {
+        career.weight = nextWeight;
+        career.flags.doubleCategoryTo = nextWeight.label;
+      }
+    }
     career.money += offer.money;
     const contractEffects = [
       ...(offer.money ? [{ key: "money", value: offer.money }] : []),
@@ -7802,9 +8073,11 @@
 	    career.pendingContracts = null;
 	    showDecisionResult(career, {
 	      title: offer.label,
-	      text: `${career.name} signe avec ${org.label}: ${formatCombats(offer.fights)}, prime ${formatMoney(offer.money)}, clause ${offer.titleClause}.`,
+	      text: offer.doubleCategory
+	        ? `${career.name} change de categorie pour viser une deuxieme ceinture FLC en ${career.weight.label}. La carriere precedente reste au palmares.`
+	        : `${career.name} signe avec ${org.label}: ${formatCombats(offer.fights)}, prime ${formatMoney(offer.money)}, clause ${offer.titleClause}.`,
 	      effects: contractEffects,
-	      visual: "contractSigning",
+	      visual: contractSigningVisualKey(career, `${offer.id}-${offer.weightId || offer.tier}`),
 	      nextAction: "advance-year",
 	      nextLabel: "Lancer la saison suivante",
 	    });
@@ -8956,17 +9229,19 @@
       : "pas de clause active";
     const rows = [
       {
-        ok: status.legendStep ? status.ufcDominance : status.cageSuccess,
-	        label: status.legendStep ? "Domination FLC" : "Resultats cage",
+        ok: status.legendStep ? status.ufcDominance : status.internationalStep ? status.nationalBreakout || status.strongSeason : status.cageSuccess,
+	        label: status.legendStep ? "Domination FLC" : status.internationalStep ? "Resultats National" : "Resultats cage",
 	        value: status.legendStep
-	          ? `${status.ufcWins} victoires FLC, ${status.legendAccess ? "acces sportif valide" : "ceinture ou rang #1 requis"}`
+	          ? `${status.ufcWins} victoires FLC, ${status.doubleCategoryEligible ? "2e categorie ouverte" : "domination a prouver"}`
+          : status.internationalStep && status.nationalBreakout ? "KSW/PFL surveille le bilan"
           : status.perfectSeason ? `saison parfaite ${status.wins}/${status.honored}` : status.hasBelt ? "ceinture active" : `serie ${career.streak}, rang #${career.rank}`,
       },
       {
-        ok: status.legendStep ? status.legendOvrReady : status.businessSuccess,
-        label: status.legendStep ? "OVR 99" : "Hype et business",
+        ok: status.legendStep ? status.legendOvrReady || status.doubleCategoryEligible : status.internationalStep ? status.nationalBreakout || status.businessSuccess : status.businessSuccess,
+        label: status.legendStep ? "Double ceinture" : status.internationalStep ? "Seuil KSW/PFL" : "Hype et business",
         value: status.legendStep
-          ? `OVR ${overall(career)}/99`
+          ? status.doubleChampionReady ? "2 ceintures FLC validees" : `OVR ${overall(career)} | ${status.flcTitleCategories}/2 ceintures`
+          : status.internationalStep ? "3 victoires propres ou invaincu"
           : status.perfectSeason ? "bonus saison invaincue" : `hype ${career.hype}/${status.hypeTarget}, charisme ${career.stats.charisma}/${status.charismaTarget}`,
       },
       {
@@ -8975,21 +9250,21 @@
 	        value: promotionReliabilityText(career, status),
       },
       {
-        ok: status.legendStep ? status.legendEligible : status.visibilityAccess || status.clauseReady,
+        ok: status.legendStep ? status.legendEligible || status.doubleCategoryEligible : status.visibilityAccess || status.clauseReady || status.nationalBreakout || status.internationalDominance,
 	        label: status.legendStep ? "Statut Legende" : status.ufcStep ? "Porte FLC" : status.internationalStep ? "Porte internationale" : "Acces superieur",
         value: status.legendStep
-          ? status.legendEligible ? "offre de legende prete" : `serie ${career.streak}, defenses ${currentTierTitle(career)?.defenses || 0}/2`
+          ? status.legendEligible ? "statut Legende pret" : status.doubleCategoryEligible ? "monter/descendre au bilan" : `ceintures FLC ${status.flcTitleCategories}/2`
           : status.ufcStep
-          ? status.hasBelt ? "champion KSW/PFL" : "ceinture KSW/PFL requise"
+          ? status.promotionEligible ? "offre FLC au bilan" : status.hasBelt ? "champion KSW/PFL" : "invaincu ou ceinture"
           : status.internationalStep
-            ? status.promotionEligible ? "KSW/PFL sur la table" : "saison forte ou invaincue"
+            ? status.promotionEligible ? "KSW/PFL sur la table" : "3 victoires propres"
             : status.clauseReady ? "clause activee" : clauseText,
       },
     ];
     return `
-      <div class="promotion-path ${status.promotionEligible ? "ready" : ""}">
-        <strong>${iconOnly(status.promotionEligible ? "circle-check" : "move-up-right", "P")} ${status.legendStep ? "Statut Legende" : status.internationalStep ? "Signature internationale" : `Montee vers ${esc(status.targetLabel)}`}</strong>
-	        <span>${status.promotionEligible ? `Offre ${esc(status.targetLabel)} possible au prochain bilan.` : status.legendStep ? "Le statut Legende demande OVR 99, domination FLC, acces sportif elite et dossier propre." : status.ufcStep ? "Le FLC attend un champion KSW/PFL fiable ou une saison parfaite avec rang elite." : "Une grosse saison peut suffire: victoires, image minimale et dossier propre."}</span>
+      <div class="promotion-path ${status.promotionEligible || status.doubleCategoryEligible ? "ready" : ""}">
+        <strong>${iconOnly(status.promotionEligible || status.doubleCategoryEligible ? "circle-check" : "move-up-right", "P")} ${status.legendStep ? "Route double champion" : status.internationalStep ? "Signature internationale" : `Montee vers ${esc(status.targetLabel)}`}</strong>
+	        <span>${status.promotionEligible ? `Offre ${esc(status.targetLabel)} possible au prochain bilan.` : status.doubleCategoryEligible ? "Domination FLC validee: tu peux monter ou descendre de categorie pour viser une deuxieme ceinture." : status.legendStep ? "Pour devenir Legende: dominer le FLC, changer de categorie, puis gagner une deuxieme ceinture." : status.ufcStep ? "Le FLC peut contacter un champion KSW/PFL, une saison invaincue ou une grosse serie sans forfait." : status.internationalStep ? "Au National, 3 victoires propres ou une saison invaincue peuvent declencher KSW/PFL." : "Une grosse saison peut suffire: victoires, image minimale et dossier propre."}</span>
         <div class="promotion-checks">
           ${rows.map(row => `
             <div class="promotion-check ${row.ok ? "ok" : "todo"}">
@@ -9005,8 +9280,9 @@
   function renderContractOffersBlock(career) {
     if (!career.pendingContracts?.length) return "";
     const nextYear = (career.year || 2026) + 1;
-    const visual = visualResultConfig("contractSigning");
-    preloadGameAssets("contractSigning");
+    const visualKey = contractSigningVisualKey(career, `offers-${career.pendingContracts.map(offer => offer.id).join("-")}`);
+    const visual = visualResultConfig(visualKey);
+    preloadGameAssets("contractSigning", "contractSigningAlt");
     return `
       <div class="contract-offers-priority">
         <div class="contract-signing-visual">
@@ -9454,7 +9730,7 @@
 			            rightIntent: "J'y vais",
 			            kicker: `Stage de camp | semaine ${camp.week}/${camp.maxWeeks}`,
 			            title: opportunity.title,
-			            summary: `${opportunity.text} Banque: ${formatMoney(career.money)}.`,
+			            summary: campOpportunitySwipeSummary(opportunity, career),
 			            visual: opportunityVisual,
 		          })}
 		        ` : `
@@ -9876,8 +10152,9 @@
 	      return;
 	    }
 	    const options = career.pendingFightOptions || [];
-    const visual = visualResultConfig("contractSigning");
-    preloadGameAssets("contractSigning");
+    const visualKey = contractSigningVisualKey(career, `fight-offer-${options.map(option => option.opponent?.name || option.id).join("-")}`);
+    const visual = visualResultConfig(visualKey);
+    preloadGameAssets("contractSigning", "contractSigningAlt");
 	    renderShell(`
 	      <section class="game-screen fight-offer-screen">
 	        ${fighterHeader(career)}
@@ -9930,15 +10207,20 @@
 		      return;
 		    }
 		    const fatigueImpact = campFatigueImpact(career);
+		    const pressVisual = visualResultConfig("press");
+		    preloadGameAssets("press", "pressPique", "pressBrawl");
 		    renderShell(`
 		      <section class="game-screen press-conference-screen">
 		        ${fighterHeader(career)}
+		        <div class="press-choice-visual">
+		          ${renderVisualResultCard(
+                pressVisual,
+                "Conference de presse",
+                `${career.name} vs ${fight.opponent.name}. Le camp est termine: choisis le ton avant que les cameras ne dictent l'histoire.`
+              )}
+		        </div>
 		        ${seasonPanel(career)}
 		        ${renderMedicalAlert(career)}
-		        <div class="story-panel press-intro">
-		          <h3>Conference de presse</h3>
-		          <p>${esc(career.name)} vs ${esc(fight.opponent.name)}. Le camp est termine: il faut vendre le combat sans se mettre l'organisation, les sponsors ou l'adversaire completement a dos.</p>
-		        </div>
 		        <div class="summary-grid press-summary">
 		          <div class="summary-item"><span>${iconOnly("target", "A")} Adversaire</span><strong>${esc(fight.opponent.name)}</strong></div>
 		          <div class="summary-item"><span>${iconOnly("flame", "H")} Hype combat</span><strong>${fight.hype}</strong></div>
@@ -11088,6 +11370,8 @@
 	        label: title.label || title.org || "",
 	        tier: title.tier || 0,
 	        defenses: title.defenses || 0,
+	        weightId: title.weightId || "",
+	        weightLabel: title.weightLabel || "",
 	        lost: Boolean(title.lost),
 	      })),
 	      stats: career.stats || {},
@@ -12637,6 +12921,8 @@
   preloadGameAssets("home");
   const warmSecondaryAssets = () => preloadGameAssets(
     "press",
+    "pressPique",
+    "pressBrawl",
     "doping",
     "podcast",
     "campDiet",
@@ -12644,8 +12930,11 @@
     "medicalRest",
     "stageGrappling",
     "stageStriking",
+    "stageStrikingAlt",
     "stageDaghestan",
+    "stageDaghestanAlt",
     "contractSigning",
+    "contractSigningAlt",
     "trainingInjury"
   );
   if ("requestIdleCallback" in window) {
