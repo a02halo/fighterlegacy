@@ -10,11 +10,15 @@
   const SAVE_VERSION = 2;
   const LEGEND_TIER = 6;
   const LEGEND_STAT_CAP = 340;
-  const ASSET_VERSION = "20260807-legend-assets";
+  const ASSET_VERSION = "20260807-life-visuals";
   const IMAGE_ASSETS = {
     home: "./assets/home-fight-legacy.png",
     press: "./assets/press-conference-fight-legacy.png",
     doping: "./assets/doping-fight-legacy.png",
+    podcast: "./assets/podcastcousin-9-16.png",
+    medicalRest: "./assets/reposmedical-9-16.png",
+    campDiet: "./assets/ecartnourriturecamp-9-16.png",
+    steakhouse: "./assets/steackhouse-fight.png",
   };
 
   const CREATOR_STEPS = [
@@ -5571,7 +5575,82 @@
   function eventResultVisual(event) {
     if (!event) return null;
     if (["night-test", "tainted-supplement", "doctor-protocol", "under-cage-control"].includes(event.id)) return "doping";
+    if (["media-channel", "media-beef"].includes(event.id)) return "podcast";
+    if (event.id === "diet-cheat") return "campDiet";
+    if (event.id === "steakhouse-beef") return "steakhouse";
     return null;
+  }
+
+  function medicalRestVisualKey(career) {
+    const source = String(ensureMedical(career).activeInjury?.source || "");
+    if (/^combat (de boxe )?contre /i.test(source)) return "medicalRest";
+    return null;
+  }
+
+  function visualResultConfig(key) {
+    const visualResults = {
+      press: {
+        className: "press-result-card",
+        image: assetUrl("press"),
+        alt: "Conference de presse MMA stylisee",
+        icon: "mic",
+        kicker: "Conference de presse",
+      },
+      doping: {
+        className: "doping-result-card",
+        image: assetUrl("doping"),
+        alt: "Controle anti-dopage stylise",
+        icon: "syringe",
+        kicker: "Protocole anti-dopage",
+      },
+      podcast: {
+        className: "podcast-result-card",
+        image: assetUrl("podcast"),
+        alt: "Studio de podcast MMA stylise",
+        icon: "podcast",
+        kicker: "Podcast MMA",
+      },
+      campDiet: {
+        className: "camp-diet-result-card",
+        image: assetUrl("campDiet"),
+        alt: "Ecart de nourriture pendant un camp",
+        icon: "utensils",
+        kicker: "Vie de camp",
+      },
+      steakhouse: {
+        className: "steakhouse-result-card",
+        image: assetUrl("steakhouse"),
+        alt: "Embrouille dans un steakhouse",
+        icon: "flame",
+        kicker: "Soiree sous tension",
+      },
+      medicalRest: {
+        className: "medical-rest-result-card",
+        image: assetUrl("medicalRest"),
+        alt: "Repos medical apres combat",
+        icon: "ambulance",
+        kicker: "Repos medical",
+      },
+    };
+    return visualResults[key] || null;
+  }
+
+  function renderVisualResultCard(visualResult, title, text, effectsMarkup = "", actionsMarkup = "") {
+    if (!visualResult) return "";
+    return `
+      <div class="visual-result-card ${visualResult.className}" style="--visual-image: url('${esc(visualResult.image)}')">
+        <img src="${esc(visualResult.image)}" alt="${esc(visualResult.alt)}" decoding="async" fetchpriority="high" loading="eager">
+        <div class="visual-result-content">
+          <span class="visual-result-kicker">${iconOnly(visualResult.icon, "V")} ${esc(visualResult.kicker)}</span>
+          <div class="visual-result-copy">
+            <h3>${esc(title)}</h3>
+            <p>${esc(text)}</p>
+          </div>
+          ${effectsMarkup ? `<div class="effect-list visual-result-effects">${effectsMarkup}</div>` : ""}
+          ${actionsMarkup ? `<div class="menu-actions visual-result-actions">${actionsMarkup}</div>` : ""}
+        </div>
+      </div>
+    `;
   }
 
   function campOpportunityById(id) {
@@ -9191,23 +9270,7 @@
     const campContext = career.camp && career.pendingFight
       ? `${renderCampStatus(career)}${renderCampRiskWarning(career)}`
       : "";
-    const visualResults = {
-      press: {
-        className: "press-result-card",
-        image: assetUrl("press"),
-        alt: "Conference de presse MMA stylisee",
-        icon: "mic",
-        kicker: "Conference de presse",
-      },
-      doping: {
-        className: "doping-result-card",
-        image: assetUrl("doping"),
-        alt: "Controle anti-dopage stylise",
-        icon: "syringe",
-        kicker: "Protocole anti-dopage",
-      },
-    };
-    const visualResult = visualResults[result.visual] || null;
+    const visualResult = visualResultConfig(result.visual);
     const effectsMarkup = (result.effects || []).map(effect => {
       const good = effectIsGood(effect.key, effect.value);
       return `<span class="effect ${good ? "good" : "bad"}">${iconOnly(effectIcon(effect.key, effect.value), good ? "+" : "-")}<span>${esc(effectText(effect.key, effect.value))}</span></span>`;
@@ -9216,20 +9279,7 @@
     renderShell(`
       <section class="game-screen decision-result-screen ${visualResult ? "visual-result-screen" : ""}">
         ${fighterHeader(career)}
-        ${visualResult ? `
-          <div class="visual-result-card ${visualResult.className}" style="--visual-image: url('${esc(visualResult.image)}')">
-            <img src="${esc(visualResult.image)}" alt="${esc(visualResult.alt)}" decoding="async" fetchpriority="high" loading="eager">
-            <div class="visual-result-content">
-              <span class="visual-result-kicker">${iconOnly(visualResult.icon, "V")} ${esc(visualResult.kicker)}</span>
-              <div class="visual-result-copy">
-                <h3>${esc(result.title)}</h3>
-                <p>${esc(result.text)}</p>
-              </div>
-              <div class="effect-list visual-result-effects">${effectsMarkup}</div>
-              <div class="menu-actions visual-result-actions">${nextButton}</div>
-            </div>
-          </div>
-        ` : ""}
+        ${renderVisualResultCard(visualResult, result.title, result.text, effectsMarkup, nextButton)}
         ${seasonPanel(career)}
         ${renderSeasonFocusPanel(career)}
         ${campContext}
@@ -9861,15 +9911,26 @@
     const medical = ensureMedical(career);
     const active = medical.activeInjury;
     const injuries = (medical.injuries || []).slice(0, 5);
+    const restText = active
+      ? `${active.label} apres ${active.source}. Pas de camp, pas de signature: on soigne, on teste, puis on reprend.`
+      : "La commission ou le staff impose une coupure. Pas de camp, pas de signature: on soigne, on teste, puis on reprend.";
+    const restVisual = visualResultConfig(medicalRestVisualKey(career));
+    const restRiskGood = medical.injuryRisk < 35;
+    const restVisualEffects = restVisual ? [
+      `<span class="effect bad">${iconOnly("calendar-clock", "-")}<span>Repos ${esc(formatRestWeeks(medical.restWeeks))}</span></span>`,
+      `<span class="effect ${restRiskGood ? "good" : "bad"}">${iconOnly("activity", restRiskGood ? "+" : "-")}<span>Risque ${medical.injuryRisk}/90</span></span>`,
+      `<span class="effect good">${iconOnly("heart", "+")}<span>Sante ${career.stats.durability}/99</span></span>`,
+    ].join("") : "";
     renderShell(`
-      <section class="game-screen">
+      <section class="game-screen medical-rest-screen ${restVisual ? "visual-result-screen" : ""}">
         ${fighterHeader(career)}
+        ${renderVisualResultCard(restVisual, "Repos medical", restText, restVisualEffects)}
         ${seasonPanel(career)}
         ${renderSeasonFocusPanel(career)}
-        <div class="story-panel">
+        ${restVisual ? "" : `<div class="story-panel">
           <h3>Repos medical</h3>
-          <p>${active ? `${active.label} apres ${active.source}.` : "La commission ou le staff impose une coupure."} Pas de camp, pas de signature: on soigne, on teste, puis on reprend.</p>
-        </div>
+          <p>${esc(restText)}</p>
+        </div>`}
 	        <div class="summary-grid">
 	          <div class="summary-item"><span>${iconOnly("calendar-clock", "R")} Repos</span><strong>${formatRestWeeks(medical.restWeeks)}</strong></div>
 	          <div class="summary-item"><span>${iconOnly("activity", "B")} Risque</span><strong>${medical.injuryRisk}/90</strong></div>
@@ -12316,7 +12377,7 @@
   });
 
   preloadGameAssets("home");
-  const warmSecondaryAssets = () => preloadGameAssets("press", "doping");
+  const warmSecondaryAssets = () => preloadGameAssets("press", "doping", "podcast", "campDiet", "steakhouse", "medicalRest");
   if ("requestIdleCallback" in window) {
     window.requestIdleCallback(warmSecondaryAssets, { timeout: 1800 });
   } else {
