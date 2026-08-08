@@ -9238,33 +9238,38 @@
 		    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
 		    const visualCards = app.querySelectorAll(".visual-result-card[data-visual-anchor]");
 		    visualCards.forEach(card => {
-		      const screen = card.closest(".visual-choice-screen");
+		      const flowScope = card.closest(".visual-choice-screen, .contract-offers-priority");
 		      const topbarBottom = app.querySelector(".topbar")?.getBoundingClientRect().bottom || 0;
-		      const priorityChoice = Boolean(screen?.classList?.contains("fight-offer-screen") || screen?.classList?.contains("press-conference-screen"));
-		      const maxParallax = priorityChoice ? 52 : 30;
-		      const maxFlowLift = priorityChoice ? (mobileViewport() ? 132 : 96) : 46;
-		      const flowFactor = priorityChoice ? (mobileViewport() ? 0.42 : 0.3) : 0.14;
+		      const isMobile = mobileViewport();
+		      const priorityChoice = Boolean(
+		        flowScope?.classList?.contains("contract-offers-priority") ||
+		        flowScope?.classList?.contains("fight-offer-screen") ||
+		        flowScope?.classList?.contains("press-conference-screen")
+		      );
+		      const maxParallax = priorityChoice ? (isMobile ? 88 : 72) : (isMobile ? 48 : 36);
+		      const maxFlowLift = priorityChoice ? (isMobile ? 240 : 170) : (isMobile ? 104 : 72);
+		      const flowFactor = priorityChoice ? (isMobile ? 0.72 : 0.5) : (isMobile ? 0.3 : 0.2);
 		      if (reducedMotion) {
 		        card.style.setProperty("--visual-parallax-y", "0px");
-		        screen?.style.setProperty("--visual-flow-lift", "0px");
+		        flowScope?.style.setProperty("--visual-flow-lift", "0px");
 		        return;
 		      }
 		      const rect = card.getBoundingClientRect();
 		      if (rect.top > window.innerHeight) {
 		        card.style.setProperty("--visual-parallax-y", "0px");
-		        screen?.style.setProperty("--visual-flow-lift", "0px");
+		        flowScope?.style.setProperty("--visual-flow-lift", "0px");
 		        return;
 		      }
 		      if (rect.bottom < topbarBottom) {
 		        card.style.setProperty("--visual-parallax-y", `-${maxParallax}px`);
-		        screen?.style.setProperty("--visual-flow-lift", `-${maxFlowLift}px`);
+		        flowScope?.style.setProperty("--visual-flow-lift", `-${maxFlowLift}px`);
 		        return;
 		      }
 		      const centerOffset = window.innerHeight / 2 - (rect.top + rect.height / 2);
-		      const parallax = clamp(centerOffset / window.innerHeight * (priorityChoice ? 44 : 28), -maxParallax, maxParallax);
+		      const parallax = clamp(centerOffset / window.innerHeight * (priorityChoice ? 62 : 36), -maxParallax, maxParallax);
 		      const flowLift = clamp((topbarBottom - rect.top) * flowFactor, 0, maxFlowLift);
 		      card.style.setProperty("--visual-parallax-y", `${parallax}px`);
-		      screen?.style.setProperty("--visual-flow-lift", `-${flowLift}px`);
+		      flowScope?.style.setProperty("--visual-flow-lift", `-${flowLift}px`);
 		    });
 		  }
 

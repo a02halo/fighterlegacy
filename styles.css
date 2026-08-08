@@ -3198,18 +3198,30 @@ input:focus-visible {
   width: 100%;
 }
 
+.visual-choice-screen,
+.contract-offers-priority {
+  --visual-flow-lift: 0px;
+  --visual-flow-overlap: clamp(34px, 5vw, 78px);
+}
+
+.contract-offers-priority,
+.fight-offer-screen,
+.press-conference-screen {
+  --visual-flow-overlap: clamp(80px, 9vw, 138px);
+}
+
 .visual-choice-flow-actions {
   background:
     linear-gradient(180deg, rgba(17, 14, 10, 0.98), rgba(10, 8, 6, 0.98));
   border: 1px solid rgba(214, 165, 59, 0.26);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.2);
-  margin: 0 0 22px;
+  margin: calc(-1 * var(--visual-flow-overlap, 0px)) 0 22px;
   padding: 18px;
   position: relative;
   transform: translate3d(0, var(--visual-flow-lift, 0px), 0);
   transition: transform 150ms ease-out;
   will-change: transform;
-  z-index: 1;
+  z-index: 5;
 }
 
 .visual-choice-screen .season-panel {
@@ -6202,18 +6214,33 @@ input:focus-visible {
 		    padding: 0 0 8px;
 		  }
 
-		  .visual-choice-screen .visual-choice-flow-actions {
+		  .visual-choice-screen,
+		  .contract-offers-priority {
+		    --visual-flow-overlap: 64px;
+		  }
+
+		  .contract-offers-priority,
+		  .fight-offer-screen,
+		  .press-conference-screen {
+		    --visual-flow-overlap: clamp(118px, 16svh, 164px);
+		  }
+
+		  .visual-choice-screen .visual-choice-flow-actions,
+		  .contract-offers-priority .visual-choice-flow-actions {
 		    background: transparent;
 		    border: 0;
 		    box-shadow: none;
 		    inline-size: 100vw;
-		    margin: 0 calc(50% - 50vw) 20px;
+		    margin: calc(-1 * var(--visual-flow-overlap, 0px)) calc(50% - 50vw) 20px;
 		    max-inline-size: 100vw;
 		    padding: 0 16px 18px;
+		    z-index: 6;
 		  }
 
 		  .visual-choice-screen .visual-choice-flow-actions .visual-embedded-choice-grid,
-		  .visual-choice-screen .visual-choice-flow-actions .choice-grid.visual-embedded-choice-grid {
+		  .visual-choice-screen .visual-choice-flow-actions .choice-grid.visual-embedded-choice-grid,
+		  .contract-offers-priority .visual-choice-flow-actions .visual-embedded-choice-grid,
+		  .contract-offers-priority .visual-choice-flow-actions .choice-grid.visual-embedded-choice-grid {
 		    margin-top: 0;
 		  }
 
