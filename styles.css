@@ -2835,9 +2835,9 @@ input:focus-visible {
 }
 
 .visual-choice-priority .visual-result-actions {
-  max-height: min(42vh, 440px);
-  overflow-y: auto;
-  padding: 3px 4px 8px 0;
+  max-height: none;
+  overflow: visible;
+  padding: 3px 0 8px;
   width: 100%;
 }
 
@@ -5713,7 +5713,8 @@ input:focus-visible {
 		  }
 
 		  .visual-choice-priority .visual-result-actions {
-		    max-height: 48svh;
+		    max-height: none;
+		    overflow: visible;
 		    padding-right: 0;
 		  }
 
