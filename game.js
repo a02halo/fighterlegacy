@@ -10,7 +10,7 @@
   const SAVE_VERSION = 2;
   const LEGEND_TIER = 6;
   const LEGEND_STAT_CAP = 340;
-  const ASSET_VERSION = "20260808-visual-events-v2";
+  const ASSET_VERSION = "20260808-training-life-v3";
   const IMAGE_ASSETS = {
     home: "./assets/home-fight-legacy.png",
     press: "./assets/press-conference-fight-legacy.png",
@@ -73,6 +73,42 @@
     trainingConditioningLuxe1: "./assets/FL_CARDIO_LUXE_1.png",
     trainingConditioningLuxe2: "./assets/FL_CARDIO_LUXE_2.png",
     trainingConditioningLuxe3: "./assets/FL_CARDIO_LUXE_3.png",
+    trainingWrestlingLow1: "./assets/FL_LUTTE_LOW_1.png",
+    trainingWrestlingLow2: "./assets/FL_LUTTE_LOW_2.png",
+    trainingWrestlingLow3: "./assets/FL_LUTTE_LOW_3.png",
+    trainingWrestlingMid1: "./assets/FL_LUTTE_MID_1.png",
+    trainingWrestlingMid2: "./assets/FL_LUTTE_MID_2.png",
+    trainingWrestlingMid3: "./assets/FL_LUTTE_MID_3.png",
+    trainingWrestlingLuxe1: "./assets/FL_LUTTE_LUXE_1.png",
+    trainingWrestlingLuxe2: "./assets/FL_LUTTE_LUXE_2.png",
+    trainingWrestlingLuxe3: "./assets/FL_LUTTE_LUXE_3.png",
+    trainingSparringLow1: "./assets/FL_SPARRING_LOW_1.png",
+    trainingSparringLow2: "./assets/FL_SPARRING_LOW_2.png",
+    trainingSparringLow3: "./assets/FL_SPARRING_LOW_3.png",
+    trainingSparringMid1: "./assets/FL_SPARRING_MID_1.png",
+    trainingSparringMid2: "./assets/FL_SPARRING_MID_2.png",
+    trainingSparringMid3: "./assets/FL_SPARRING_MID_3.png",
+    trainingSparringLuxe1: "./assets/FL_SPARRING_LUXE_1.png",
+    trainingSparringLuxe2: "./assets/FL_SPARRING_LUXE_2.png",
+    trainingSparringLuxe3: "./assets/FL_SPARRING_LUXE_3.png",
+    trainingTrashLow1: "./assets/FL_TRASH_TALK_LOW_1.png",
+    trainingTrashLow2: "./assets/FL_TRASH_TALK_LOW_6.png",
+    trainingTrashMid1: "./assets/FL_TRASH_TALK_MID_2.png",
+    trainingTrashMid2: "./assets/FL_TRASH_TALK_MID_5.png",
+    trainingTrashLuxe1: "./assets/FL_TRASH_TALK_LUXE_3.png",
+    trainingTrashLuxe2: "./assets/FL_TRASH_TALK_LUXE_4.png",
+    managerBefore: "./assets/manager-historique-avantchoix.png",
+    managerChanged: "./assets/manager-historique-choix-changement.png",
+    managerFaithful: "./assets/manager-historique-choix-fidele.png",
+    streetwearBefore: "./assets/marques-fringues-crew-avantchoix.png",
+    streetwearAccepted: "./assets/marques-fringues-du-crew-acceptation.png",
+    streetwearRefused: "./assets/marques-fringues-crew-refus.png",
+    mouthguardBefore: "./assets/marque-protege-dents-avant-choix.png",
+    mouthguardAccepted: "./assets/marque-protege-dent-acceptation.png",
+    mouthguardRefused: "./assets/marque-protege-dents-refus.png",
+    physioStudioBefore: "./assets/cabinet-recup-kine-avant-choix.png",
+    physioStudioAccepted: "./assets/cabinet-recup-kine-acceptation.png",
+    physioStudioRefused: "./assets/cabinet-recup-kine-refus.png",
   };
 
   const CREATOR_STEPS = [
@@ -5665,6 +5701,22 @@
 
   function eventResultVisual(event, option = null) {
     if (!event) return null;
+    if (event.id === "manager-loyalty") {
+      if (!option) return "managerBefore";
+      return option.label === "Garder l'historique" ? "managerFaithful" : "managerChanged";
+    }
+    if (event.id === "streetwear-drop") {
+      if (!option) return "streetwearBefore";
+      return option.label === "Financer le drop" ? "streetwearAccepted" : "streetwearRefused";
+    }
+    if (event.id === "mouthguard-brand") {
+      if (!option) return "mouthguardBefore";
+      return option.label === "Signer en royalties" ? "mouthguardAccepted" : "mouthguardRefused";
+    }
+    if (event.id === "physio-studio") {
+      if (!option) return "physioStudioBefore";
+      return option.label === "Entrer au projet" ? "physioStudioAccepted" : "physioStudioRefused";
+    }
     if (event.id === "weight-cut") {
       if (!option) return "weightCutBefore";
       return option.label === "Forcer la coupe" ? "weightCutForced" : "weightCutRefused";
@@ -5678,7 +5730,6 @@
       "friend-restaurant": "friendRestaurant",
       "local-gym-shares": "localGymShares",
       "media-channel": "podcast",
-      "physio-studio": "recoveryClinic",
       "relationship-pressure": "relationshipPressure",
       "media-beef": "podcast",
       "boxing-crossover": "boxingCrossover",
@@ -5772,11 +5823,35 @@
     return ["trainingConditioningLow1", "trainingConditioningLow2", "trainingConditioningLow3"];
   }
 
+  function wrestlingTrainingVisualKeys(career = ui.career) {
+    const tier = trainingVisualTier(career);
+    if (tier >= 5) return ["trainingWrestlingLuxe1", "trainingWrestlingLuxe2", "trainingWrestlingLuxe3"];
+    if (tier >= 3) return ["trainingWrestlingMid1", "trainingWrestlingMid2", "trainingWrestlingMid3"];
+    return ["trainingWrestlingLow1", "trainingWrestlingLow2", "trainingWrestlingLow3"];
+  }
+
+  function sparringTrainingVisualKeys(career = ui.career) {
+    const tier = trainingVisualTier(career);
+    if (tier >= 5) return ["trainingSparringLuxe1", "trainingSparringLuxe2", "trainingSparringLuxe3"];
+    if (tier >= 3) return ["trainingSparringMid1", "trainingSparringMid2", "trainingSparringMid3"];
+    return ["trainingSparringLow1", "trainingSparringLow2", "trainingSparringLow3"];
+  }
+
+  function trashTrainingVisualKeys(career = ui.career) {
+    const tier = trainingVisualTier(career);
+    if (tier >= 5) return ["trainingTrashLuxe1", "trainingTrashLuxe2"];
+    if (tier >= 3) return ["trainingTrashMid1", "trainingTrashMid2"];
+    return ["trainingTrashLow1", "trainingTrashLow2"];
+  }
+
   function trainingFocusResultVisualKey(career, focus, week) {
     const visualKeysByFocus = {
       striking: strikingTrainingVisualKeys,
       tactics: tacticsTrainingVisualKeys,
       conditioning: conditioningTrainingVisualKeys,
+      wrestling: wrestlingTrainingVisualKeys,
+      sparring: sparringTrainingVisualKeys,
+      "trash-media": trashTrainingVisualKeys,
     };
     const resolveKeys = visualKeysByFocus[focus?.id];
     if (!resolveKeys) return null;
@@ -5803,6 +5878,13 @@
   }
 
   function visualResultConfig(key) {
+    const card = (assetKey, className, alt, icon, kicker) => ({
+      className,
+      image: assetUrl(assetKey),
+      alt,
+      icon,
+      kicker,
+    });
     const visualResults = {
       press: {
         className: "press-result-card",
@@ -5888,6 +5970,18 @@
         icon: "warehouse",
         kicker: "Business local",
       },
+      managerBefore: card("managerBefore", "manager-before-result-card", "Manager historique et nouvel agent devant le combattant", "users", "Manager historique"),
+      managerChanged: card("managerChanged", "manager-changed-result-card", "Combattant serrant la main du nouvel agent", "briefcase-business", "Nouveau manager"),
+      managerFaithful: card("managerFaithful", "manager-faithful-result-card", "Combattant restant fidele a son manager historique", "handshake", "Loyaute"),
+      streetwearBefore: card("streetwearBefore", "streetwear-before-result-card", "Projet de marque de fringues du crew avant decision", "shirt", "Marque du crew"),
+      streetwearAccepted: card("streetwearAccepted", "streetwear-accepted-result-card", "Combattant acceptant de financer la marque du crew", "shirt", "Drop finance"),
+      streetwearRefused: card("streetwearRefused", "streetwear-refused-result-card", "Combattant refusant de financer la marque du crew", "badge-x", "Promo sans cheque"),
+      mouthguardBefore: card("mouthguardBefore", "mouthguard-before-result-card", "Proposition de marque de protege-dents signature", "shield", "Protege-dents"),
+      mouthguardAccepted: card("mouthguardAccepted", "mouthguard-accepted-result-card", "Deal accepte pour un protege-dents signature", "badge-check", "Deal signature"),
+      mouthguardRefused: card("mouthguardRefused", "mouthguard-refused-result-card", "Refus du projet de protege-dents signature", "badge-x", "Deal refuse"),
+      physioStudioBefore: card("physioStudioBefore", "physio-studio-before-result-card", "Cabinet de recuperation du kine avant decision", "stethoscope", "Cabinet recup"),
+      physioStudioAccepted: card("physioStudioAccepted", "physio-studio-accepted-result-card", "Investissement accepte dans un cabinet de recuperation", "handshake", "Projet recup"),
+      physioStudioRefused: card("physioStudioRefused", "physio-studio-refused-result-card", "Refus d'investir dans un cabinet de recuperation", "badge-x", "Client seulement"),
       relationshipPressure: {
         className: "relationship-pressure-result-card",
         image: assetUrl("relationshipPressure"),
@@ -6224,6 +6318,30 @@
         icon: "dumbbell",
         kicker: "Cardio puissance FLC",
       },
+      trainingWrestlingLow1: card("trainingWrestlingLow1", "training-wrestling-low-result-card", "Lutte et cage control dans une salle locale", "shield", "Lutte et cage control"),
+      trainingWrestlingLow2: card("trainingWrestlingLow2", "training-wrestling-low-result-card", "Controle au sol dans une salle brute", "shield", "Lutte et cage control"),
+      trainingWrestlingLow3: card("trainingWrestlingLow3", "training-wrestling-low-result-card", "Rounds de lutte dans une salle modeste", "shield", "Lutte et cage control"),
+      trainingWrestlingMid1: card("trainingWrestlingMid1", "training-wrestling-mid-result-card", "Lutte MMA dans une structure professionnelle", "shield", "Lutte internationale"),
+      trainingWrestlingMid2: card("trainingWrestlingMid2", "training-wrestling-mid-result-card", "Controle cage et sol en salle internationale", "shield", "Lutte internationale"),
+      trainingWrestlingMid3: card("trainingWrestlingMid3", "training-wrestling-mid-result-card", "Rounds de wrestling dans un centre professionnel", "shield", "Lutte internationale"),
+      trainingWrestlingLuxe1: card("trainingWrestlingLuxe1", "training-wrestling-luxe-result-card", "Lutte MMA dans un centre elite FLC", "shield", "Lutte FLC"),
+      trainingWrestlingLuxe2: card("trainingWrestlingLuxe2", "training-wrestling-luxe-result-card", "Controle au sol dans une salle de luxe FLC", "shield", "Lutte FLC"),
+      trainingWrestlingLuxe3: card("trainingWrestlingLuxe3", "training-wrestling-luxe-result-card", "Wrestling haut niveau dans une structure FLC", "shield", "Lutte FLC"),
+      trainingSparringLow1: card("trainingSparringLow1", "training-sparring-low-result-card", "Sparring dans une cage locale", "swords", "Sparring partenaire"),
+      trainingSparringLow2: card("trainingSparringLow2", "training-sparring-low-result-card", "Sparring dur dans une petite salle", "swords", "Sparring partenaire"),
+      trainingSparringLow3: card("trainingSparringLow3", "training-sparring-low-result-card", "Rounds de sparring dans une salle brute", "swords", "Sparring partenaire"),
+      trainingSparringMid1: card("trainingSparringMid1", "training-sparring-mid-result-card", "Sparring dans une salle professionnelle", "swords", "Sparring international"),
+      trainingSparringMid2: card("trainingSparringMid2", "training-sparring-mid-result-card", "Sparring equipe dans une structure internationale", "swords", "Sparring international"),
+      trainingSparringMid3: card("trainingSparringMid3", "training-sparring-mid-result-card", "Sparring debout avec protections en salle pro", "swords", "Sparring international"),
+      trainingSparringLuxe1: card("trainingSparringLuxe1", "training-sparring-luxe-result-card", "Sparring elite sur terrasse de luxe", "swords", "Sparring FLC"),
+      trainingSparringLuxe2: card("trainingSparringLuxe2", "training-sparring-luxe-result-card", "Sparring FLC avec staff haut niveau", "swords", "Sparring FLC"),
+      trainingSparringLuxe3: card("trainingSparringLuxe3", "training-sparring-luxe-result-card", "Sparring FLC sous observation technique", "swords", "Sparring FLC"),
+      trainingTrashLow1: card("trainingTrashLow1", "training-trash-low-result-card", "Contenu reseaux dans une salle locale", "megaphone", "Trash-talk reseaux"),
+      trainingTrashLow2: card("trainingTrashLow2", "training-trash-low-result-card", "Video trash-talk tournee a l'ancienne", "megaphone", "Trash-talk reseaux"),
+      trainingTrashMid1: card("trainingTrashMid1", "training-trash-mid-result-card", "Trash-talk filme dans une salle professionnelle", "megaphone", "Trash-talk international"),
+      trainingTrashMid2: card("trainingTrashMid2", "training-trash-mid-result-card", "Trash-talk de rue devant les cameras", "megaphone", "Trash-talk international"),
+      trainingTrashLuxe1: card("trainingTrashLuxe1", "training-trash-luxe-result-card", "Trash-talk dans une voiture de luxe", "megaphone", "Trash-talk FLC"),
+      trainingTrashLuxe2: card("trainingTrashLuxe2", "training-trash-luxe-result-card", "Trash-talk televisuel tres show", "megaphone", "Trash-talk FLC"),
     };
     return visualResults[key] || null;
   }
@@ -13517,7 +13635,43 @@
     "trainingConditioningMid3",
     "trainingConditioningLuxe1",
     "trainingConditioningLuxe2",
-    "trainingConditioningLuxe3"
+    "trainingConditioningLuxe3",
+    "trainingWrestlingLow1",
+    "trainingWrestlingLow2",
+    "trainingWrestlingLow3",
+    "trainingWrestlingMid1",
+    "trainingWrestlingMid2",
+    "trainingWrestlingMid3",
+    "trainingWrestlingLuxe1",
+    "trainingWrestlingLuxe2",
+    "trainingWrestlingLuxe3",
+    "trainingSparringLow1",
+    "trainingSparringLow2",
+    "trainingSparringLow3",
+    "trainingSparringMid1",
+    "trainingSparringMid2",
+    "trainingSparringMid3",
+    "trainingSparringLuxe1",
+    "trainingSparringLuxe2",
+    "trainingSparringLuxe3",
+    "trainingTrashLow1",
+    "trainingTrashLow2",
+    "trainingTrashMid1",
+    "trainingTrashMid2",
+    "trainingTrashLuxe1",
+    "trainingTrashLuxe2",
+    "managerBefore",
+    "managerChanged",
+    "managerFaithful",
+    "streetwearBefore",
+    "streetwearAccepted",
+    "streetwearRefused",
+    "mouthguardBefore",
+    "mouthguardAccepted",
+    "mouthguardRefused",
+    "physioStudioBefore",
+    "physioStudioAccepted",
+    "physioStudioRefused"
   );
   if ("requestIdleCallback" in window) {
     window.requestIdleCallback(warmSecondaryAssets, { timeout: 1800 });

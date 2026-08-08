@@ -1211,6 +1211,15 @@ input:focus-visible {
 .visual-swipe-screen .training-conditioning-low-result-card .swipe-card-visual,
 .visual-swipe-screen .training-conditioning-mid-result-card .swipe-card-visual,
 .visual-swipe-screen .training-conditioning-luxe-result-card .swipe-card-visual,
+.visual-swipe-screen .training-wrestling-low-result-card .swipe-card-visual,
+.visual-swipe-screen .training-wrestling-mid-result-card .swipe-card-visual,
+.visual-swipe-screen .training-wrestling-luxe-result-card .swipe-card-visual,
+.visual-swipe-screen .training-sparring-low-result-card .swipe-card-visual,
+.visual-swipe-screen .training-sparring-mid-result-card .swipe-card-visual,
+.visual-swipe-screen .training-sparring-luxe-result-card .swipe-card-visual,
+.visual-swipe-screen .training-trash-low-result-card .swipe-card-visual,
+.visual-swipe-screen .training-trash-mid-result-card .swipe-card-visual,
+.visual-swipe-screen .training-trash-luxe-result-card .swipe-card-visual,
 .visual-swipe-screen .doping-result-card .swipe-card-visual {
   object-position: center 42%;
 }
@@ -2803,6 +2812,70 @@ input:focus-visible {
     linear-gradient(180deg, rgba(11, 10, 8, 0.02) 0%, rgba(11, 10, 8, 0.16) 42%, rgba(11, 10, 8, 0.84) 100%);
 }
 
+.manager-before-result-card,
+.manager-changed-result-card,
+.manager-faithful-result-card,
+.streetwear-before-result-card,
+.streetwear-accepted-result-card,
+.streetwear-refused-result-card,
+.mouthguard-before-result-card,
+.mouthguard-accepted-result-card,
+.mouthguard-refused-result-card {
+  background:
+    linear-gradient(135deg, rgba(214, 165, 59, 0.2), transparent 42%),
+    #12100d;
+}
+
+.physio-studio-before-result-card,
+.physio-studio-accepted-result-card,
+.physio-studio-refused-result-card {
+  background:
+    linear-gradient(135deg, rgba(67, 135, 220, 0.24), transparent 42%),
+    #07101a;
+}
+
+.manager-before-result-card img,
+.manager-changed-result-card img,
+.manager-faithful-result-card img,
+.streetwear-before-result-card img,
+.streetwear-accepted-result-card img,
+.streetwear-refused-result-card img,
+.mouthguard-before-result-card img,
+.mouthguard-accepted-result-card img,
+.mouthguard-refused-result-card img {
+  object-position: center 45%;
+  opacity: 0.95;
+}
+
+.physio-studio-before-result-card img,
+.physio-studio-accepted-result-card img,
+.physio-studio-refused-result-card img {
+  object-position: center 47%;
+  opacity: 0.95;
+}
+
+.manager-before-result-card::before,
+.manager-changed-result-card::before,
+.manager-faithful-result-card::before,
+.streetwear-before-result-card::before,
+.streetwear-accepted-result-card::before,
+.streetwear-refused-result-card::before,
+.mouthguard-before-result-card::before,
+.mouthguard-accepted-result-card::before,
+.mouthguard-refused-result-card::before {
+  background:
+    linear-gradient(90deg, rgba(16, 11, 7, 0.82) 0%, rgba(16, 11, 7, 0.5) 45%, rgba(16, 11, 7, 0.1) 100%),
+    linear-gradient(180deg, rgba(16, 11, 7, 0.02) 0%, rgba(16, 11, 7, 0.16) 42%, rgba(16, 11, 7, 0.84) 100%);
+}
+
+.physio-studio-before-result-card::before,
+.physio-studio-accepted-result-card::before,
+.physio-studio-refused-result-card::before {
+  background:
+    linear-gradient(90deg, rgba(4, 10, 17, 0.82) 0%, rgba(4, 10, 17, 0.5) 45%, rgba(4, 10, 17, 0.1) 100%),
+    linear-gradient(180deg, rgba(4, 10, 17, 0.02) 0%, rgba(4, 10, 17, 0.16) 42%, rgba(4, 10, 17, 0.84) 100%);
+}
+
 .press-result-card,
 .press-pique-result-card,
 .press-brawl-result-card,
@@ -2847,6 +2920,15 @@ input:focus-visible {
 .training-conditioning-low-result-card,
 .training-conditioning-mid-result-card,
 .training-conditioning-luxe-result-card,
+.training-wrestling-low-result-card,
+.training-wrestling-mid-result-card,
+.training-wrestling-luxe-result-card,
+.training-sparring-low-result-card,
+.training-sparring-mid-result-card,
+.training-sparring-luxe-result-card,
+.training-trash-low-result-card,
+.training-trash-mid-result-card,
+.training-trash-luxe-result-card,
 .training-injury-result-card {
   background:
     linear-gradient(135deg, rgba(214, 165, 59, 0.22), transparent 42%),
@@ -2869,7 +2951,16 @@ input:focus-visible {
 .training-tactics-luxe-result-card img,
 .training-conditioning-low-result-card img,
 .training-conditioning-mid-result-card img,
-.training-conditioning-luxe-result-card img {
+.training-conditioning-luxe-result-card img,
+.training-wrestling-low-result-card img,
+.training-wrestling-mid-result-card img,
+.training-wrestling-luxe-result-card img,
+.training-sparring-low-result-card img,
+.training-sparring-mid-result-card img,
+.training-sparring-luxe-result-card img,
+.training-trash-low-result-card img,
+.training-trash-mid-result-card img,
+.training-trash-luxe-result-card img {
   object-position: center 40%;
   opacity: 0.94;
 }
@@ -2892,6 +2983,15 @@ input:focus-visible {
 .training-conditioning-low-result-card::before,
 .training-conditioning-mid-result-card::before,
 .training-conditioning-luxe-result-card::before,
+.training-wrestling-low-result-card::before,
+.training-wrestling-mid-result-card::before,
+.training-wrestling-luxe-result-card::before,
+.training-sparring-low-result-card::before,
+.training-sparring-mid-result-card::before,
+.training-sparring-luxe-result-card::before,
+.training-trash-low-result-card::before,
+.training-trash-mid-result-card::before,
+.training-trash-luxe-result-card::before,
 .training-injury-result-card::before {
   background:
     linear-gradient(90deg, rgba(13, 12, 10, 0.82) 0%, rgba(13, 12, 10, 0.48) 45%, rgba(13, 12, 10, 0.08) 100%),
@@ -5512,6 +5612,15 @@ input:focus-visible {
 		  .training-conditioning-low-result-card .swipe-card-visual,
 		  .training-conditioning-mid-result-card .swipe-card-visual,
 		  .training-conditioning-luxe-result-card .swipe-card-visual,
+		  .training-wrestling-low-result-card .swipe-card-visual,
+		  .training-wrestling-mid-result-card .swipe-card-visual,
+		  .training-wrestling-luxe-result-card .swipe-card-visual,
+		  .training-sparring-low-result-card .swipe-card-visual,
+		  .training-sparring-mid-result-card .swipe-card-visual,
+		  .training-sparring-luxe-result-card .swipe-card-visual,
+		  .training-trash-low-result-card .swipe-card-visual,
+		  .training-trash-mid-result-card .swipe-card-visual,
+		  .training-trash-luxe-result-card .swipe-card-visual,
 		  .training-injury-result-card .swipe-card-visual {
 		    object-position: center 42%;
 		  }
@@ -5936,6 +6045,18 @@ input:focus-visible {
 		  .steakhouse-result-card::before,
 		  .friend-restaurant-result-card::before,
 		  .local-gym-shares-result-card::before,
+		  .manager-before-result-card::before,
+		  .manager-changed-result-card::before,
+		  .manager-faithful-result-card::before,
+		  .streetwear-before-result-card::before,
+		  .streetwear-accepted-result-card::before,
+		  .streetwear-refused-result-card::before,
+		  .mouthguard-before-result-card::before,
+		  .mouthguard-accepted-result-card::before,
+		  .mouthguard-refused-result-card::before,
+		  .physio-studio-before-result-card::before,
+		  .physio-studio-accepted-result-card::before,
+		  .physio-studio-refused-result-card::before,
 		  .hotel-suite-result-card::before,
 		  .sponsor-night-result-card::before,
 		  .dodgy-sponsor-result-card::before,
@@ -5959,6 +6080,15 @@ input:focus-visible {
 		  .training-conditioning-low-result-card::before,
 		  .training-conditioning-mid-result-card::before,
 		  .training-conditioning-luxe-result-card::before,
+		  .training-wrestling-low-result-card::before,
+		  .training-wrestling-mid-result-card::before,
+		  .training-wrestling-luxe-result-card::before,
+		  .training-sparring-low-result-card::before,
+		  .training-sparring-mid-result-card::before,
+		  .training-sparring-luxe-result-card::before,
+		  .training-trash-low-result-card::before,
+		  .training-trash-mid-result-card::before,
+		  .training-trash-luxe-result-card::before,
 		  .training-injury-result-card::before {
 		    background:
 		      linear-gradient(180deg, rgba(10, 10, 10, 0.02) 0%, rgba(10, 10, 10, 0.08) 32%, rgba(10, 10, 10, 0.58) 68%, rgba(10, 10, 10, 0.92) 100%),
