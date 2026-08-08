@@ -10,7 +10,7 @@
   const SAVE_VERSION = 2;
   const LEGEND_TIER = 6;
   const LEGEND_STAT_CAP = 340;
-  const ASSET_VERSION = "20260808-training-pp-v1";
+  const ASSET_VERSION = "20260808-training-coach-v1";
   const IMAGE_ASSETS = {
     home: "./assets/home-fight-legacy.png",
     press: "./assets/press-conference-fight-legacy.png",
@@ -49,6 +49,15 @@
     trainingStrikingLuxe1: "./assets/FL_PP_LUXE_1.png",
     trainingStrikingLuxe2: "./assets/FL_PP_LUXE_2.png",
     trainingStrikingLuxe3: "./assets/FL_PP_LUXE_3.png",
+    trainingTacticsLow1: "./assets/FL_COACH_LOW_1.png",
+    trainingTacticsLow2: "./assets/FL_COACH_LOW_2.png",
+    trainingTacticsLow3: "./assets/FL_COACH_LOW_3.png",
+    trainingTacticsMid1: "./assets/FL_COACH_MID_1.png",
+    trainingTacticsMid2: "./assets/FL_COACH_MID_2.png",
+    trainingTacticsMid3: "./assets/FL_COACH_MID_3.png",
+    trainingTacticsLuxe1: "./assets/FL_COACH_LUXE_1.png",
+    trainingTacticsLuxe2: "./assets/FL_COACH_LUXE_2.png",
+    trainingTacticsLuxe3: "./assets/FL_COACH_LUXE_3.png",
   };
 
   const CREATOR_STEPS = [
@@ -5709,17 +5718,33 @@
     return null;
   }
 
-  function strikingTrainingVisualKeys(career = ui.career) {
+  function trainingVisualTier(career = ui.career) {
     const labelTier = orgTierFromLabel(career?.org?.label || career?.org?.id || "");
-    const tier = clamp(Number.isFinite(Number(career?.tier)) ? Number(career.tier) : (labelTier ?? 0), 0, LEGEND_TIER);
+    return clamp(Number.isFinite(Number(career?.tier)) ? Number(career.tier) : (labelTier ?? 0), 0, LEGEND_TIER);
+  }
+
+  function strikingTrainingVisualKeys(career = ui.career) {
+    const tier = trainingVisualTier(career);
     if (tier >= 5) return ["trainingStrikingLuxe1", "trainingStrikingLuxe2", "trainingStrikingLuxe3"];
     if (tier >= 3) return ["trainingStrikingMid1", "trainingStrikingMid2", "trainingStrikingMid3"];
     return ["trainingStrikingLow1", "trainingStrikingLow2", "trainingStrikingLow3"];
   }
 
+  function tacticsTrainingVisualKeys(career = ui.career) {
+    const tier = trainingVisualTier(career);
+    if (tier >= 5) return ["trainingTacticsLuxe1", "trainingTacticsLuxe2", "trainingTacticsLuxe3"];
+    if (tier >= 3) return ["trainingTacticsMid1", "trainingTacticsMid2", "trainingTacticsMid3"];
+    return ["trainingTacticsLow1", "trainingTacticsLow2", "trainingTacticsLow3"];
+  }
+
   function trainingFocusResultVisualKey(career, focus, week) {
-    if (focus?.id !== "striking") return null;
-    const keys = strikingTrainingVisualKeys(career);
+    const visualKeysByFocus = {
+      striking: strikingTrainingVisualKeys,
+      tactics: tacticsTrainingVisualKeys,
+    };
+    const resolveKeys = visualKeysByFocus[focus?.id];
+    if (!resolveKeys) return null;
+    const keys = resolveKeys(career);
     return visualVariantKey(
       keys[0],
       keys.slice(1),
@@ -5994,6 +6019,69 @@
         alt: "Salle pied-poing haut niveau FLC pendant un camp MMA",
         icon: "target",
         kicker: "Pied-poing FLC",
+      },
+      trainingTacticsLow1: {
+        className: "training-tactics-low-result-card",
+        image: assetUrl("trainingTacticsLow1"),
+        alt: "Seance video et game plan dans une salle locale",
+        icon: "brain",
+        kicker: "Video et game plan",
+      },
+      trainingTacticsLow2: {
+        className: "training-tactics-low-result-card",
+        image: assetUrl("trainingTacticsLow2"),
+        alt: "Analyse video dans une salle locale",
+        icon: "brain",
+        kicker: "Video et game plan",
+      },
+      trainingTacticsLow3: {
+        className: "training-tactics-low-result-card",
+        image: assetUrl("trainingTacticsLow3"),
+        alt: "Game plan dans une salle modeste",
+        icon: "brain",
+        kicker: "Video et game plan",
+      },
+      trainingTacticsMid1: {
+        className: "training-tactics-mid-result-card",
+        image: assetUrl("trainingTacticsMid1"),
+        alt: "Analyse video dans une salle professionnelle",
+        icon: "brain",
+        kicker: "Game plan international",
+      },
+      trainingTacticsMid2: {
+        className: "training-tactics-mid-result-card",
+        image: assetUrl("trainingTacticsMid2"),
+        alt: "Seance tactique dans une petite organisation",
+        icon: "brain",
+        kicker: "Game plan international",
+      },
+      trainingTacticsMid3: {
+        className: "training-tactics-mid-result-card",
+        image: assetUrl("trainingTacticsMid3"),
+        alt: "Video et ajustements tactiques en organisation internationale",
+        icon: "brain",
+        kicker: "Game plan international",
+      },
+      trainingTacticsLuxe1: {
+        className: "training-tactics-luxe-result-card",
+        image: assetUrl("trainingTacticsLuxe1"),
+        alt: "Salle video de luxe FLC",
+        icon: "brain",
+        kicker: "Game plan FLC",
+      },
+      trainingTacticsLuxe2: {
+        className: "training-tactics-luxe-result-card",
+        image: assetUrl("trainingTacticsLuxe2"),
+        alt: "Analyse tactique haut niveau FLC",
+        icon: "brain",
+        kicker: "Game plan FLC",
+      },
+      trainingTacticsLuxe3: {
+        className: "training-tactics-luxe-result-card",
+        image: assetUrl("trainingTacticsLuxe3"),
+        alt: "War room tactique FLC pendant un camp MMA",
+        icon: "brain",
+        kicker: "Game plan FLC",
       },
     };
     return visualResults[key] || null;
@@ -13258,7 +13346,16 @@
     "trainingStrikingMid3",
     "trainingStrikingLuxe1",
     "trainingStrikingLuxe2",
-    "trainingStrikingLuxe3"
+    "trainingStrikingLuxe3",
+    "trainingTacticsLow1",
+    "trainingTacticsLow2",
+    "trainingTacticsLow3",
+    "trainingTacticsMid1",
+    "trainingTacticsMid2",
+    "trainingTacticsMid3",
+    "trainingTacticsLuxe1",
+    "trainingTacticsLuxe2",
+    "trainingTacticsLuxe3"
   );
   if ("requestIdleCallback" in window) {
     window.requestIdleCallback(warmSecondaryAssets, { timeout: 1800 });
