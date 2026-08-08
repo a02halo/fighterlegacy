@@ -10,18 +10,29 @@
   const SAVE_VERSION = 2;
   const LEGEND_TIER = 6;
   const LEGEND_STAT_CAP = 340;
-  const ASSET_VERSION = "20260807-press-stage-variants";
+  const ASSET_VERSION = "20260808-life-visuals-anchor";
   const IMAGE_ASSETS = {
     home: "./assets/home-fight-legacy.png",
     press: "./assets/press-conference-fight-legacy.png",
     pressPique: "./assets/confpresse-pique-9-16.png",
     pressBrawl: "./assets/confpresse-brawl-9-16.png",
+    pressBrawlAlt: "./assets/conference-presse-brawl-2-9-16.png",
     doping: "./assets/doping-fight-legacy.png",
     podcast: "./assets/podcastcousin-9-16.png",
     medicalRest: "./assets/reposmedical-9-16.png",
+    recoveryClinic: "./assets/clinique-de-recuperation-9-16.png",
     campDiet: "./assets/ecartnourriturecamp-9-16.png",
     steakhouse: "./assets/steackhouse-fight.png",
+    friendRestaurant: "./assets/le-restaurant-du-pote-9-16.png",
+    localGymShares: "./assets/parts-dans-une-salle-locale-9-16.png",
+    relationshipPressure: "./assets/couple-sous-pression-9-16.png",
+    boxingCrossover: "./assets/combat-boxe-9-16.png",
+    parkingIncident: "./assets/accroche-au-parking-9-16.png",
+    hotelSuite: "./assets/suite-hotel-retournee-9-16.png",
+    sponsorNight: "./assets/soiree-sponsorisee-9-16.png",
+    dodgySponsor: "./assets/sponsor-vereux-contrat.png",
     stageGrappling: "./assets/stage-sol-9-16.png",
+    stageGrapplingAlt: "./assets/stage-lutte-2-9-16.png",
     stageStriking: "./assets/stage-striking-9-16.png",
     stageStrikingAlt: "./assets/stage-striking-2-9-16.png",
     stageDaghestan: "./assets/stage-daghestan-9-16.png",
@@ -4345,7 +4356,7 @@
 	      startFightSelection();
 	      return;
 	    }
-	    preloadGameAssets("press", "pressPique", "pressBrawl");
+	    preloadGameAssets("press", "pressPique", "pressBrawl", "pressBrawlAlt");
 	    if (hasMedicalRest(career)) {
 	      routeMedicalRest("La conference attendra le feu vert medical.");
 	      return;
@@ -4397,7 +4408,7 @@
 	    });
 	    if (hasMedicalRest(career)) cancelPendingFightForMedical(career, "Incident en conference de presse.");
 	    const pressVisual = pressVisualKeyForOption(option);
-	    preloadGameAssets("press", "pressPique", "pressBrawl");
+	    preloadGameAssets("press", "pressPique", "pressBrawl", "pressBrawlAlt");
 	    showDecisionResult(career, {
 	      title: "Conference de presse",
 	      text: resultText,
@@ -5616,27 +5627,60 @@
 
   function eventResultVisual(event) {
     if (!event) return null;
+    const visualsByEvent = {
+      "diet-cheat": "campDiet",
+      "friend-restaurant": "friendRestaurant",
+      "local-gym-shares": "localGymShares",
+      "media-channel": "podcast",
+      "physio-studio": "recoveryClinic",
+      "relationship-pressure": "relationshipPressure",
+      "media-beef": "podcast",
+      "boxing-crossover": "boxingCrossover",
+      "steakhouse-beef": "steakhouse",
+      "sponsor-night": "sponsorNight",
+      "recovery-clinic": "recoveryClinic",
+      "hotel-extinguisher": "hotelSuite",
+      "parking-incident": "parkingIncident",
+      "diet-sponsor": "dodgySponsor",
+    };
     if (["night-test", "tainted-supplement", "doctor-protocol", "under-cage-control"].includes(event.id)) return "doping";
-    if (["media-channel", "media-beef"].includes(event.id)) return "podcast";
-    if (event.id === "diet-cheat") return "campDiet";
-    if (event.id === "steakhouse-beef") return "steakhouse";
+    if (event.id === "presser-bottles") {
+      return visualVariantKey(
+        "pressBrawl",
+        ["pressBrawlAlt"],
+        `${ui.career?.seed || ""}|${ui.career?.year || ""}|${event.id}|${ui.career?.pendingFight?.opponent?.name || ""}`
+      );
+    }
+    if (visualsByEvent[event.id]) return visualsByEvent[event.id];
     return null;
   }
 
   function eventDecisionVisual(event) {
     const visual = eventResultVisual(event);
-    return visual === "doping" ? visual : null;
+    return visual && event?.options?.length === 2 ? visual : null;
   }
 
   function pressVisualKeyForOption(option) {
     if (option?.id === "personal-trash") return "pressPique";
-    if (option?.id === "staredown-push") return "pressBrawl";
+    if (["staredown-push", "bottle-chaos"].includes(option?.id)) {
+      return visualVariantKey(
+        "pressBrawl",
+        ["pressBrawlAlt"],
+        `${ui.career?.seed || ""}|${ui.career?.year || ""}|${option.id}|${ui.career?.pendingFight?.opponent?.name || ""}`
+      );
+    }
     return "press";
   }
 
   function campOpportunityVisualKey(opportunity, career = ui.career) {
     if (!opportunity) return null;
-    if (opportunity.id === "bjj-seminar") return "stageGrappling";
+    if (opportunity.id === "bjj-seminar") {
+      return visualVariantKey(
+        "stageGrappling",
+        ["stageGrapplingAlt"],
+        `${career?.seed || ""}|${career?.year || ""}|${career?.pendingFight?.opponent?.name || ""}|${career?.camp?.week || ""}|${opportunity.id}`
+      );
+    }
     if (opportunity.id === "striking-seminar") {
       return visualVariantKey(
         "stageStriking",
@@ -5691,6 +5735,13 @@
         icon: "shield-alert",
         kicker: "Face-off sous tension",
       },
+      pressBrawlAlt: {
+        className: "press-brawl-alt-result-card",
+        image: assetUrl("pressBrawlAlt"),
+        alt: "Face-off de conference de presse qui degenere",
+        icon: "shield-alert",
+        kicker: "Face-off sous tension",
+      },
       doping: {
         className: "doping-result-card",
         image: assetUrl("doping"),
@@ -5726,10 +5777,80 @@
         icon: "ambulance",
         kicker: "Repos medical",
       },
+      recoveryClinic: {
+        className: "recovery-clinic-result-card",
+        image: assetUrl("recoveryClinic"),
+        alt: "Clinique de recuperation pour combattants",
+        icon: "stethoscope",
+        kicker: "Recuperation",
+      },
+      friendRestaurant: {
+        className: "friend-restaurant-result-card",
+        image: assetUrl("friendRestaurant"),
+        alt: "Projet de restaurant porte par un proche",
+        icon: "utensils",
+        kicker: "Investissement",
+      },
+      localGymShares: {
+        className: "local-gym-shares-result-card",
+        image: assetUrl("localGymShares"),
+        alt: "Projet de salle locale de MMA",
+        icon: "warehouse",
+        kicker: "Business local",
+      },
+      relationshipPressure: {
+        className: "relationship-pressure-result-card",
+        image: assetUrl("relationshipPressure"),
+        alt: "Couple sous pression pendant une carriere MMA",
+        icon: "heart-crack",
+        kicker: "Vie perso",
+      },
+      boxingCrossover: {
+        className: "boxing-crossover-result-card",
+        image: assetUrl("boxingCrossover"),
+        alt: "Combat de boxe anglaise sous les projecteurs",
+        icon: "badge-dollar-sign",
+        kicker: "Money fight",
+      },
+      parkingIncident: {
+        className: "parking-incident-result-card",
+        image: assetUrl("parkingIncident"),
+        alt: "Accrochage au parking apres un gala",
+        icon: "car",
+        kicker: "Incident",
+      },
+      hotelSuite: {
+        className: "hotel-suite-result-card",
+        image: assetUrl("hotelSuite"),
+        alt: "Suite d'hotel retournee apres une soiree",
+        icon: "building-2",
+        kicker: "Scandale",
+      },
+      sponsorNight: {
+        className: "sponsor-night-result-card",
+        image: assetUrl("sponsorNight"),
+        alt: "Soiree sponsorisee pendant une fight week",
+        icon: "sparkles",
+        kicker: "Soiree sponsorisee",
+      },
+      dodgySponsor: {
+        className: "dodgy-sponsor-result-card",
+        image: assetUrl("dodgySponsor"),
+        alt: "Sponsor douteux proposant un contrat",
+        icon: "briefcase-business",
+        kicker: "Sponsor douteux",
+      },
       stageGrappling: {
         className: "stage-grappling-result-card",
         image: assetUrl("stageGrappling"),
         alt: "Stage de grappling et lutte",
+        icon: "shield",
+        kicker: "Stage lutte et sol",
+      },
+      stageGrapplingAlt: {
+        className: "stage-grappling-alt-result-card",
+        image: assetUrl("stageGrapplingAlt"),
+        alt: "Stage de lutte MMA alternatif",
         icon: "shield",
         kicker: "Stage lutte et sol",
       },
@@ -5789,7 +5910,7 @@
   function renderVisualResultCard(visualResult, title, text, effectsMarkup = "", actionsMarkup = "") {
     if (!visualResult) return "";
     return `
-      <div class="visual-result-card ${visualResult.className}" style="--visual-image: url('${esc(visualResult.image)}')">
+      <div class="visual-result-card ${visualResult.className}" data-visual-anchor style="--visual-image: url('${esc(visualResult.image)}')">
         <img src="${esc(visualResult.image)}" alt="${esc(visualResult.alt)}" decoding="async" fetchpriority="high" loading="eager">
         <div class="visual-result-content">
           <span class="visual-result-kicker">${iconOnly(visualResult.icon, "V")} ${esc(visualResult.kicker)}</span>
@@ -8618,6 +8739,13 @@
 		  function renderShell(content) {
 		    app.innerHTML = `<div class="app-shell">${renderTopbar()}${renderStatsNudge()}${content}</div>`;
 		    hydrateIcons();
+		    const visualAnchor = [...app.querySelectorAll("[data-visual-anchor]")]
+		      .find(node => node.offsetParent !== null) || app.querySelector("[data-visual-anchor]");
+		    if (visualAnchor) {
+		      window.requestAnimationFrame(() => {
+		        visualAnchor.scrollIntoView({ block: "center", inline: "nearest" });
+		      });
+		    }
 		  }
 
   function renderMenu() {
@@ -8842,7 +8970,7 @@
 	    const visualClass = visual ? ` has-swipe-visual ${visual.className}` : "";
 	    const visualStyle = visual ? ` style="--visual-image: url('${esc(visual.image)}')"` : "";
 	    return `
-	      <div class="swipe-choice-deck" data-swipe-deck>
+	      <div class="swipe-choice-deck" data-swipe-deck${visual ? " data-visual-anchor" : ""}>
 	        <div class="swipe-choice-card${visualClass}" data-swipe-card data-left-label="${esc(left.label)}" data-right-label="${esc(right.label)}"${visualStyle}>
 	          ${visual ? `<img class="swipe-card-visual" src="${esc(visual.image)}" alt="${esc(visual.alt)}" decoding="async" fetchpriority="high" loading="eager"><span class="swipe-card-visual-shade" aria-hidden="true"></span>` : ""}
           <div class="swipe-card-top">
@@ -9283,31 +9411,35 @@
     const visualKey = contractSigningVisualKey(career, `offers-${career.pendingContracts.map(offer => offer.id).join("-")}`);
     const visual = visualResultConfig(visualKey);
     preloadGameAssets("contractSigning", "contractSigningAlt");
+    const offersMarkup = `
+      <div class="choice-grid contract-offer-grid mobile-option-stack visual-embedded-choice-grid contract-visual-choice-grid">
+        ${career.pendingContracts.map((offer, index) => `
+          <button class="choice-btn contract-offer-card" data-action="choose-contract" data-index="${index}">
+            <span class="contract-offer-head">
+              <span class="choice-icon">${iconOnly(String(offer.id).startsWith("move") ? "circle-dollar-sign" : offer.id === "sponsor" ? "badge-dollar-sign" : "shield-check", "$")}</span>
+              <strong>${esc(offer.label)}</strong>
+            </span>
+            <span class="choice-summary">${esc(offer.summary)}</span>
+            <span class="contract-offer-meta">
+              <span>${iconOnly("calendar-check", "C")} ${offer.fights} combats</span>
+              <span>${iconOnly("badge-dollar-sign", "B")} x${(offer.purseBoost || 1).toFixed(2)}</span>
+              <span>${iconOnly("circle-dollar-sign", "$")} ${formatMoney(offer.money)}</span>
+            </span>
+            <small>${esc(offer.tag || "Contrat")} | Sponsor: ${esc(offer.sponsor)}. Clause: ${esc(offer.titleClause)}</small>
+          </button>
+        `).join("")}
+      </div>
+    `;
     return `
-      <div class="contract-offers-priority">
+      <div class="contract-offers-priority visual-choice-priority">
         <div class="contract-signing-visual">
           ${renderVisualResultCard(
             visual,
             `Signer la saison ${nextYear}`,
-            "Les offres sont sur la table. Choisis le cadre de ta prochaine annee: organisation, nombre de combats, prime et clause sportive."
+            "Les offres sont sur la table. Choisis le cadre de ta prochaine annee: organisation, nombre de combats, prime et clause sportive.",
+            "",
+            offersMarkup
           )}
-        </div>
-        <div class="choice-grid contract-offer-grid mobile-option-stack">
-          ${career.pendingContracts.map((offer, index) => `
-            <button class="choice-btn contract-offer-card" data-action="choose-contract" data-index="${index}">
-	              <span class="contract-offer-head">
-	                <span class="choice-icon">${iconOnly(String(offer.id).startsWith("move") ? "circle-dollar-sign" : offer.id === "sponsor" ? "badge-dollar-sign" : "shield-check", "$")}</span>
-	                <strong>${esc(offer.label)}</strong>
-	              </span>
-	              <span class="choice-summary">${esc(offer.summary)}</span>
-	              <span class="contract-offer-meta">
-	                <span>${iconOnly("calendar-check", "C")} ${offer.fights} combats</span>
-	                <span>${iconOnly("badge-dollar-sign", "B")} x${(offer.purseBoost || 1).toFixed(2)}</span>
-	                <span>${iconOnly("circle-dollar-sign", "$")} ${formatMoney(offer.money)}</span>
-	              </span>
-              <small>${esc(offer.tag || "Contrat")} | Sponsor: ${esc(offer.sponsor)}. Clause: ${esc(offer.titleClause)}</small>
-            </button>
-          `).join("")}
         </div>
         <div class="notice contract-sign-notice">
           ${iconOnly("mouse-pointer-click", "S")} Chaque offre change le cadre de la prochaine saison: organisation, nombre de combats, prime et multiplicateur de bourse.
@@ -9687,14 +9819,14 @@
 		    const opportunityVisual = campOpportunityVisualKey(opportunity);
 		    if (opportunityVisual) preloadGameAssets(opportunityVisual);
 			    renderShell(`
-				      <section class="game-screen training-screen ${opportunity ? "quick-choice-screen camp-stage-choice-screen" : ""} ${opportunityVisual ? "visual-swipe-screen" : ""}">
+				      <section class="game-screen training-screen ${opportunity ? "quick-choice-screen camp-stage-choice-screen" : ""} ${opportunityVisual ? "visual-swipe-screen visual-choice-screen" : ""}">
 		        ${campPrepPanel(career)}
 		        ${renderCampStatus(career)}
 		        ${renderCampRiskWarning(career)}
-	        <div class="story-panel">
+	        ${opportunityVisual ? "" : `<div class="story-panel">
 	          <h3>${opportunity ? esc(opportunity.title) : `Semaine ${camp.week}/${camp.maxWeeks} pour ${esc(fight.opponent.name)}`}</h3>
 	          <p>${opportunity ? esc(opportunity.text) : "Chaque semaine ajoute une couche au camp. Les gros blocs progressent vite mais augmentent fatigue, blessures et baisse de forme."}</p>
-	        </div>
+	        </div>`}
 	        ${opportunityVisual ? `
 	          <div class="stage-choice-visual">
 	            ${renderVisualResultCard(visualResultConfig(opportunityVisual), opportunity.title, opportunity.text)}
@@ -9820,7 +9952,7 @@
 	    const decisionVisual = visualResultConfig(decisionVisualKey);
 	    if (decisionVisualKey) preloadGameAssets(decisionVisualKey);
 	    renderShell(`
-	      <section class="game-screen ${quickChoice ? "quick-choice-screen life-choice-screen" : ""} ${decisionVisualKey ? "visual-swipe-screen" : ""}">
+	      <section class="game-screen ${quickChoice ? "quick-choice-screen life-choice-screen" : ""} ${decisionVisualKey ? "visual-swipe-screen visual-choice-screen" : ""}">
 	        ${fighterHeader(career)}
 	        ${decisionVisual ? "" : `<div class="story-panel">
 	          <h3>${esc(event.title)}</h3>
@@ -9870,7 +10002,7 @@
 	    const decisionVisual = visualResultConfig(decisionVisualKey);
 	    if (decisionVisualKey) preloadGameAssets(decisionVisualKey);
 	    renderShell(`
-	      <section class="game-screen ${quickChoice ? "quick-choice-screen life-choice-screen" : ""} ${decisionVisualKey ? "visual-swipe-screen" : ""}">
+	      <section class="game-screen ${quickChoice ? "quick-choice-screen life-choice-screen" : ""} ${decisionVisualKey ? "visual-swipe-screen visual-choice-screen" : ""}">
 	        ${fighterHeader(career)}
 	        ${decisionVisual ? "" : `<div class="story-panel">
 	          <h3>${esc(event.title)}</h3>
@@ -10155,21 +10287,25 @@
     const visualKey = contractSigningVisualKey(career, `fight-offer-${options.map(option => option.opponent?.name || option.id).join("-")}`);
     const visual = visualResultConfig(visualKey);
     preloadGameAssets("contractSigning", "contractSigningAlt");
+    const fightChoicesMarkup = `
+      <div class="choice-grid fight-offer-grid visual-embedded-choice-grid fight-visual-choice-grid">
+        ${options.map((fight, index) => fightOptionButton(fight, index)).join("")}
+      </div>
+    `;
 	    renderShell(`
-	      <section class="game-screen fight-offer-screen">
+	      <section class="game-screen fight-offer-screen visual-choice-screen">
 	        ${fighterHeader(career)}
-	        ${seasonPanel(career)}
-	        ${renderMedicalAlert(career)}
-		        <div class="fight-offer-contract-visual">
+		        <div class="fight-offer-contract-visual visual-choice-priority">
 		          ${renderVisualResultCard(
                 visual,
                 "Signer le prochain combat",
-                "Le manager pose trois dossiers sur la table. Une fois le combat signe, le camp commence autour de cet adversaire."
+                "Le manager pose trois dossiers sur la table. Une fois le combat signe, le camp commence autour de cet adversaire.",
+                "",
+                fightChoicesMarkup
               )}
 		        </div>
-		        <div class="choice-grid fight-offer-grid">
-		          ${options.map((fight, index) => fightOptionButton(fight, index)).join("")}
-		        </div>
+	        ${seasonPanel(career)}
+	        ${renderMedicalAlert(career)}
 	      </section>
     `);
   }
@@ -10208,15 +10344,31 @@
 		    }
 		    const fatigueImpact = campFatigueImpact(career);
 		    const pressVisual = visualResultConfig("press");
-		    preloadGameAssets("press", "pressPique", "pressBrawl");
+		    preloadGameAssets("press", "pressPique", "pressBrawl", "pressBrawlAlt");
+		    const pressChoicesMarkup = `
+		      <div class="choice-grid three press-grid visual-embedded-choice-grid press-visual-choice-grid">
+		        ${PRESS_OPTIONS.map(option => `
+		          <button class="choice-btn choice-card press-choice" data-action="press-option" data-id="${option.id}">
+		            <span class="choice-head">
+		              <span class="choice-icon">${iconOnly(pressOptionIcon(option.id), "P")}</span>
+		              <strong>${esc(option.label)}</strong>
+		            </span>
+		            <span class="choice-summary">${esc(option.summary)}</span>
+		            <small>${esc(effectLine(option.effects))}</small>
+		          </button>
+		        `).join("")}
+		      </div>
+		    `;
 		    renderShell(`
-		      <section class="game-screen press-conference-screen">
+		      <section class="game-screen press-conference-screen visual-choice-screen">
 		        ${fighterHeader(career)}
-		        <div class="press-choice-visual">
+		        <div class="press-choice-visual visual-choice-priority">
 		          ${renderVisualResultCard(
                 pressVisual,
-                "Conference de presse",
-                `${career.name} vs ${fight.opponent.name}. Le camp est termine: choisis le ton avant que les cameras ne dictent l'histoire.`
+                "Choix attitude",
+                `${career.name} vs ${fight.opponent.name}. Le camp est termine: choisis le ton avant que les cameras ne dictent l'histoire.`,
+                "",
+                pressChoicesMarkup
               )}
 		        </div>
 		        ${seasonPanel(career)}
@@ -10226,18 +10378,6 @@
 		          <div class="summary-item"><span>${iconOnly("flame", "H")} Hype combat</span><strong>${fight.hype}</strong></div>
 		          <div class="summary-item"><span>${iconOnly("activity", "F")} Fatigue</span><strong>${fatigueImpact.fatigue}/12</strong></div>
 		          <div class="summary-item"><span>${iconOnly("circle-dollar-sign", "$")} Bourse</span><strong>${formatMoney(fight.money)}</strong></div>
-		        </div>
-		        <div class="choice-grid three press-grid">
-		          ${PRESS_OPTIONS.map(option => `
-		            <button class="choice-btn choice-card press-choice" data-action="press-option" data-id="${option.id}">
-		              <span class="choice-head">
-		                <span class="choice-icon">${iconOnly(pressOptionIcon(option.id), "P")}</span>
-		                <strong>${esc(option.label)}</strong>
-		              </span>
-		              <span class="choice-summary">${esc(option.summary)}</span>
-		              <small>${esc(effectLine(option.effects))}</small>
-		            </button>
-		          `).join("")}
 		        </div>
 		      </section>
 		    `);
@@ -12610,18 +12750,18 @@
 	    activeSwipe.dy = (event.clientY || 0) - activeSwipe.startY;
 	    if (Math.abs(activeSwipe.dx) < 6 && Math.abs(activeSwipe.dy) > 12) return;
 	    event.preventDefault?.();
-	    const rotate = clamp(activeSwipe.dx / 14, -10, 10);
-	    const progress = clamp(Math.abs(activeSwipe.dx) / 120, 0, 1);
+	    const rotate = clamp(activeSwipe.dx / 10, -13, 13);
+	    const progress = clamp(Math.abs(activeSwipe.dx) / 88, 0, 1);
 	    activeSwipe.card.style.transform = `translateX(${activeSwipe.dx}px) rotate(${rotate}deg)`;
 	    activeSwipe.card.style.setProperty("--swipe-progress", progress.toFixed(2));
-	    activeSwipe.card.classList.toggle("swipe-left", activeSwipe.dx < -36);
-	    activeSwipe.card.classList.toggle("swipe-right", activeSwipe.dx > 36);
+	    activeSwipe.card.classList.toggle("swipe-left", activeSwipe.dx < -26);
+	    activeSwipe.card.classList.toggle("swipe-right", activeSwipe.dx > 26);
 	  });
 
 	  function finishSwipe(event) {
 	    if (!activeSwipe) return;
 	    const { card, deck, dx, dy } = activeSwipe;
-	    const shouldPick = Math.abs(dx) > 86 && Math.abs(dx) > Math.abs(dy) * 1.2;
+	    const shouldPick = Math.abs(dx) > 72 && Math.abs(dx) > Math.abs(dy) * 1.15;
 	    const direction = dx < 0 ? "left" : "right";
 	    resetSwipeCard(card);
 	    activeSwipe = null;
@@ -12923,12 +13063,23 @@
     "press",
     "pressPique",
     "pressBrawl",
+    "pressBrawlAlt",
     "doping",
     "podcast",
+    "recoveryClinic",
     "campDiet",
     "steakhouse",
+    "friendRestaurant",
+    "localGymShares",
+    "relationshipPressure",
+    "boxingCrossover",
+    "parkingIncident",
+    "hotelSuite",
+    "sponsorNight",
+    "dodgySponsor",
     "medicalRest",
     "stageGrappling",
+    "stageGrapplingAlt",
     "stageStriking",
     "stageStrikingAlt",
     "stageDaghestan",

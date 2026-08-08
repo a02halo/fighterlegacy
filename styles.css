@@ -1154,6 +1154,7 @@ input:focus-visible {
   display: grid;
   gap: 14px;
   margin: 16px 0 18px;
+  scroll-margin-block: 14px;
 }
 
 .visual-swipe-screen .swipe-choice-card.has-swipe-visual {
@@ -1164,7 +1165,7 @@ input:focus-visible {
   color: var(--paper);
   display: grid;
   gap: 18px;
-  min-height: clamp(500px, 48vw, 740px);
+  min-height: min(100vh, 980px);
   overflow: hidden;
   padding: clamp(22px, 4vw, 44px);
   position: relative;
@@ -1174,7 +1175,7 @@ input:focus-visible {
 }
 
 .camp-stage-choice-screen.visual-swipe-screen .swipe-choice-card.has-swipe-visual {
-  min-height: min(90vh, 900px);
+  min-height: min(100vh, 980px);
 }
 
 .visual-swipe-screen .swipe-card-visual,
@@ -1202,8 +1203,27 @@ input:focus-visible {
 .visual-swipe-screen .stage-striking-result-card .swipe-card-visual,
 .visual-swipe-screen .stage-striking-alt-result-card .swipe-card-visual,
 .visual-swipe-screen .stage-grappling-result-card .swipe-card-visual,
+.visual-swipe-screen .stage-grappling-alt-result-card .swipe-card-visual,
 .visual-swipe-screen .doping-result-card .swipe-card-visual {
   object-position: center 42%;
+}
+
+.visual-swipe-screen .friend-restaurant-result-card .swipe-card-visual,
+.visual-swipe-screen .local-gym-shares-result-card .swipe-card-visual,
+.visual-swipe-screen .hotel-suite-result-card .swipe-card-visual,
+.visual-swipe-screen .sponsor-night-result-card .swipe-card-visual,
+.visual-swipe-screen .camp-diet-result-card .swipe-card-visual,
+.visual-swipe-screen .steakhouse-result-card .swipe-card-visual {
+  object-position: center 44%;
+}
+
+.visual-swipe-screen .podcast-result-card .swipe-card-visual,
+.visual-swipe-screen .relationship-pressure-result-card .swipe-card-visual,
+.visual-swipe-screen .boxing-crossover-result-card .swipe-card-visual,
+.visual-swipe-screen .parking-incident-result-card .swipe-card-visual,
+.visual-swipe-screen .recovery-clinic-result-card .swipe-card-visual,
+.visual-swipe-screen .dodgy-sponsor-result-card .swipe-card-visual {
+  object-position: center 46%;
 }
 
 .visual-swipe-screen .swipe-card-visual-shade {
@@ -1362,12 +1382,12 @@ input:focus-visible {
 
 .visual-swipe-screen .swipe-choice-card.swipe-left {
   border-color: rgba(215, 52, 56, 0.88);
-  box-shadow: -18px 22px 46px rgba(144, 30, 37, 0.3), 0 0 0 3px rgba(215, 52, 56, 0.12);
+  box-shadow: -24px 26px 54px rgba(144, 30, 37, 0.38), 0 0 0 5px rgba(215, 52, 56, 0.18);
 }
 
 .visual-swipe-screen .swipe-choice-card.swipe-right {
   border-color: rgba(11, 157, 136, 0.88);
-  box-shadow: 18px 22px 46px rgba(11, 157, 136, 0.28), 0 0 0 3px rgba(11, 157, 136, 0.12);
+  box-shadow: 24px 26px 54px rgba(11, 157, 136, 0.36), 0 0 0 5px rgba(11, 157, 136, 0.18);
 }
 
 .visual-swipe-screen .swipe-choice-card.swipe-left .swipe-card-visual-shade {
@@ -1384,14 +1404,14 @@ input:focus-visible {
 
 .visual-swipe-screen .swipe-choice-card.swipe-left .swipe-card-visual,
 .visual-swipe-screen .swipe-choice-card.swipe-right .swipe-card-visual {
-  filter: saturate(1.08) contrast(1.05);
-  transform: scale(1.035);
+  filter: saturate(1.18) contrast(1.1);
+  transform: scale(1.07);
 }
 
 .visual-swipe-screen .swipe-choice-card.swipe-left::before,
 .visual-swipe-screen .swipe-choice-card.swipe-right::after {
   opacity: 1;
-  transform: scale(1.06);
+  transform: scale(1.12);
 }
 
 .visual-swipe-screen .swipe-choice-card.swipe-left .swipe-card-options div:first-child,
@@ -1521,7 +1541,7 @@ input:focus-visible {
   min-height: 82px;
   padding: 16px 14px;
   text-align: left;
-  transition: background 150ms ease, padding 150ms ease;
+  transition: background 150ms ease, box-shadow 150ms ease, padding 150ms ease, transform 150ms ease;
 }
 
 .training-thumb {
@@ -1534,6 +1554,7 @@ input:focus-visible {
   inline-size: 42px;
   justify-content: center;
   min-height: 42px;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
 }
 
 .training-thumb .icon {
@@ -1547,8 +1568,22 @@ input:focus-visible {
 
 .training-row:hover {
   background: #fff7e8;
+  box-shadow: inset 4px 0 0 var(--gold);
   padding-left: 18px;
   padding-right: 18px;
+}
+
+.training-row:active:not(:disabled):not(.is-disabled) {
+  background: #fff1d6;
+  box-shadow: inset 7px 0 0 var(--red), 0 0 0 4px rgba(215, 52, 56, 0.14);
+  transform: translateY(2px) scale(0.995);
+}
+
+.training-row:active:not(:disabled):not(.is-disabled) .training-thumb {
+  background: var(--red);
+  border-color: var(--red-dark);
+  color: var(--paper);
+  transform: scale(1.08);
 }
 
 .training-row:disabled,
@@ -2355,7 +2390,7 @@ input:focus-visible {
   display: grid;
   isolation: isolate;
   margin: 18px calc(-1 * clamp(18px, 4vw, 34px)) 24px;
-  min-height: clamp(520px, 52vw, 760px);
+  min-height: min(100vh, 980px);
   overflow: hidden;
   position: relative;
 }
@@ -2479,9 +2514,111 @@ input:focus-visible {
     linear-gradient(180deg, rgba(4, 10, 18, 0.02) 0%, rgba(4, 10, 18, 0.13) 42%, rgba(4, 10, 18, 0.8) 100%);
 }
 
+.recovery-clinic-result-card {
+  background:
+    linear-gradient(135deg, rgba(72, 116, 176, 0.28), transparent 42%),
+    #0d1118;
+}
+
+.recovery-clinic-result-card img {
+  object-position: center 42%;
+  opacity: 0.95;
+}
+
+.recovery-clinic-result-card::before {
+  background:
+    linear-gradient(90deg, rgba(8, 10, 15, 0.8) 0%, rgba(8, 10, 15, 0.48) 45%, rgba(8, 10, 15, 0.08) 100%),
+    linear-gradient(180deg, rgba(8, 10, 15, 0.02) 0%, rgba(8, 10, 15, 0.14) 42%, rgba(8, 10, 15, 0.82) 100%);
+}
+
+.friend-restaurant-result-card,
+.local-gym-shares-result-card,
+.hotel-suite-result-card,
+.sponsor-night-result-card,
+.dodgy-sponsor-result-card {
+  background:
+    linear-gradient(135deg, rgba(224, 130, 40, 0.32), transparent 42%),
+    #160d08;
+}
+
+.friend-restaurant-result-card img,
+.local-gym-shares-result-card img,
+.hotel-suite-result-card img,
+.sponsor-night-result-card img,
+.dodgy-sponsor-result-card img {
+  object-position: center 44%;
+  opacity: 0.94;
+}
+
+.dodgy-sponsor-result-card img {
+  object-position: center 50%;
+}
+
+.friend-restaurant-result-card::before,
+.local-gym-shares-result-card::before,
+.hotel-suite-result-card::before,
+.sponsor-night-result-card::before,
+.dodgy-sponsor-result-card::before {
+  background:
+    linear-gradient(90deg, rgba(19, 10, 5, 0.82) 0%, rgba(19, 10, 5, 0.5) 45%, rgba(19, 10, 5, 0.1) 100%),
+    linear-gradient(180deg, rgba(19, 10, 5, 0.02) 0%, rgba(19, 10, 5, 0.16) 42%, rgba(19, 10, 5, 0.84) 100%);
+}
+
+.relationship-pressure-result-card {
+  background:
+    linear-gradient(135deg, rgba(203, 91, 55, 0.28), transparent 42%),
+    #1b100b;
+}
+
+.relationship-pressure-result-card img {
+  object-position: center 45%;
+  opacity: 0.95;
+}
+
+.relationship-pressure-result-card::before {
+  background:
+    linear-gradient(90deg, rgba(21, 12, 7, 0.8) 0%, rgba(21, 12, 7, 0.48) 46%, rgba(21, 12, 7, 0.08) 100%),
+    linear-gradient(180deg, rgba(21, 12, 7, 0.02) 0%, rgba(21, 12, 7, 0.14) 42%, rgba(21, 12, 7, 0.84) 100%);
+}
+
+.boxing-crossover-result-card {
+  background:
+    linear-gradient(135deg, rgba(52, 96, 178, 0.26), transparent 42%),
+    #080b15;
+}
+
+.boxing-crossover-result-card img {
+  object-position: center 45%;
+  opacity: 0.95;
+}
+
+.boxing-crossover-result-card::before {
+  background:
+    linear-gradient(90deg, rgba(6, 8, 14, 0.8) 0%, rgba(6, 8, 14, 0.46) 45%, rgba(6, 8, 14, 0.08) 100%),
+    linear-gradient(180deg, rgba(6, 8, 14, 0.02) 0%, rgba(6, 8, 14, 0.12) 42%, rgba(6, 8, 14, 0.82) 100%);
+}
+
+.parking-incident-result-card {
+  background:
+    linear-gradient(135deg, rgba(178, 100, 55, 0.28), transparent 42%),
+    #0e1015;
+}
+
+.parking-incident-result-card img {
+  object-position: center 47%;
+  opacity: 0.95;
+}
+
+.parking-incident-result-card::before {
+  background:
+    linear-gradient(90deg, rgba(8, 9, 13, 0.8) 0%, rgba(8, 9, 13, 0.48) 45%, rgba(8, 9, 13, 0.08) 100%),
+    linear-gradient(180deg, rgba(8, 9, 13, 0.02) 0%, rgba(8, 9, 13, 0.14) 42%, rgba(8, 9, 13, 0.84) 100%);
+}
+
 .press-result-card,
 .press-pique-result-card,
-.press-brawl-result-card {
+.press-brawl-result-card,
+.press-brawl-alt-result-card {
   background:
     linear-gradient(135deg, rgba(94, 76, 214, 0.22), transparent 42%),
     #0b0b10;
@@ -2489,24 +2626,28 @@ input:focus-visible {
 
 .press-result-card img,
 .press-pique-result-card img,
-.press-brawl-result-card img {
+.press-brawl-result-card img,
+.press-brawl-alt-result-card img {
   object-position: center 42%;
   opacity: 0.94;
 }
 
-.press-brawl-result-card img {
+.press-brawl-result-card img,
+.press-brawl-alt-result-card img {
   object-position: center 48%;
 }
 
 .press-result-card::before,
 .press-pique-result-card::before,
-.press-brawl-result-card::before {
+.press-brawl-result-card::before,
+.press-brawl-alt-result-card::before {
   background:
     linear-gradient(90deg, rgba(8, 7, 11, 0.78) 0%, rgba(8, 7, 11, 0.44) 46%, rgba(8, 7, 11, 0.08) 100%),
     linear-gradient(180deg, rgba(8, 7, 11, 0.02) 0%, rgba(8, 7, 11, 0.13) 40%, rgba(8, 7, 11, 0.78) 100%);
 }
 
 .stage-grappling-result-card,
+.stage-grappling-alt-result-card,
 .stage-striking-result-card,
 .stage-striking-alt-result-card,
 .training-injury-result-card {
@@ -2515,7 +2656,8 @@ input:focus-visible {
     #12100e;
 }
 
-.stage-grappling-result-card img {
+.stage-grappling-result-card img,
+.stage-grappling-alt-result-card img {
   object-position: center 42%;
   opacity: 0.94;
 }
@@ -2532,6 +2674,7 @@ input:focus-visible {
 }
 
 .stage-grappling-result-card::before,
+.stage-grappling-alt-result-card::before,
 .stage-striking-result-card::before,
 .stage-striking-alt-result-card::before,
 .training-injury-result-card::before {
@@ -2668,6 +2811,65 @@ input:focus-visible {
 
 .visual-result-actions {
   margin-top: 0;
+}
+
+.visual-choice-priority .visual-result-card {
+  align-items: stretch;
+  margin-top: 0;
+}
+
+.visual-choice-priority .visual-result-content {
+  align-content: end;
+  max-width: none;
+  min-height: inherit;
+  width: 100%;
+}
+
+.visual-choice-priority .visual-result-copy {
+  max-width: 900px;
+}
+
+.visual-choice-priority .visual-result-actions {
+  max-height: min(42vh, 440px);
+  overflow-y: auto;
+  padding: 3px 4px 8px 0;
+  width: 100%;
+}
+
+.visual-embedded-choice-grid,
+.choice-grid.visual-embedded-choice-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  margin-top: 0;
+  width: 100%;
+}
+
+.visual-embedded-choice-grid .choice-btn {
+  background: rgba(255, 250, 240, 0.9);
+  border-color: rgba(255, 250, 240, 0.46);
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.26), 0 18px 36px rgba(0, 0, 0, 0.22);
+  min-height: 118px;
+}
+
+.visual-embedded-choice-grid .choice-btn:hover {
+  background: #fffaf0;
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.28), 0 0 0 4px rgba(214, 165, 59, 0.18);
+  transform: translateY(-2px);
+}
+
+.visual-embedded-choice-grid .choice-btn:active {
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.36), 0 0 0 5px rgba(215, 52, 56, 0.18);
+  transform: translateY(3px) scale(0.985);
+}
+
+.press-visual-choice-grid {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.fight-visual-choice-grid,
+.contract-visual-choice-grid {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
 }
 
 .special-screen {
@@ -4995,16 +5197,16 @@ input:focus-visible {
 
   .swipe-choice-card.has-swipe-visual {
     background: #11100e;
-    min-height: clamp(380px, 62svh, 560px);
+    min-height: 100svh;
   }
 
   .visual-swipe-screen .swipe-choice-card.has-swipe-visual {
-    min-height: clamp(380px, 62svh, 560px);
+    min-height: 100svh;
     padding: 14px;
   }
 
   .camp-stage-choice-screen.visual-swipe-screen .swipe-choice-card.has-swipe-visual {
-    min-height: min(90svh, 760px);
+    min-height: 100svh;
   }
 
   .swipe-card-visual,
@@ -5032,6 +5234,7 @@ input:focus-visible {
   .stage-striking-result-card .swipe-card-visual,
   .stage-striking-alt-result-card .swipe-card-visual,
   .stage-grappling-result-card .swipe-card-visual,
+  .stage-grappling-alt-result-card .swipe-card-visual,
   .training-injury-result-card .swipe-card-visual {
     object-position: center 42%;
   }
@@ -5039,8 +5242,21 @@ input:focus-visible {
   .contract-signing-result-card .swipe-card-visual,
   .contract-signing-alt-result-card .swipe-card-visual,
   .steakhouse-result-card .swipe-card-visual,
-  .camp-diet-result-card .swipe-card-visual {
+  .camp-diet-result-card .swipe-card-visual,
+  .friend-restaurant-result-card .swipe-card-visual,
+  .local-gym-shares-result-card .swipe-card-visual,
+  .hotel-suite-result-card .swipe-card-visual,
+  .sponsor-night-result-card .swipe-card-visual {
     object-position: center 48%;
+  }
+
+  .podcast-result-card .swipe-card-visual,
+  .relationship-pressure-result-card .swipe-card-visual,
+  .boxing-crossover-result-card .swipe-card-visual,
+  .parking-incident-result-card .swipe-card-visual,
+  .recovery-clinic-result-card .swipe-card-visual,
+  .dodgy-sponsor-result-card .swipe-card-visual {
+    object-position: center 46%;
   }
 
   .swipe-card-visual-shade {
@@ -5095,7 +5311,7 @@ input:focus-visible {
       linear-gradient(145deg, rgba(57, 24, 24, 0.98), rgba(55, 43, 34, 0.94)),
       linear-gradient(315deg, rgba(215, 52, 56, 0.34), transparent);
     border-color: rgba(215, 52, 56, 0.88);
-    box-shadow: -18px 22px 46px rgba(144, 30, 37, 0.3), 0 0 0 3px rgba(215, 52, 56, 0.12);
+    box-shadow: -24px 26px 54px rgba(144, 30, 37, 0.4), 0 0 0 5px rgba(215, 52, 56, 0.2);
   }
 
   .swipe-choice-card.swipe-right {
@@ -5103,7 +5319,7 @@ input:focus-visible {
       linear-gradient(145deg, rgba(18, 48, 42, 0.98), rgba(55, 43, 34, 0.94)),
       linear-gradient(315deg, rgba(11, 157, 136, 0.34), transparent);
     border-color: rgba(11, 157, 136, 0.88);
-    box-shadow: 18px 22px 46px rgba(11, 157, 136, 0.28), 0 0 0 3px rgba(11, 157, 136, 0.12);
+    box-shadow: 24px 26px 54px rgba(11, 157, 136, 0.38), 0 0 0 5px rgba(11, 157, 136, 0.2);
   }
 
   .swipe-choice-card.has-swipe-visual.swipe-left .swipe-card-visual-shade {
@@ -5120,14 +5336,14 @@ input:focus-visible {
 
   .swipe-choice-card.has-swipe-visual.swipe-left .swipe-card-visual,
   .swipe-choice-card.has-swipe-visual.swipe-right .swipe-card-visual {
-    filter: saturate(1.08) contrast(1.05);
-    transform: scale(1.035);
+    filter: saturate(1.18) contrast(1.1);
+    transform: scale(1.07);
   }
 
   .swipe-choice-card.swipe-left::before,
   .swipe-choice-card.swipe-right::after {
     opacity: 1;
-    transform: scale(1.06);
+    transform: scale(1.12);
   }
 
   .swipe-choice-card.swipe-left .swipe-card-options div:first-child,
@@ -5364,6 +5580,16 @@ input:focus-visible {
 			    min-height: 0;
 			  }
 
+		  .visual-choice-priority .visual-result-card,
+		  .press-choice-visual .visual-result-card,
+		  .contract-signing-visual .visual-result-card,
+		  .fight-offer-contract-visual .visual-result-card,
+		  .medical-rest-screen.visual-result-screen .visual-result-card {
+		    aspect-ratio: auto;
+		    margin: 0 -16px 18px;
+		    min-height: 100svh;
+		  }
+
 		  .visual-result-card img {
 		    object-position: center center;
 		    opacity: 0.98;
@@ -5389,6 +5615,11 @@ input:focus-visible {
 
 		  .camp-diet-result-card::before,
 		  .steakhouse-result-card::before,
+		  .friend-restaurant-result-card::before,
+		  .local-gym-shares-result-card::before,
+		  .hotel-suite-result-card::before,
+		  .sponsor-night-result-card::before,
+		  .dodgy-sponsor-result-card::before,
 		  .contract-signing-result-card::before,
 		  .contract-signing-alt-result-card::before {
 		    background:
@@ -5397,6 +5628,7 @@ input:focus-visible {
 		  }
 
 		  .stage-grappling-result-card::before,
+		  .stage-grappling-alt-result-card::before,
 		  .stage-striking-result-card::before,
 		  .stage-striking-alt-result-card::before,
 		  .training-injury-result-card::before {
@@ -5418,9 +5650,38 @@ input:focus-visible {
 		      linear-gradient(90deg, rgba(4, 10, 18, 0.12), rgba(4, 10, 18, 0.04));
 		  }
 
+		  .press-brawl-alt-result-card::before,
+		  .recovery-clinic-result-card::before,
+		  .relationship-pressure-result-card::before,
+		  .boxing-crossover-result-card::before,
+		  .parking-incident-result-card::before {
+		    background:
+		      linear-gradient(180deg, rgba(8, 8, 12, 0.02) 0%, rgba(8, 8, 12, 0.08) 34%, rgba(8, 8, 12, 0.58) 68%, rgba(8, 8, 12, 0.92) 100%),
+		      linear-gradient(90deg, rgba(8, 8, 12, 0.13), rgba(8, 8, 12, 0.04));
+		  }
+
 		  .visual-result-content {
 		    gap: 10px;
 		    padding: 15px;
+		  }
+
+		  .visual-choice-priority .visual-result-content {
+		    padding: 14px;
+		  }
+
+		  .visual-choice-priority .visual-result-actions {
+		    max-height: 48svh;
+		    padding-right: 0;
+		  }
+
+		  .visual-embedded-choice-grid,
+		  .choice-grid.visual-embedded-choice-grid {
+		    gap: 8px;
+		  }
+
+		  .visual-embedded-choice-grid .choice-btn {
+		    min-height: auto;
+		    padding: 10px;
 		  }
 
 		  .visual-result-kicker {
