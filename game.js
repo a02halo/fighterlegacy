@@ -10,7 +10,7 @@
   const SAVE_VERSION = 2;
   const LEGEND_TIER = 6;
   const LEGEND_STAT_CAP = 340;
-  const ASSET_VERSION = "20260808-visual-polish-v3";
+  const ASSET_VERSION = "20260808-training-pp-v1";
   const IMAGE_ASSETS = {
     home: "./assets/home-fight-legacy.png",
     press: "./assets/press-conference-fight-legacy.png",
@@ -40,6 +40,15 @@
     contractSigning: "./assets/signaturecontrats-9-16.png",
     contractSigningAlt: "./assets/signaturecontrats-2-9-16.png",
     trainingInjury: "./assets/blessureentrainement.png",
+    trainingStrikingLow1: "./assets/FL_PP_LOW_1.png",
+    trainingStrikingLow2: "./assets/FL_PP_LOW_2.png",
+    trainingStrikingLow3: "./assets/FL_PP_LOW_3.png",
+    trainingStrikingMid1: "./assets/FL_PP_MID_1.png",
+    trainingStrikingMid2: "./assets/FL_PP_MID_2png.png",
+    trainingStrikingMid3: "./assets/FL_PP_MID_3.png",
+    trainingStrikingLuxe1: "./assets/FL_PP_LUXE_1.png",
+    trainingStrikingLuxe2: "./assets/FL_PP_LUXE_2.png",
+    trainingStrikingLuxe3: "./assets/FL_PP_LUXE_3.png",
   };
 
   const CREATOR_STEPS = [
@@ -5700,6 +5709,24 @@
     return null;
   }
 
+  function strikingTrainingVisualKeys(career = ui.career) {
+    const labelTier = orgTierFromLabel(career?.org?.label || career?.org?.id || "");
+    const tier = clamp(Number.isFinite(Number(career?.tier)) ? Number(career.tier) : (labelTier ?? 0), 0, LEGEND_TIER);
+    if (tier >= 5) return ["trainingStrikingLuxe1", "trainingStrikingLuxe2", "trainingStrikingLuxe3"];
+    if (tier >= 3) return ["trainingStrikingMid1", "trainingStrikingMid2", "trainingStrikingMid3"];
+    return ["trainingStrikingLow1", "trainingStrikingLow2", "trainingStrikingLow3"];
+  }
+
+  function trainingFocusResultVisualKey(career, focus, week) {
+    if (focus?.id !== "striking") return null;
+    const keys = strikingTrainingVisualKeys(career);
+    return visualVariantKey(
+      keys[0],
+      keys.slice(1),
+      `${career?.seed || ""}|${career?.year || ""}|${career?.pendingFight?.opponent?.name || ""}|${week}|${focus.id}|${career?.tier || 0}`
+    );
+  }
+
   function contractSigningVisualKey(career = ui.career, context = "") {
     return visualVariantKey(
       "contractSigning",
@@ -5904,6 +5931,69 @@
         alt: "Blessure pendant un entrainement MMA",
         icon: "heart-crack",
         kicker: "Blessure au camp",
+      },
+      trainingStrikingLow1: {
+        className: "training-striking-low-result-card",
+        image: assetUrl("trainingStrikingLow1"),
+        alt: "Salle pied-poing modeste pendant un camp MMA",
+        icon: "target",
+        kicker: "Pied-poing",
+      },
+      trainingStrikingLow2: {
+        className: "training-striking-low-result-card",
+        image: assetUrl("trainingStrikingLow2"),
+        alt: "Salle pied-poing locale pendant un camp MMA",
+        icon: "target",
+        kicker: "Pied-poing",
+      },
+      trainingStrikingLow3: {
+        className: "training-striking-low-result-card",
+        image: assetUrl("trainingStrikingLow3"),
+        alt: "Salle pied-poing brute pendant un camp MMA",
+        icon: "target",
+        kicker: "Pied-poing",
+      },
+      trainingStrikingMid1: {
+        className: "training-striking-mid-result-card",
+        image: assetUrl("trainingStrikingMid1"),
+        alt: "Salle pied-poing professionnelle pendant un camp MMA",
+        icon: "target",
+        kicker: "Pied-poing",
+      },
+      trainingStrikingMid2: {
+        className: "training-striking-mid-result-card",
+        image: assetUrl("trainingStrikingMid2"),
+        alt: "Salle pied-poing internationale pendant un camp MMA",
+        icon: "target",
+        kicker: "Pied-poing",
+      },
+      trainingStrikingMid3: {
+        className: "training-striking-mid-result-card",
+        image: assetUrl("trainingStrikingMid3"),
+        alt: "Salle pied-poing de petite organisation pendant un camp MMA",
+        icon: "target",
+        kicker: "Pied-poing",
+      },
+      trainingStrikingLuxe1: {
+        className: "training-striking-luxe-result-card",
+        image: assetUrl("trainingStrikingLuxe1"),
+        alt: "Salle pied-poing elite FLC pendant un camp MMA",
+        icon: "target",
+        kicker: "Pied-poing FLC",
+      },
+      trainingStrikingLuxe2: {
+        className: "training-striking-luxe-result-card",
+        image: assetUrl("trainingStrikingLuxe2"),
+        alt: "Salle pied-poing de luxe FLC pendant un camp MMA",
+        icon: "target",
+        kicker: "Pied-poing FLC",
+      },
+      trainingStrikingLuxe3: {
+        className: "training-striking-luxe-result-card",
+        image: assetUrl("trainingStrikingLuxe3"),
+        alt: "Salle pied-poing haut niveau FLC pendant un camp MMA",
+        icon: "target",
+        kicker: "Pied-poing FLC",
       },
     };
     return visualResults[key] || null;
@@ -6117,11 +6207,12 @@
 	      effects = [...effects, ...cancelFightForCampInjury(career, injury, interruptionText)];
 	    }
     const needsRest = hasMedicalRest(career);
+    const focusVisual = trainingFocusResultVisualKey(career, focus, week);
 	    showDecisionResult(career, {
 	      title: `Semaine ${week}: ${focus.label}`,
 		      text: needsRest ? `${focus.result} ${interruptionText}` : campDone ? `${focus.result} Le camp est termine: place a la fight week.` : `${focus.result} Il reste ${formatWeeks(camp.maxWeeks - week)} de preparation.`,
 	      effects,
-	      visual: injury ? "trainingInjury" : null,
+	      visual: injury ? "trainingInjury" : focusVisual,
 	      nextAction: needsRest ? "to-medical-rest" : campDone ? "to-life-event" : "next-training-week",
 	      nextLabel: needsRest ? "Repos medical" : campDone ? "Fight week" : `Semaine ${week + 1}`,
 	    });
@@ -8748,18 +8839,29 @@
 		    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
 		    const visualCards = app.querySelectorAll(".visual-result-card[data-visual-anchor]");
 		    visualCards.forEach(card => {
+		      const screen = card.closest(".visual-choice-screen");
+		      const topbarBottom = app.querySelector(".topbar")?.getBoundingClientRect().bottom || 0;
 		      if (reducedMotion) {
 		        card.style.setProperty("--visual-parallax-y", "0px");
+		        screen?.style.setProperty("--visual-flow-lift", "0px");
 		        return;
 		      }
 		      const rect = card.getBoundingClientRect();
-		      if (rect.bottom < 0 || rect.top > window.innerHeight) {
+		      if (rect.top > window.innerHeight) {
 		        card.style.setProperty("--visual-parallax-y", "0px");
+		        screen?.style.setProperty("--visual-flow-lift", "0px");
+		        return;
+		      }
+		      if (rect.bottom < topbarBottom) {
+		        card.style.setProperty("--visual-parallax-y", "-30px");
+		        screen?.style.setProperty("--visual-flow-lift", "-46px");
 		        return;
 		      }
 		      const centerOffset = window.innerHeight / 2 - (rect.top + rect.height / 2);
 		      const parallax = clamp(centerOffset / window.innerHeight * 28, -30, 30);
+		      const flowLift = clamp((topbarBottom - rect.top) * 0.14, 0, 46);
 		      card.style.setProperty("--visual-parallax-y", `${parallax}px`);
+		      screen?.style.setProperty("--visual-flow-lift", `-${flowLift}px`);
 		    });
 		  }
 
@@ -9020,6 +9122,11 @@
 	      <div class="swipe-choice-deck" data-swipe-deck${visual ? " data-visual-anchor" : ""}>
 	        <div class="swipe-choice-card${visualClass}" data-swipe-card data-left-label="${esc(left.label)}" data-right-label="${esc(right.label)}"${visualStyle}>
 	          ${visual ? `<img class="swipe-card-visual" src="${esc(visual.image)}" alt="${esc(visual.alt)}" decoding="async" fetchpriority="high" loading="eager"><span class="swipe-card-visual-shade" aria-hidden="true"></span>` : ""}
+	          <span class="swipe-gesture-hint" aria-hidden="true">
+	            <span class="swipe-gesture-arrow">${iconOnly("arrow-left", "<")}</span>
+	            <span class="swipe-gesture-hand">${iconOnly("hand", "M")}</span>
+	            <span class="swipe-gesture-arrow">${iconOnly("arrow-right", ">")}</span>
+	          </span>
           <div class="swipe-card-top">
             <span>${iconOnly("move-horizontal", "S")} ${esc(kicker)}</span>
             <strong>${esc(title)}</strong>
@@ -13142,7 +13249,16 @@
     "stageDaghestanAlt",
     "contractSigning",
     "contractSigningAlt",
-    "trainingInjury"
+    "trainingInjury",
+    "trainingStrikingLow1",
+    "trainingStrikingLow2",
+    "trainingStrikingLow3",
+    "trainingStrikingMid1",
+    "trainingStrikingMid2",
+    "trainingStrikingMid3",
+    "trainingStrikingLuxe1",
+    "trainingStrikingLuxe2",
+    "trainingStrikingLuxe3"
   );
   if ("requestIdleCallback" in window) {
     window.requestIdleCallback(warmSecondaryAssets, { timeout: 1800 });
