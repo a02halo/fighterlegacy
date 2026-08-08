@@ -10,7 +10,7 @@
   const SAVE_VERSION = 2;
   const LEGEND_TIER = 6;
   const LEGEND_STAT_CAP = 340;
-  const ASSET_VERSION = "20260808-visual-bottom-choices";
+  const ASSET_VERSION = "20260808-visual-page-flow-v2";
   const IMAGE_ASSETS = {
     home: "./assets/home-fight-legacy.png",
     press: "./assets/press-conference-fight-legacy.png",
@@ -5925,6 +5925,11 @@
     `;
   }
 
+  function renderVisualChoiceFlow(actionsMarkup, extraClass = "") {
+    if (!actionsMarkup) return "";
+    return `<div class="visual-choice-flow-actions ${esc(extraClass)}">${actionsMarkup}</div>`;
+  }
+
   function campOpportunityById(id) {
     return EVENTS.find(event => event.campOnly && event.id === id);
   }
@@ -8741,17 +8746,12 @@
 		    hydrateIcons();
 		    const visualAnchor = [...app.querySelectorAll("[data-visual-anchor]")]
 		      .find(node => node.offsetParent !== null) || app.querySelector("[data-visual-anchor]");
-		    if (visualAnchor) {
-		      const focusVisual = () => {
-		        const isMobile = window.matchMedia?.("(max-width: 620px)")?.matches;
-		        if (!isMobile) {
-		          visualAnchor.scrollIntoView({ block: "center", inline: "nearest" });
-		          return;
-		        }
-		        const topbarBottom = app.querySelector(".topbar")?.getBoundingClientRect().bottom || 0;
-		        const targetTop = window.scrollY + visualAnchor.getBoundingClientRect().top - topbarBottom;
-		        window.scrollTo({ top: Math.max(0, targetTop), left: 0, behavior: "auto" });
-		      };
+			    if (visualAnchor) {
+			      const focusVisual = () => {
+			        const topbarBottom = app.querySelector(".topbar")?.getBoundingClientRect().bottom || 0;
+			        const targetTop = window.scrollY + visualAnchor.getBoundingClientRect().top - topbarBottom;
+			        window.scrollTo({ top: Math.max(0, targetTop), left: 0, behavior: "auto" });
+			      };
 		      window.requestAnimationFrame(() => {
 		        focusVisual();
 		        window.setTimeout(focusVisual, 140);
@@ -9448,10 +9448,10 @@
             visual,
             `Signer la saison ${nextYear}`,
             "Les offres sont sur la table. Choisis le cadre de ta prochaine annee: organisation, nombre de combats, prime et clause sportive.",
-            "",
-            offersMarkup
+            ""
           )}
         </div>
+        ${renderVisualChoiceFlow(offersMarkup, "contract-offer-flow-actions")}
         <div class="notice contract-sign-notice">
           ${iconOnly("mouse-pointer-click", "S")} Chaque offre change le cadre de la prochaine saison: organisation, nombre de combats, prime et multiplicateur de bourse.
         </div>
@@ -10320,10 +10320,10 @@
                 visual,
                 "Signer le prochain combat",
                 "Le manager pose trois dossiers sur la table. Une fois le combat signe, le camp commence autour de cet adversaire.",
-                "",
-                fightChoicesMarkup
+                ""
               )}
 		        </div>
+	        ${renderVisualChoiceFlow(fightChoicesMarkup, "fight-offer-flow-actions")}
 	        ${seasonPanel(career)}
 	        ${renderMedicalAlert(career)}
 	      </section>
@@ -10387,10 +10387,10 @@
                 pressVisual,
                 "Choix attitude",
                 `${career.name} vs ${fight.opponent.name}. Le camp est termine: choisis le ton avant que les cameras ne dictent l'histoire.`,
-                "",
-                pressChoicesMarkup
+                ""
               )}
 		        </div>
+		        ${renderVisualChoiceFlow(pressChoicesMarkup, "press-conference-flow-actions")}
 		        ${seasonPanel(career)}
 		        ${renderMedicalAlert(career)}
 		        <div class="summary-grid press-summary">

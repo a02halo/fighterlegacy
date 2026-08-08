@@ -2846,6 +2846,24 @@ input:focus-visible {
   width: 100%;
 }
 
+.visual-choice-flow-actions {
+  background:
+    linear-gradient(180deg, rgba(17, 14, 10, 0.98), rgba(10, 8, 6, 0.98));
+  border: 1px solid rgba(214, 165, 59, 0.26);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.2);
+  margin: 0 0 22px;
+  padding: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.visual-choice-screen .season-panel {
+  inset: auto;
+  position: static;
+  transform: none;
+  z-index: auto;
+}
+
 .visual-embedded-choice-grid,
 .choice-grid.visual-embedded-choice-grid {
   display: grid;
@@ -4887,10 +4905,15 @@ input:focus-visible {
     order: 1;
   }
 
+  .fight-offer-screen .visual-choice-flow-actions,
+  .press-conference-screen .visual-choice-flow-actions {
+    order: 2;
+  }
+
   .fight-offer-screen .season-panel,
   .press-conference-screen .season-panel {
     margin: 22px 0 10px;
-    order: 2;
+    order: 3;
     position: static;
     z-index: auto;
   }
@@ -4902,7 +4925,7 @@ input:focus-visible {
 
   .press-conference-screen .medical-context-alert,
   .press-conference-screen .press-summary {
-    order: 3;
+    order: 4;
   }
 
   .fight-offer-intro {
@@ -5618,16 +5641,16 @@ input:focus-visible {
 			    min-height: 0;
 			  }
 
-		  .visual-choice-priority .visual-result-card,
-		  .press-choice-visual .visual-result-card,
-		  .contract-signing-visual .visual-result-card,
-		  .fight-offer-contract-visual .visual-result-card,
-		  .boxing-special-visual .visual-result-card,
-		  .medical-rest-screen.visual-result-screen .visual-result-card {
-		    aspect-ratio: auto;
-		    margin: 0 -16px 18px;
-		    min-height: 100svh;
-		  }
+			  .visual-choice-priority .visual-result-card,
+			  .press-choice-visual .visual-result-card,
+			  .contract-signing-visual .visual-result-card,
+			  .fight-offer-contract-visual .visual-result-card,
+			  .boxing-special-visual .visual-result-card,
+			  .medical-rest-screen.visual-result-screen .visual-result-card {
+			    aspect-ratio: auto;
+			    margin: 0 -16px 18px;
+			    min-height: calc(100svh - var(--mobile-visual-offset));
+			  }
 
 		  .visual-choice-screen [data-visual-anchor],
 		  .visual-result-screen [data-visual-anchor] {
@@ -5643,14 +5666,14 @@ input:focus-visible {
 		    max-inline-size: 100vw;
 		  }
 
-		  .visual-choice-screen .visual-result-card,
-		  .visual-result-screen .visual-result-card,
-		  .visual-swipe-screen .swipe-choice-card.has-swipe-visual {
-		    border-left: 0;
-		    border-radius: 0;
-		    border-right: 0;
-		    min-height: 100svh;
-		  }
+			  .visual-choice-screen .visual-result-card,
+			  .visual-result-screen .visual-result-card,
+			  .visual-swipe-screen .swipe-choice-card.has-swipe-visual {
+			    border-left: 0;
+			    border-radius: 0;
+			    border-right: 0;
+			    min-height: calc(100svh - var(--mobile-visual-offset));
+			  }
 
 		  .visual-swipe-screen .swipe-choice-actions {
 		    padding-inline: 16px;
@@ -5740,14 +5763,27 @@ input:focus-visible {
 		  }
 
 		  .visual-choice-priority .visual-result-content {
-		    min-height: 100svh;
+		    min-height: inherit;
 		    padding: 14px;
+		  }
+
+		  .fight-offer-contract-visual .visual-result-card,
+		  .press-choice-visual .visual-result-card,
+		  .contract-signing-visual .visual-result-card {
+		    min-height: calc(100svh - var(--mobile-visual-offset));
 		  }
 
 		  .visual-choice-priority .visual-result-actions {
 		    max-height: min(44svh, 390px);
 		    overflow-y: auto;
 		    padding: 0 0 8px;
+		  }
+
+		  .visual-choice-screen .visual-choice-flow-actions {
+		    inline-size: 100vw;
+		    margin: 0 calc(50% - 50vw) 20px;
+		    max-inline-size: 100vw;
+		    padding: 14px 16px 18px;
 		  }
 
 		  .visual-embedded-choice-grid,
