@@ -2407,7 +2407,17 @@ input:focus-visible {
   object-position: center 38%;
   opacity: 0.9;
   position: absolute;
+  transform: translate3d(0, var(--visual-parallax-y, 0px), 0) scale(1.035);
+  transform-origin: center;
+  will-change: transform;
   z-index: -2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .visual-result-card img {
+    transform: none;
+    will-change: auto;
+  }
 }
 
 .visual-result-card::before {
@@ -5770,6 +5780,7 @@ input:focus-visible {
 		  .fight-offer-contract-visual .visual-result-card,
 		  .press-choice-visual .visual-result-card,
 		  .contract-signing-visual .visual-result-card {
+		    margin-bottom: 0;
 		    min-height: calc(100svh - var(--mobile-visual-offset));
 		  }
 
@@ -5783,7 +5794,7 @@ input:focus-visible {
 		    inline-size: 100vw;
 		    margin: 0 calc(50% - 50vw) 20px;
 		    max-inline-size: 100vw;
-		    padding: 14px 16px 18px;
+		    padding: 0 16px 18px;
 		  }
 
 		  .visual-embedded-choice-grid,

@@ -10,7 +10,7 @@
   const SAVE_VERSION = 2;
   const LEGEND_TIER = 6;
   const LEGEND_STAT_CAP = 340;
-  const ASSET_VERSION = "20260808-visual-page-flow-v2";
+  const ASSET_VERSION = "20260808-visual-polish-v3";
   const IMAGE_ASSETS = {
     home: "./assets/home-fight-legacy.png",
     press: "./assets/press-conference-fight-legacy.png",
@@ -1449,7 +1449,7 @@
       tag: "Buzz",
       result: "Les extraits tournent. Le public veut voir le boxeur vous punir.",
       chance: 0,
-      effects: { hype: 10, morale: 3, injuryRisk: 3, stats: { charisma: 2 } },
+      effects: { hype: 10, morale: 3, stats: { charisma: 2 } },
     },
     {
       id: "staredown-chaos",
@@ -1457,7 +1457,7 @@
       tag: "Chaos",
       result: "Les vigiles se jettent entre les camps. La bourse survit, l'amende aussi.",
       chance: -1,
-      effects: { hype: 15, money: -12000, rep: -5, injuryRisk: 6, scandal: 8 },
+      effects: { hype: 15, money: -12000, rep: -5, scandal: 8 },
     },
 	  ];
 
@@ -1486,7 +1486,7 @@
 	      tag: "Risque",
 	      summary: "Tu piques l'ego adverse et tu acceptes le retour de flamme.",
 	      result: "La salle reagit fort. Le combat se vend mieux, mais l'adversaire arrive avec plus de carburant.",
-	      effects: { hype: 11, rep: -3, morale: 2, rivalry: 2, injuryRisk: 2, stats: { charisma: 2, discipline: -1 } },
+	      effects: { hype: 11, rep: -3, morale: 2, rivalry: 2, stats: { charisma: 2, discipline: -1 } },
 	      fight: { score: 0, finish: 0.018, damage: 1 },
 	    },
 	    {
@@ -1495,7 +1495,7 @@
 	      tag: "Chaos",
 	      summary: "Image virale immediate, amende probable, entourage sous tension.",
 	      result: "Les vigiles coupent la conference. Les clips explosent, les officiels notent votre nom en rouge.",
-	      effects: { hype: 16, rep: -8, money: -9000, scandal: 10, injuryRisk: 5, stats: { charisma: -1, discipline: -2 } },
+	      effects: { hype: 16, rep: -8, money: -9000, scandal: 10, stats: { charisma: -1, discipline: -2 } },
 	      fight: { score: -1, finish: 0.025, damage: 2 },
 	    },
 	    {
@@ -1504,7 +1504,7 @@
 	      tag: "Commission",
 	      summary: "Tu ne recules pas au front contre front. Tout peut deraper.",
 	      result: "Le face-off devient une melee courte. L'affiche chauffe, la commission aussi.",
-	      effects: { hype: 13, rep: -5, money: -6000, scandal: 7, injuryRisk: 4, rivalry: 2, stats: { discipline: -2 } },
+	      effects: { hype: 13, rep: -5, money: -6000, scandal: 7, rivalry: 2, stats: { discipline: -2 } },
 	      fight: { score: 0, finish: 0.02, damage: 2 },
 	    },
 	  ];
@@ -1688,7 +1688,7 @@
 	      title: "Mauvais entourage",
 	      text: "Des amis veulent vous trainer en club apres une victoire. Le camp reprend lundi matin.",
 	      options: [
-	        { label: "Sortir avec eux", tag: "Joie", result: "Super nuit. Lundi matin, moins super.", effects: { morale: 7, hype: 2, condition: -7, injuryRisk: 10, stats: { discipline: -2 } }, risk: { injuryChance: 12, severity: 5, source: "sortie en club" } },
+	        { label: "Sortir avec eux", tag: "Joie", result: "Super nuit. Lundi matin, moins super.", effects: { morale: 7, hype: 2, condition: -7, stats: { discipline: -2 } } },
 	        { label: "Rentrer dormir", tag: "Discipline", result: "Pas d'histoire a raconter, mais le corps remercie.", effects: { condition: 5, stats: { discipline: 2, cardio: 1 }, morale: -1 } },
 	      ],
 	    },
@@ -1713,7 +1713,7 @@
 	      requiresFight: true,
 	      options: [
 	        { label: "Signaler tout de suite", tag: "Prudent", result: "Le staff nettoie, les cameras se moquent un peu, mais vous evitez le pire.", effects: { rep: -1, hype: -2, condition: 1, medicalCare: 3, stats: { discipline: 1 } } },
-	        { label: "Faire comme si de rien n'etait", tag: "Orgueil", result: "Vous refusez de donner une excuse au public. Chaque appui devient un pari.", effects: { hype: 2, condition: -3, injuryRisk: 12, stats: { striking: -1, cardio: -1 } }, risk: { injuryChance: 22, severity: 7, source: "appui blesse" } },
+	        { label: "Faire comme si de rien n'etait", tag: "Orgueil", result: "Vous refusez de donner une excuse au public. Chaque appui devient un pari.", effects: { hype: 2, condition: -3, stats: { striking: -1, cardio: -1 } } },
 	      ],
 	    },
 	    {
@@ -1725,7 +1725,7 @@
 	      minHype: 20,
 	      options: [
 	        { label: "Tout dire et entrer en protocole", tag: "Rehab", result: "L'image prend un coup, mais le camp accepte de vous remettre droit.", effects: { rep: -8, hype: -5, morale: -4, medicalCare: 8, restWeeks: 4, scandal: 8, stats: { charisma: -6, discipline: 1 } } },
-	        { label: "Nier et attaquer", tag: "Avocats", result: "La defense occupe les emissions. Le stress, lui, reste dans les jambes.", effects: { money: -35000, hype: 4, rep: -12, injuryRisk: 16, scandal: 14, stats: { charisma: -4, discipline: -2 } }, risk: { injuryChance: 16, severity: 5, source: "stress de scandale" } },
+	        { label: "Nier et attaquer", tag: "Avocats", result: "La defense occupe les emissions. Le stress, lui, reste dans les jambes.", effects: { money: -35000, hype: 4, rep: -12, scandal: 14, stats: { charisma: -4, discipline: -2 } } },
 	      ],
 	    },
 	    {
@@ -1736,7 +1736,7 @@
 	      requiresFight: true,
 	      minFightHype: 12,
 	      options: [
-	        { label: "Suivre le clan", tag: "Chaos", result: "Le clip explose. La commission aussi.", effects: { hype: 15, rep: -8, money: -25000, restWeeks: 3, rivalry: 2, injuryRisk: 6, scandal: 14 } },
+	        { label: "Suivre le clan", tag: "Chaos", result: "Le clip explose. La commission aussi.", effects: { hype: 15, rep: -8, money: -25000, suspension: 1, rivalry: 2, scandal: 14 } },
 	        { label: "Bloquer tout le monde", tag: "Pro", result: "Vous perdez un moment viral, mais le vestiaire sait qui tient la laisse.", effects: { rep: 5, hype: -2, morale: -3, stats: { discipline: 2, iq: 1 }, rivalry: -1 } },
 	      ],
 	    },
@@ -1748,7 +1748,7 @@
 	      needsRival: true,
 	      minHype: 25,
 	      options: [
-	        { label: "Sauter dans le bruit", tag: "Viral", result: "L'image fait le tour du monde. Le cheque de la commission aussi.", effects: { hype: 18, rep: -10, restWeeks: 2, rivalry: 2, injuryRisk: 4, scandal: 12 } },
+	        { label: "Sauter dans le bruit", tag: "Viral", result: "L'image fait le tour du monde. Le cheque de la commission aussi.", effects: { hype: 18, rep: -10, suspension: 1, rivalry: 2, scandal: 12 } },
 	        { label: "Rester dans la cage", tag: "Champion", result: "La rivalite chauffe, mais vous laissez l'autre passer pour l'amateur.", effects: { rep: 5, morale: 2, stats: { iq: 2, discipline: 2 }, rivalry: 1 } },
 	      ],
 	    },
@@ -1760,7 +1760,7 @@
 	      minTier: 1,
 	      options: [
 	        { label: "Publier les analyses", tag: "Transparence", result: "Vous exposez le dossier, payez les tests et sauvez une partie de l'image.", effects: { money: -8000, rep: 5, hype: -2, medicalCare: 4, stats: { discipline: 1 } } },
-		        { label: "Garder ca discret", tag: "Court terme", result: "Le combat reste en vie, mais la suspicion colle aux gants.", effects: { rep: -6, hype: 2, scandal: 8, injuryRisk: 10, stats: { charisma: -2 } }, risk: { injuryChance: 12, severity: 5, source: "protocole supplement" } },
+		        { label: "Garder ca discret", tag: "Court terme", result: "Le combat reste en vie, mais la suspicion colle aux gants.", effects: { rep: -6, hype: 2, scandal: 8, stats: { charisma: -2 } } },
 		      ],
 		    },
 		    {
@@ -1771,7 +1771,7 @@
 		      minTier: 1,
 		      options: [
 		        { label: "Refuser net", tag: "Propre", result: "Vous perdez le raccourci, mais le vestiaire comprend que la carriere restera defendable.", effects: { rep: 2, condition: -1, stats: { discipline: 2, durability: 1 } } },
-		        { label: "Prendre le protocole", tag: "Interdit", result: "La forme revient comme par magie. Le dossier anti-dopage, lui, commence a peser sur chaque sonnette du matin.", effects: { condition: 8, injuryRisk: 8, scandal: 5, dopingRisk: 24, doping: 1, stats: { cardio: 3, power: 2, durability: -2, discipline: -3 } }, risk: { injuryChance: 10, severity: 5, source: "protocole interdit" } },
+		        { label: "Prendre le protocole", tag: "Interdit", result: "La forme revient comme par magie. Le dossier anti-dopage, lui, commence a peser sur chaque sonnette du matin.", effects: { condition: 8, scandal: 5, dopingRisk: 24, doping: 1, stats: { cardio: 3, power: 2, durability: -2, discipline: -3 } } },
 		      ],
 		    },
 		    {
@@ -1793,7 +1793,7 @@
 	      text: "Un ancien partenaire devenu rival dine a quelques tables. Il parle trop fort de votre famille et de votre camp.",
 	      needsRival: true,
 	      options: [
-	        { label: "Regler ca dehors", tag: "Rue", result: "Le public adore le folklore, les avocats beaucoup moins.", effects: { hype: 9, rep: -7, money: -15000, restWeeks: 2, rivalry: 2, injuryRisk: 4, scandal: 10 } },
+	        { label: "Regler ca dehors", tag: "Rue", result: "Le public adore le folklore, les avocats beaucoup moins.", effects: { hype: 9, rep: -7, money: -15000, suspension: 1, rivalry: 2, scandal: 10 } },
 	        { label: "Laisser la securite", tag: "Froid", result: "Vous avalez votre ego. Le camp reste propre.", effects: { rep: 4, morale: -2, stats: { iq: 1, discipline: 2 } } },
 	      ],
 	    },
@@ -1804,7 +1804,7 @@
 	      text: "Une marque paie une soiree privee avec influenceurs, flashs et bouteilles. Le lendemain, sparring dur.",
 	      minHype: 15,
 	      options: [
-	        { label: "Faire la tournee", tag: "Cash", result: "Argent facile, buzz facile, recuperation beaucoup moins facile.", effects: { money: 14000, hype: 7, morale: 5, condition: -8, injuryRisk: 14, scandal: 4, stats: { discipline: -2 } }, risk: { injuryChance: 18, severity: 5, source: "nuit sponsorisee" } },
+	        { label: "Faire la tournee", tag: "Cash", result: "Argent facile, buzz facile, recuperation beaucoup moins facile.", effects: { money: 14000, hype: 7, morale: 5, condition: -8, scandal: 4, stats: { discipline: -2 } } },
 	        { label: "Rentrer tot", tag: "Focus", result: "Le sponsor rale, le cardio non.", effects: { hype: -2, morale: -1, condition: 3, stats: { discipline: 2, cardio: 1 } } },
 	      ],
 	    },
@@ -1827,7 +1827,7 @@
 	      minInjuryRisk: 8,
 	      options: [
 	        { label: "Accepter le cadre", tag: "Pro", result: "La vie devient moins fun. Le corps, lui, applaudit en silence.", effects: { morale: -3, condition: 7, medicalCare: 10, stats: { cardio: 1, discipline: 2, durability: 2 } } },
-	        { label: "Garder votre rythme", tag: "Libre", result: "Vous gardez le controle de vos soirees, et un peu trop de hasard.", effects: { morale: 4, hype: 1, injuryRisk: 6, stats: { discipline: -1 } } },
+	        { label: "Garder votre rythme", tag: "Libre", result: "Vous gardez le controle de vos soirees, et un peu trop de hasard.", effects: { morale: 4, hype: 1, stats: { discipline: -1 } } },
 	      ],
 	    },
 	    {
@@ -1838,7 +1838,7 @@
 		      minHype: 10,
 		      options: [
 		        { label: "Regler les degats", tag: "Discret", result: "Tu paies l'hotel, tu coupes l'after et le staff impose un couvre-feu. L'affaire reste locale, mais les insiders savent que tu as assume.", effects: { money: -18000, morale: -3, rep: 1, hype: 2, scandal: 5, medicalCare: 2, stats: { discipline: 1, charisma: 1 } } },
-		        { label: "Assumer la nuit en story", tag: "Chaos", result: "Les videos tournent partout. Sportivement c'est sale, mediatiquement tout le monde parle de toi.", effects: { hype: 16, money: -28000, rep: 2, condition: -6, injuryRisk: 8, scandal: 16, stats: { charisma: 3, discipline: -2 } } },
+		        { label: "Assumer la nuit en story", tag: "Chaos", result: "Les videos tournent partout. Sportivement c'est sale, mediatiquement tout le monde parle de toi.", effects: { hype: 16, money: -28000, rep: 2, condition: -6, scandal: 16, stats: { charisma: 3, discipline: -2 } } },
 		      ],
 		    },
 	    {
@@ -1860,7 +1860,7 @@
 	      minHype: 14,
 	      options: [
 	        { label: "Accepter le programme", tag: "Aide", result: "L'image prend une gifle, mais le vestiaire respecte la prise de controle.", effects: { rep: -4, hype: -2, morale: -2, medicalCare: 10, restWeeks: 2, scandal: 6, stats: { discipline: 2 } } },
-	        { label: "Tout nier en story", tag: "Ego", result: "Les fans commentent, les sponsors relisent le contrat, le sommeil part en morceaux.", effects: { hype: 6, rep: -10, condition: -5, injuryRisk: 10, scandal: 14, stats: { charisma: -3, discipline: -2 } } },
+	        { label: "Tout nier en story", tag: "Ego", result: "Les fans commentent, les sponsors relisent le contrat, le sommeil part en morceaux.", effects: { hype: 6, rep: -10, condition: -5, scandal: 14, stats: { charisma: -3, discipline: -2 } } },
 	      ],
 	    },
 	    {
@@ -1870,8 +1870,8 @@
 	      text: "La sortie d'un gala tourne mal: voiture touchee, camera de securite, staff qui te demande de rester sur place.",
 	      minTier: 2,
 	      options: [
-	        { label: "Rester et cooperer", tag: "Responsable", result: "Tu rates une semaine de camp, mais le dossier reste sous controle.", effects: { money: -15000, rep: -2, restWeeks: 1, scandal: 4, stats: { discipline: 1 } } },
-	        { label: "Partir avant la police", tag: "Tres risque", result: "La fuite coute plus cher que l'accident. La commission bloque ton agenda.", effects: { money: -45000, rep: -18, hype: -8, restWeeks: 6, locked: 1, scandal: 24, stats: { charisma: -5, discipline: -3 } } },
+	        { label: "Rester et cooperer", tag: "Responsable", result: "Tu rates une semaine de camp, mais le dossier reste sous controle.", effects: { money: -15000, rep: -2, suspension: 1, scandal: 4, stats: { discipline: 1 } } },
+	        { label: "Partir avant la police", tag: "Tres risque", result: "La fuite coute plus cher que l'accident. La commission bloque ton agenda.", effects: { money: -45000, rep: -18, hype: -8, suspension: 2, locked: 1, scandal: 24, stats: { charisma: -5, discipline: -3 } } },
 	      ],
 	    },
 	    {
@@ -1883,7 +1883,7 @@
 	      minFightHype: 14,
 	      options: [
 	        { label: "Rester derriere la securite", tag: "Pro", result: "Moins de viral, plus de controle. La commission note le calme.", effects: { rep: 4, hype: -1, stats: { iq: 1, discipline: 2 } } },
-	        { label: "Rejoindre le chaos", tag: "Viral", result: "La conference saute. Les images vendent le combat, les officiels detestent.", effects: { hype: 14, rep: -7, money: -10000, rivalry: 2, injuryRisk: 6, scandal: 12 }, risk: { injuryChance: 14, severity: 4, source: "melee backstage" } },
+	        { label: "Rejoindre le chaos", tag: "Viral", result: "La conference saute. Les images vendent le combat, les officiels detestent.", effects: { hype: 14, rep: -7, money: -10000, rivalry: 2, scandal: 12 } },
 	      ],
 	    },
 	    {
@@ -1894,7 +1894,7 @@
 	      minHype: 12,
 	      options: [
 	        { label: "Suivre le coach", tag: "Propre", result: "Tu rentres sans clip viral. Le staff garde le camp calme et ton corps recupere.", effects: { condition: 3, medicalCare: 4, morale: -1, stats: { discipline: 1 } } },
-	        { label: "Faire la blague au volant", tag: "Viral sale", result: "La video donne l'impression que tu voles un taxi. Amende, excuses publiques et sommeil ruine.", effects: { hype: 9, money: -9000, rep: -6, condition: -4, scandal: 9, injuryRisk: 7, stats: { discipline: -2 } }, risk: { injuryChance: 10, severity: 4, source: "retour de soiree" } },
+	        { label: "Faire la blague au volant", tag: "Viral sale", result: "La video donne l'impression que tu voles un taxi. Amende, excuses publiques et sommeil ruine.", effects: { hype: 9, money: -9000, rep: -6, condition: -4, scandal: 9, stats: { discipline: -2 } } },
 	      ],
 	    },
 	  ];
@@ -2206,6 +2206,8 @@
   const toast = document.createElement("div");
   toast.className = "toast";
   document.body.appendChild(toast);
+  let visualParallaxBound = false;
+  let visualParallaxFrame = 0;
 
   const savedCareer = loadCareer();
   const savedCreatorDraft = savedCareer ? null : loadCreatorDraft();
@@ -8741,16 +8743,50 @@
     `;
   }
 
+		  function updateVisualParallax() {
+		    visualParallaxFrame = 0;
+		    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+		    const visualCards = app.querySelectorAll(".visual-result-card[data-visual-anchor]");
+		    visualCards.forEach(card => {
+		      if (reducedMotion) {
+		        card.style.setProperty("--visual-parallax-y", "0px");
+		        return;
+		      }
+		      const rect = card.getBoundingClientRect();
+		      if (rect.bottom < 0 || rect.top > window.innerHeight) {
+		        card.style.setProperty("--visual-parallax-y", "0px");
+		        return;
+		      }
+		      const centerOffset = window.innerHeight / 2 - (rect.top + rect.height / 2);
+		      const parallax = clamp(centerOffset / window.innerHeight * 28, -30, 30);
+		      card.style.setProperty("--visual-parallax-y", `${parallax}px`);
+		    });
+		  }
+
+		  function scheduleVisualParallax() {
+		    if (visualParallaxFrame) return;
+		    visualParallaxFrame = window.requestAnimationFrame(updateVisualParallax);
+		  }
+
+		  function bindVisualParallax() {
+		    if (visualParallaxBound) return;
+		    visualParallaxBound = true;
+		    window.addEventListener("scroll", scheduleVisualParallax, { passive: true });
+		    window.addEventListener("resize", scheduleVisualParallax);
+		  }
+
 		  function renderShell(content) {
 		    app.innerHTML = `<div class="app-shell">${renderTopbar()}${renderStatsNudge()}${content}</div>`;
 		    hydrateIcons();
 		    const visualAnchor = [...app.querySelectorAll("[data-visual-anchor]")]
 		      .find(node => node.offsetParent !== null) || app.querySelector("[data-visual-anchor]");
 			    if (visualAnchor) {
+			      bindVisualParallax();
 			      const focusVisual = () => {
 			        const topbarBottom = app.querySelector(".topbar")?.getBoundingClientRect().bottom || 0;
 			        const targetTop = window.scrollY + visualAnchor.getBoundingClientRect().top - topbarBottom;
 			        window.scrollTo({ top: Math.max(0, targetTop), left: 0, behavior: "auto" });
+			        scheduleVisualParallax();
 			      };
 		      window.requestAnimationFrame(() => {
 		        focusVisual();
