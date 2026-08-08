@@ -10,7 +10,7 @@
   const SAVE_VERSION = 2;
   const LEGEND_TIER = 6;
   const LEGEND_STAT_CAP = 340;
-  const ASSET_VERSION = "20260808-life-visuals-anchor";
+  const ASSET_VERSION = "20260808-mobile-visual-fullscreen";
   const IMAGE_ASSETS = {
     home: "./assets/home-fight-legacy.png",
     press: "./assets/press-conference-fight-legacy.png",
@@ -8742,8 +8742,19 @@
 		    const visualAnchor = [...app.querySelectorAll("[data-visual-anchor]")]
 		      .find(node => node.offsetParent !== null) || app.querySelector("[data-visual-anchor]");
 		    if (visualAnchor) {
+		      const focusVisual = () => {
+		        const isMobile = window.matchMedia?.("(max-width: 620px)")?.matches;
+		        if (!isMobile) {
+		          visualAnchor.scrollIntoView({ block: "center", inline: "nearest" });
+		          return;
+		        }
+		        const topbarBottom = app.querySelector(".topbar")?.getBoundingClientRect().bottom || 0;
+		        const targetTop = window.scrollY + visualAnchor.getBoundingClientRect().top - topbarBottom;
+		        window.scrollTo({ top: Math.max(0, targetTop), left: 0, behavior: "auto" });
+		      };
 		      window.requestAnimationFrame(() => {
-		        visualAnchor.scrollIntoView({ block: "center", inline: "nearest" });
+		        focusVisual();
+		        window.setTimeout(focusVisual, 140);
 		      });
 		    }
 		  }
@@ -10063,6 +10074,8 @@
       startFightSelection();
       return;
     }
+    const boxingVisual = visualResultConfig("boxingCrossover");
+    preloadGameAssets("boxingCrossover");
     const mobileChoices = [
       {
         label: "Signer en anglaise",
@@ -10077,40 +10090,47 @@
         attrs: { index: 1 },
       },
     ];
+    const choiceMarkup = `
+      <div class="choice-grid two visual-embedded-choice-grid special-visual-choice-grid">
+        <button class="choice-btn special-choice" data-action="career-special-option" data-index="0">
+          <span class="choice-icon">${iconOnly("badge-dollar-sign", "$")}</span>
+          <strong>Signer en anglaise</strong>
+          <span class="choice-summary">Vous suspendez la route MMA et lancez un mini-arc: camp de boxe, conference, puis combat.</span>
+          <small>Gros cheque | tres faible chance de victoire</small>
+        </button>
+        <button class="choice-btn special-choice" data-action="career-special-option" data-index="1">
+          <span class="choice-icon">${iconOnly("shield-check", "M")}</span>
+          <strong>Refuser et revenir au MMA</strong>
+          <span class="choice-summary">Vous gardez la saison MMA propre et utilisez le refus pour vendre votre discipline.</span>
+          <small>Focus MMA | reputation + discipline</small>
+        </button>
+      </div>
+    `;
     renderShell(`
-      <section class="game-screen special-screen">
+      <section class="game-screen special-screen visual-choice-screen visual-swipe-screen">
         ${fighterHeader(career)}
+        <div class="boxing-special-visual visual-choice-priority">
+          ${renderVisualResultCard(
+            boxingVisual,
+            special.title,
+            special.text,
+            "",
+            choiceMarkup
+          )}
+        </div>
         ${seasonPanel(career)}
         ${renderSeasonFocusPanel(career)}
-        <div class="special-hero">
-          <span>${iconOnly("ticket", "S")} Offre hors MMA</span>
-          <h3>${esc(special.title)}</h3>
-          <p>${esc(special.text)}</p>
-        </div>
         <div class="summary-grid">
           <div class="summary-item"><span>${iconOnly("target", "B")} Adversaire</span><strong>${esc(special.opponent.name)}</strong></div>
           <div class="summary-item"><span>${iconOnly("list-checks", "R")} Record</span><strong>${esc(special.opponent.record)}</strong></div>
           <div class="summary-item"><span>${iconOnly("circle-dollar-sign", "$")} Bourse</span><strong>${formatMoney(special.purse)}</strong></div>
           <div class="summary-item"><span>${iconOnly("sparkles", "%")} Chance</span><strong>${special.baseWinChance}% base</strong></div>
         </div>
-        <div class="choice-grid two binary-choice-grid">
-          <button class="choice-btn special-choice" data-action="career-special-option" data-index="0">
-            <span class="choice-icon">${iconOnly("badge-dollar-sign", "$")}</span>
-            <strong>Signer en anglaise</strong>
-            <span class="choice-summary">Vous suspendez la route MMA et lancez un mini-arc: camp de boxe, conference, puis combat.</span>
-            <small>Gros cheque | tres faible chance de victoire</small>
-          </button>
-          <button class="choice-btn special-choice" data-action="career-special-option" data-index="1">
-            <span class="choice-icon">${iconOnly("shield-check", "M")}</span>
-            <strong>Refuser et revenir au MMA</strong>
-            <span class="choice-summary">Vous gardez la saison MMA propre et utilisez le refus pour vendre votre discipline.</span>
-            <small>Focus MMA | reputation + discipline</small>
-          </button>
-        </div>
         ${mobileSwipeDeck(mobileChoices, {
           kicker: "Offre hors MMA",
           title: special.title,
           summary: `${special.opponent.name} met ${formatMoney(special.purse)} sur la table.`,
+          visual: "boxingCrossover",
         })}
       </section>
     `);

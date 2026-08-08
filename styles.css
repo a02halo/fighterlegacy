@@ -1157,6 +1157,10 @@ input:focus-visible {
   scroll-margin-block: 14px;
 }
 
+.special-screen.visual-choice-screen .swipe-choice-deck {
+  display: none;
+}
+
 .visual-swipe-screen .swipe-choice-card.has-swipe-visual {
   background: #11100e;
   border: 1px solid rgba(214, 165, 59, 0.52);
@@ -2751,7 +2755,8 @@ input:focus-visible {
 }
 
 .contract-signing-visual .visual-result-card,
-.fight-offer-contract-visual .visual-result-card {
+.fight-offer-contract-visual .visual-result-card,
+.boxing-special-visual .visual-result-card {
   margin-bottom: 18px;
   min-height: clamp(430px, 44vw, 650px);
 }
@@ -2868,7 +2873,8 @@ input:focus-visible {
 }
 
 .fight-visual-choice-grid,
-.contract-visual-choice-grid {
+.contract-visual-choice-grid,
+.special-visual-choice-grid {
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
 }
 
@@ -4633,6 +4639,7 @@ input:focus-visible {
 
 @media (max-width: 620px) {
   .app-shell {
+    --mobile-visual-offset: 70px;
     width: min(100% - 18px, 1120px);
     padding-top: 12px;
   }
@@ -5584,10 +5591,46 @@ input:focus-visible {
 		  .press-choice-visual .visual-result-card,
 		  .contract-signing-visual .visual-result-card,
 		  .fight-offer-contract-visual .visual-result-card,
+		  .boxing-special-visual .visual-result-card,
 		  .medical-rest-screen.visual-result-screen .visual-result-card {
 		    aspect-ratio: auto;
 		    margin: 0 -16px 18px;
 		    min-height: 100svh;
+		  }
+
+		  .visual-choice-screen [data-visual-anchor],
+		  .visual-result-screen [data-visual-anchor] {
+		    scroll-margin-top: var(--mobile-visual-offset);
+		  }
+
+		  .visual-choice-screen .visual-result-card,
+		  .visual-result-screen .visual-result-card,
+		  .visual-swipe-screen .swipe-choice-deck {
+		    inline-size: 100vw;
+		    margin-left: calc(50% - 50vw);
+		    margin-right: calc(50% - 50vw);
+		    max-inline-size: 100vw;
+		  }
+
+		  .visual-choice-screen .visual-result-card,
+		  .visual-result-screen .visual-result-card,
+		  .visual-swipe-screen .swipe-choice-card.has-swipe-visual {
+		    border-left: 0;
+		    border-radius: 0;
+		    border-right: 0;
+		    min-height: 100svh;
+		  }
+
+		  .visual-swipe-screen .swipe-choice-actions {
+		    padding-inline: 16px;
+		  }
+
+		  .special-screen.visual-choice-screen .boxing-special-visual {
+		    display: none;
+		  }
+
+		  .special-screen.visual-choice-screen .swipe-choice-deck {
+		    display: grid;
 		  }
 
 		  .visual-result-card img {
