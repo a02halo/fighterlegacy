@@ -4866,12 +4866,25 @@ input:focus-visible {
     display: none;
   }
 
+  .fight-offer-screen {
+    display: flex;
+    flex-direction: column;
+  }
+
   .fight-offer-screen .fighter-strip {
     margin-bottom: 0;
+    order: 0;
+  }
+
+  .fight-offer-screen .fight-offer-contract-visual {
+    order: 1;
   }
 
   .fight-offer-screen .season-panel {
-    margin-bottom: 10px;
+    margin: 22px 0 10px;
+    order: 2;
+    position: static;
+    z-index: auto;
   }
 
   .fight-offer-intro {
