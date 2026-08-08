@@ -10,7 +10,7 @@
   const SAVE_VERSION = 2;
   const LEGEND_TIER = 6;
   const LEGEND_STAT_CAP = 340;
-  const ASSET_VERSION = "20260808-training-life-v3";
+  const ASSET_VERSION = "20260808-victory-visuals-v4";
   const IMAGE_ASSETS = {
     home: "./assets/home-fight-legacy.png",
     press: "./assets/press-conference-fight-legacy.png",
@@ -97,6 +97,18 @@
     trainingTrashMid2: "./assets/FL_TRASH_TALK_MID_5.png",
     trainingTrashLuxe1: "./assets/FL_TRASH_TALK_LUXE_3.png",
     trainingTrashLuxe2: "./assets/FL_TRASH_TALK_LUXE_4.png",
+    victoryLow1: "./assets/FL_VICTORY_LOW_1.png",
+    victoryLow2: "./assets/FL_VICTORY_LOW_2.png",
+    victoryLow3: "./assets/FL_VICTORY_LOW_3.png",
+    victoryMid1: "./assets/FL_VICTORY_MID_1.png",
+    victoryMid2: "./assets/FL_VICTORY_MID_2.png",
+    victoryMid3: "./assets/FL_VICTORY_MID_3.png",
+    victoryLuxe1: "./assets/FL_VICTORY_LUXE_1.png",
+    victoryLuxe2: "./assets/FL_VICTORY_LUXE_2.png",
+    victoryLuxe3: "./assets/FL_VICTORY_LUXE_3.png",
+    victoryLegend1: "./assets/FL_VICTORY_LEGEND_1.png",
+    victoryLegend2: "./assets/FL_VICTORY_LEGEND_2.png",
+    victoryLegend3: "./assets/FL_VICTORY_LEGEND_3.png",
     managerBefore: "./assets/manager-historique-avantchoix.png",
     managerChanged: "./assets/manager-historique-choix-changement.png",
     managerFaithful: "./assets/manager-historique-choix-fidele.png",
@@ -5844,6 +5856,34 @@
     return ["trainingTrashLow1", "trainingTrashLow2"];
   }
 
+  function victoryVisualTier(career = ui.career, result = career?.lastResult) {
+    const fightTier = Number(result?.fight?.tier ?? result?.opponent?.tier);
+    if (Number.isFinite(fightTier) && fightTier >= LEGEND_TIER) return LEGEND_TIER;
+    return trainingVisualTier(career);
+  }
+
+  function victoryVisualKeys(career = ui.career, result = career?.lastResult) {
+    const tier = victoryVisualTier(career, result);
+    if (tier >= LEGEND_TIER || isLegendCareer(career)) return ["victoryLegend1", "victoryLegend2", "victoryLegend3"];
+    if (tier >= 5) return ["victoryLuxe1", "victoryLuxe2", "victoryLuxe3"];
+    if (tier >= 3) return ["victoryMid1", "victoryMid2", "victoryMid3"];
+    return ["victoryLow1", "victoryLow2", "victoryLow3"];
+  }
+
+  function victoryVisualKey(career = ui.career, result = career?.lastResult) {
+    if (!result?.won) return null;
+    const keys = victoryVisualKeys(career, result);
+    return visualVariantKey(
+      keys[0],
+      keys.slice(1),
+      `${career?.seed || ""}|${career?.year || ""}|${result?.opponent?.name || ""}|${result?.scoreText || ""}|${victoryVisualTier(career, result)}|${result?.special ? "special" : "mma"}`
+    );
+  }
+
+  function victoryVisualText(result) {
+    return (result?.analysis || []).find(Boolean) || "La cage s'ouvre sur une victoire qui change l'energie autour de la carriere.";
+  }
+
   function trainingFocusResultVisualKey(career, focus, week) {
     const visualKeysByFocus = {
       striking: strikingTrainingVisualKeys,
@@ -6342,6 +6382,18 @@
       trainingTrashMid2: card("trainingTrashMid2", "training-trash-mid-result-card", "Trash-talk de rue devant les cameras", "megaphone", "Trash-talk international"),
       trainingTrashLuxe1: card("trainingTrashLuxe1", "training-trash-luxe-result-card", "Trash-talk dans une voiture de luxe", "megaphone", "Trash-talk FLC"),
       trainingTrashLuxe2: card("trainingTrashLuxe2", "training-trash-luxe-result-card", "Trash-talk televisuel tres show", "megaphone", "Trash-talk FLC"),
+      victoryLow1: card("victoryLow1", "victory-low-result-card", "Victoire dans une cage locale sombre", "trophy", "Victoire locale"),
+      victoryLow2: card("victoryLow2", "victory-low-result-card", "Victoire a genoux dans une petite cage", "trophy", "Victoire locale"),
+      victoryLow3: card("victoryLow3", "victory-low-result-card", "Celebration sur le grillage d'une cage brute", "trophy", "Victoire locale"),
+      victoryMid1: card("victoryMid1", "victory-mid-result-card", "Victoire debout dans une cage regionale", "award", "Victoire nationale"),
+      victoryMid2: card("victoryMid2", "victory-mid-result-card", "Victoire au centre d'une cage regionale", "award", "Victoire nationale"),
+      victoryMid3: card("victoryMid3", "victory-mid-result-card", "Celebration contre le grillage apres une victoire", "award", "Victoire nationale"),
+      victoryLuxe1: card("victoryLuxe1", "victory-luxe-result-card", "Celebration acrobatique dans une grande arena", "sparkles", "Victoire internationale"),
+      victoryLuxe2: card("victoryLuxe2", "victory-luxe-result-card", "Victoire devant une grande foule internationale", "sparkles", "Victoire internationale"),
+      victoryLuxe3: card("victoryLuxe3", "victory-luxe-result-card", "Celebration allongee sous les ecrans geants", "sparkles", "Victoire internationale"),
+      victoryLegend1: card("victoryLegend1", "victory-legend-result-card", "Celebration legendaire sur le grillage de l'arena", "crown", "Victoire legende"),
+      victoryLegend2: card("victoryLegend2", "victory-legend-result-card", "Victoire legendaire devant les ecrans geants", "crown", "Victoire legende"),
+      victoryLegend3: card("victoryLegend3", "victory-legend-result-card", "Victoire legendaire sous les feux d'artifice", "crown", "Victoire legende"),
     };
     return visualResults[key] || null;
   }
@@ -10722,6 +10774,9 @@
       return;
     }
     const needsRest = hasMedicalRest(career);
+    const victoryKey = victoryVisualKey(career, result);
+    const victoryVisual = visualResultConfig(victoryKey);
+    if (victoryKey) preloadGameAssets(victoryKey);
 	    const nextLabel = career.flags.medicalRetirement
 	      ? "Rapport medical"
 	      : needsRest
@@ -10760,9 +10815,14 @@
 	      </div>
 	    `;
 	    renderShell(`
-	      <section class="game-screen special-screen">
+	      <section class="game-screen special-screen ${victoryVisual ? "visual-result-screen fight-result-screen" : ""}">
         ${fighterHeader(career)}
         ${seasonPanel(career)}
+        ${renderVisualResultCard(
+          victoryVisual,
+          `Upset en anglaise: ${result.scoreText}`,
+          victoryVisualText(result)
+        )}
         <div class="result-banner ${result.won ? "win" : "loss"}">
           <span class="rank">Boxe anglaise | chance ${result.chance}%</span>
           <h3>${iconOnly(result.won ? "circle-check" : "x-circle", result.won ? "V" : "D")} ${result.won ? "Upset en anglaise" : "Money fight"} | ${esc(result.scoreText)}</h3>
@@ -11003,6 +11063,9 @@
 	    const career = ui.career;
     const result = career.lastResult;
     const needsRest = hasMedicalRest(career);
+    const victoryKey = victoryVisualKey(career, result);
+    const victoryVisual = visualResultConfig(victoryKey);
+    if (victoryKey) preloadGameAssets(victoryKey);
 	    const afterFightLabel = career.flags.medicalRetirement
 	      ? "Rapport medical"
 	      : needsRest
@@ -11051,9 +11114,14 @@
 	      </div>
 	    `;
 	    renderShell(`
-	      <section class="game-screen">
+	      <section class="game-screen ${victoryVisual ? "visual-result-screen fight-result-screen" : ""}">
         ${fighterHeader(career)}
 	        ${seasonPanel(career)}
+	        ${renderVisualResultCard(
+            victoryVisual,
+            `Victoire: ${result.scoreText}`,
+            victoryVisualText(result)
+          )}
 	        <div class="result-banner ${result.won ? "win" : "loss"}">
 	          <span class="rank">${esc(result.fight.tag)} | ${esc(result.plan.label)}</span>
 	          <h3>${iconOnly(result.won ? "circle-check" : "x-circle", result.won ? "V" : "D")} ${result.won ? "Victoire" : "Defaite"} | ${esc(result.scoreText)}</h3>
@@ -13660,6 +13728,18 @@
     "trainingTrashMid2",
     "trainingTrashLuxe1",
     "trainingTrashLuxe2",
+    "victoryLow1",
+    "victoryLow2",
+    "victoryLow3",
+    "victoryMid1",
+    "victoryMid2",
+    "victoryMid3",
+    "victoryLuxe1",
+    "victoryLuxe2",
+    "victoryLuxe3",
+    "victoryLegend1",
+    "victoryLegend2",
+    "victoryLegend3",
     "managerBefore",
     "managerChanged",
     "managerFaithful",
