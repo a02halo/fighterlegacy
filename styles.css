@@ -1208,6 +1208,9 @@ input:focus-visible {
 .visual-swipe-screen .stage-striking-alt-result-card .swipe-card-visual,
 .visual-swipe-screen .stage-grappling-result-card .swipe-card-visual,
 .visual-swipe-screen .stage-grappling-alt-result-card .swipe-card-visual,
+.visual-swipe-screen .training-conditioning-low-result-card .swipe-card-visual,
+.visual-swipe-screen .training-conditioning-mid-result-card .swipe-card-visual,
+.visual-swipe-screen .training-conditioning-luxe-result-card .swipe-card-visual,
 .visual-swipe-screen .doping-result-card .swipe-card-visual {
   object-position: center 42%;
 }
@@ -1225,6 +1228,12 @@ input:focus-visible {
 .visual-swipe-screen .relationship-pressure-result-card .swipe-card-visual,
 .visual-swipe-screen .boxing-crossover-result-card .swipe-card-visual,
 .visual-swipe-screen .parking-incident-result-card .swipe-card-visual,
+.visual-swipe-screen .weight-cut-before-result-card .swipe-card-visual,
+.visual-swipe-screen .weight-cut-forced-result-card .swipe-card-visual,
+.visual-swipe-screen .weight-cut-refused-result-card .swipe-card-visual,
+.visual-swipe-screen .bus-cart-before-result-card .swipe-card-visual,
+.visual-swipe-screen .bus-cart-sent-result-card .swipe-card-visual,
+.visual-swipe-screen .bus-cart-refused-result-card .swipe-card-visual,
 .visual-swipe-screen .recovery-clinic-result-card .swipe-card-visual,
 .visual-swipe-screen .dodgy-sponsor-result-card .swipe-card-visual {
   object-position: center 46%;
@@ -1343,9 +1352,45 @@ input:focus-visible {
   opacity: 0.78;
 }
 
-.visual-swipe-screen .swipe-choice-card.is-dragging .swipe-gesture-hint,
-.visual-swipe-screen .swipe-choice-card.swipe-left .swipe-gesture-hint,
-.visual-swipe-screen .swipe-choice-card.swipe-right .swipe-gesture-hint {
+.swipe-side-cue {
+  align-items: center;
+  background: rgba(255, 250, 240, 0.12);
+  border: 1px solid rgba(255, 250, 240, 0.18);
+  border-radius: 999px;
+  color: rgba(255, 250, 240, 0.78);
+  display: inline-flex;
+  inline-size: 34px;
+  justify-content: center;
+  min-height: 34px;
+  opacity: 0.72;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+}
+
+.swipe-side-cue .icon {
+  block-size: 17px;
+  inline-size: 17px;
+}
+
+.swipe-side-cue-left {
+  animation: swipeCueLeft 1650ms ease-in-out infinite;
+  left: 10px;
+}
+
+.swipe-side-cue-right {
+  animation: swipeCueRight 1650ms ease-in-out infinite;
+  right: 10px;
+}
+
+.swipe-choice-card.is-dragging .swipe-gesture-hint,
+.swipe-choice-card.swipe-left .swipe-gesture-hint,
+.swipe-choice-card.swipe-right .swipe-gesture-hint,
+.swipe-choice-card.is-dragging .swipe-side-cue,
+.swipe-choice-card.swipe-left .swipe-side-cue,
+.swipe-choice-card.swipe-right .swipe-side-cue {
   opacity: 0;
 }
 
@@ -1360,6 +1405,26 @@ input:focus-visible {
 
   58% {
     transform: translateX(12px) rotate(8deg);
+  }
+}
+
+@keyframes swipeCueLeft {
+  0%, 100% {
+    transform: translateY(-50%) translateX(0);
+  }
+
+  48% {
+    transform: translateY(-50%) translateX(-7px);
+  }
+}
+
+@keyframes swipeCueRight {
+  0%, 100% {
+    transform: translateY(-50%) translateX(0);
+  }
+
+  48% {
+    transform: translateY(-50%) translateX(7px);
   }
 }
 
@@ -2477,6 +2542,10 @@ input:focus-visible {
   .swipe-gesture-hand {
     animation: none;
   }
+
+  .swipe-side-cue {
+    animation: none;
+  }
 }
 
 .visual-result-card::before {
@@ -2688,6 +2757,52 @@ input:focus-visible {
     linear-gradient(180deg, rgba(8, 9, 13, 0.02) 0%, rgba(8, 9, 13, 0.14) 42%, rgba(8, 9, 13, 0.84) 100%);
 }
 
+.weight-cut-before-result-card,
+.weight-cut-forced-result-card,
+.weight-cut-refused-result-card {
+  background:
+    linear-gradient(135deg, rgba(52, 96, 178, 0.26), transparent 42%),
+    #090d14;
+}
+
+.weight-cut-before-result-card img,
+.weight-cut-forced-result-card img,
+.weight-cut-refused-result-card img {
+  object-position: center 45%;
+  opacity: 0.95;
+}
+
+.weight-cut-before-result-card::before,
+.weight-cut-forced-result-card::before,
+.weight-cut-refused-result-card::before {
+  background:
+    linear-gradient(90deg, rgba(5, 8, 13, 0.8) 0%, rgba(5, 8, 13, 0.48) 45%, rgba(5, 8, 13, 0.08) 100%),
+    linear-gradient(180deg, rgba(5, 8, 13, 0.02) 0%, rgba(5, 8, 13, 0.14) 42%, rgba(5, 8, 13, 0.84) 100%);
+}
+
+.bus-cart-before-result-card,
+.bus-cart-sent-result-card,
+.bus-cart-refused-result-card {
+  background:
+    linear-gradient(135deg, rgba(211, 71, 55, 0.3), transparent 42%),
+    #11100e;
+}
+
+.bus-cart-before-result-card img,
+.bus-cart-sent-result-card img,
+.bus-cart-refused-result-card img {
+  object-position: center 48%;
+  opacity: 0.95;
+}
+
+.bus-cart-before-result-card::before,
+.bus-cart-sent-result-card::before,
+.bus-cart-refused-result-card::before {
+  background:
+    linear-gradient(90deg, rgba(11, 10, 8, 0.82) 0%, rgba(11, 10, 8, 0.5) 45%, rgba(11, 10, 8, 0.1) 100%),
+    linear-gradient(180deg, rgba(11, 10, 8, 0.02) 0%, rgba(11, 10, 8, 0.16) 42%, rgba(11, 10, 8, 0.84) 100%);
+}
+
 .press-result-card,
 .press-pique-result-card,
 .press-brawl-result-card,
@@ -2729,6 +2844,9 @@ input:focus-visible {
 .training-tactics-low-result-card,
 .training-tactics-mid-result-card,
 .training-tactics-luxe-result-card,
+.training-conditioning-low-result-card,
+.training-conditioning-mid-result-card,
+.training-conditioning-luxe-result-card,
 .training-injury-result-card {
   background:
     linear-gradient(135deg, rgba(214, 165, 59, 0.22), transparent 42%),
@@ -2748,7 +2866,10 @@ input:focus-visible {
 .training-striking-luxe-result-card img,
 .training-tactics-low-result-card img,
 .training-tactics-mid-result-card img,
-.training-tactics-luxe-result-card img {
+.training-tactics-luxe-result-card img,
+.training-conditioning-low-result-card img,
+.training-conditioning-mid-result-card img,
+.training-conditioning-luxe-result-card img {
   object-position: center 40%;
   opacity: 0.94;
 }
@@ -2768,6 +2889,9 @@ input:focus-visible {
 .training-tactics-low-result-card::before,
 .training-tactics-mid-result-card::before,
 .training-tactics-luxe-result-card::before,
+.training-conditioning-low-result-card::before,
+.training-conditioning-mid-result-card::before,
+.training-conditioning-luxe-result-card::before,
 .training-injury-result-card::before {
   background:
     linear-gradient(90deg, rgba(13, 12, 10, 0.82) 0%, rgba(13, 12, 10, 0.48) 45%, rgba(13, 12, 10, 0.08) 100%),
@@ -2950,8 +3074,6 @@ input:focus-visible {
 .visual-choice-screen .season-panel {
   inset: auto;
   position: static;
-  transform: translate3d(0, var(--visual-flow-lift, 0px), 0);
-  transition: transform 150ms ease-out;
   z-index: auto;
 }
 
@@ -5383,13 +5505,16 @@ input:focus-visible {
     object-position: center 46%;
   }
 
-  .stage-striking-result-card .swipe-card-visual,
-  .stage-striking-alt-result-card .swipe-card-visual,
-  .stage-grappling-result-card .swipe-card-visual,
-  .stage-grappling-alt-result-card .swipe-card-visual,
-  .training-injury-result-card .swipe-card-visual {
-    object-position: center 42%;
-  }
+		  .stage-striking-result-card .swipe-card-visual,
+		  .stage-striking-alt-result-card .swipe-card-visual,
+		  .stage-grappling-result-card .swipe-card-visual,
+		  .stage-grappling-alt-result-card .swipe-card-visual,
+		  .training-conditioning-low-result-card .swipe-card-visual,
+		  .training-conditioning-mid-result-card .swipe-card-visual,
+		  .training-conditioning-luxe-result-card .swipe-card-visual,
+		  .training-injury-result-card .swipe-card-visual {
+		    object-position: center 42%;
+		  }
 
   .contract-signing-result-card .swipe-card-visual,
   .contract-signing-alt-result-card .swipe-card-visual,
@@ -5402,14 +5527,20 @@ input:focus-visible {
     object-position: center 48%;
   }
 
-  .podcast-result-card .swipe-card-visual,
-  .relationship-pressure-result-card .swipe-card-visual,
-  .boxing-crossover-result-card .swipe-card-visual,
-  .parking-incident-result-card .swipe-card-visual,
-  .recovery-clinic-result-card .swipe-card-visual,
-  .dodgy-sponsor-result-card .swipe-card-visual {
-    object-position: center 46%;
-  }
+		  .podcast-result-card .swipe-card-visual,
+		  .relationship-pressure-result-card .swipe-card-visual,
+		  .boxing-crossover-result-card .swipe-card-visual,
+		  .parking-incident-result-card .swipe-card-visual,
+		  .weight-cut-before-result-card .swipe-card-visual,
+		  .weight-cut-forced-result-card .swipe-card-visual,
+		  .weight-cut-refused-result-card .swipe-card-visual,
+		  .bus-cart-before-result-card .swipe-card-visual,
+		  .bus-cart-sent-result-card .swipe-card-visual,
+		  .bus-cart-refused-result-card .swipe-card-visual,
+		  .recovery-clinic-result-card .swipe-card-visual,
+		  .dodgy-sponsor-result-card .swipe-card-visual {
+		    object-position: center 46%;
+		  }
 
   .swipe-card-visual-shade {
     background:
@@ -5825,6 +5956,9 @@ input:focus-visible {
 		  .training-tactics-low-result-card::before,
 		  .training-tactics-mid-result-card::before,
 		  .training-tactics-luxe-result-card::before,
+		  .training-conditioning-low-result-card::before,
+		  .training-conditioning-mid-result-card::before,
+		  .training-conditioning-luxe-result-card::before,
 		  .training-injury-result-card::before {
 		    background:
 		      linear-gradient(180deg, rgba(10, 10, 10, 0.02) 0%, rgba(10, 10, 10, 0.08) 32%, rgba(10, 10, 10, 0.58) 68%, rgba(10, 10, 10, 0.92) 100%),
@@ -5848,7 +5982,13 @@ input:focus-visible {
 		  .recovery-clinic-result-card::before,
 		  .relationship-pressure-result-card::before,
 		  .boxing-crossover-result-card::before,
-		  .parking-incident-result-card::before {
+		  .parking-incident-result-card::before,
+		  .weight-cut-before-result-card::before,
+		  .weight-cut-forced-result-card::before,
+		  .weight-cut-refused-result-card::before,
+		  .bus-cart-before-result-card::before,
+		  .bus-cart-sent-result-card::before,
+		  .bus-cart-refused-result-card::before {
 		    background:
 		      linear-gradient(180deg, rgba(8, 8, 12, 0.02) 0%, rgba(8, 8, 12, 0.08) 34%, rgba(8, 8, 12, 0.58) 68%, rgba(8, 8, 12, 0.92) 100%),
 		      linear-gradient(90deg, rgba(8, 8, 12, 0.13), rgba(8, 8, 12, 0.04));

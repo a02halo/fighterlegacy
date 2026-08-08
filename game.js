@@ -10,7 +10,7 @@
   const SAVE_VERSION = 2;
   const LEGEND_TIER = 6;
   const LEGEND_STAT_CAP = 340;
-  const ASSET_VERSION = "20260808-training-coach-v1";
+  const ASSET_VERSION = "20260808-visual-events-v2";
   const IMAGE_ASSETS = {
     home: "./assets/home-fight-legacy.png",
     press: "./assets/press-conference-fight-legacy.png",
@@ -40,6 +40,12 @@
     contractSigning: "./assets/signaturecontrats-9-16.png",
     contractSigningAlt: "./assets/signaturecontrats-2-9-16.png",
     trainingInjury: "./assets/blessureentrainement.png",
+    weightCutBefore: "./assets/coupe-sale-avantdecision.png",
+    weightCutForced: "./assets/coupesale-apres-decision-decisioncut.png",
+    weightCutRefused: "./assets/coupesale-apresdecision-refuscut.png",
+    busCartBefore: "./assets/chariot-situationinitiale.png",
+    busCartSent: "./assets/chariot-envoidanslebus.png",
+    busCartRefused: "./assets/chariot-pasdanslebus.png",
     trainingStrikingLow1: "./assets/FL_PP_LOW_1.png",
     trainingStrikingLow2: "./assets/FL_PP_LOW_2.png",
     trainingStrikingLow3: "./assets/FL_PP_LOW_3.png",
@@ -58,6 +64,15 @@
     trainingTacticsLuxe1: "./assets/FL_COACH_LUXE_1.png",
     trainingTacticsLuxe2: "./assets/FL_COACH_LUXE_2.png",
     trainingTacticsLuxe3: "./assets/FL_COACH_LUXE_3.png",
+    trainingConditioningLow1: "./assets/FL_CARDIO_LOW_1.png",
+    trainingConditioningLow2: "./assets/FL_CARDIO_LOW_2.png",
+    trainingConditioningLow3: "./assets/FL_CARDIO_LOW_3.png",
+    trainingConditioningMid1: "./assets/FL_CARDIO_MID_1.png",
+    trainingConditioningMid2: "./assets/FL_CARDIO_MID_2.png",
+    trainingConditioningMid3: "./assets/FL_CARDIO_MID_3.png",
+    trainingConditioningLuxe1: "./assets/FL_CARDIO_LUXE_1.png",
+    trainingConditioningLuxe2: "./assets/FL_CARDIO_LUXE_2.png",
+    trainingConditioningLuxe3: "./assets/FL_CARDIO_LUXE_3.png",
   };
 
   const CREATOR_STEPS = [
@@ -102,6 +117,7 @@
 	    hype: "Hype",
 	    morale: "Moral",
 	    condition: "Forme",
+	    campWeek: "Semaine camp",
 	    rivalry: "Rivalite",
 	    locked: "Contrat bloque",
 	    doublePath: "Double categorie",
@@ -1719,7 +1735,7 @@
 	      minTier: 2,
 	      minHype: 28,
 	      options: [
-	        { label: "Signer en anglaise", tag: "Cash", result: "Vous partez sur son terrain. Presque personne ne vous donne gagnant, mais la bourse change une vie.", effects: { money: 220000, hype: 16, condition: -5, injuryRisk: 8, stats: { charisma: 4, cardio: -2 } }, special: { kind: "boxing-crossover", winChance: 8 }, risk: { injuryChance: 8, severity: 5, source: "gala de boxe" } },
+	        { label: "Signer en anglaise", tag: "Cash", result: "Vous partez sur son terrain. Presque personne ne vous donne gagnant, mais la bourse change une vie.", effects: { money: 220000, hype: 16, condition: -5, stats: { charisma: 4, cardio: -2 } }, special: { kind: "boxing-crossover", winChance: 8 } },
 	        { label: "Refuser et chambrer", tag: "MMA", result: "Vous gardez votre sport et transformez le refus en punchline.", effects: { rep: 4, morale: 4, hype: -3, stats: { discipline: 1, iq: 1 } } },
 	      ],
 	    },
@@ -1749,13 +1765,13 @@
 	    {
 	      id: "media-bus-melee",
 	      category: "Scandale",
-	      title: "Chariot dans le parking",
-	      text: "Fight week derape: ton clan croise le bus adverse dans les coulisses. Un chariot traine, les telephones filment deja.",
+	      title: "Chariot dans le bus",
+	      text: "Fight week derape: ton clan croise le bus adverse dans les coulisses. Un chariot de materiel traine entre les vigiles et la porte ouverte du bus. Les telephones filment deja.",
 	      requiresFight: true,
 	      minFightHype: 12,
 	      options: [
-	        { label: "Suivre le clan", tag: "Chaos", result: "Le clip explose. La commission aussi.", effects: { hype: 15, rep: -8, money: -25000, suspension: 1, rivalry: 2, scandal: 14 } },
-	        { label: "Bloquer tout le monde", tag: "Pro", result: "Vous perdez un moment viral, mais le vestiaire sait qui tient la laisse.", effects: { rep: 5, hype: -2, morale: -3, stats: { discipline: 2, iq: 1 }, rivalry: -1 } },
+	        { label: "Envoyer le chariot", tag: "Chaos", result: "Le chariot finit dans le bus adverse. Le clip explose, la commission aussi.", effects: { hype: 15, rep: -8, money: -25000, suspension: 1, rivalry: 2, scandal: 14 } },
+	        { label: "Ne pas l'envoyer", tag: "Pro", result: "Tu bloques ton clan avant le geste idiot. Pas de clip viral, mais le vestiaire sait qui tient la laisse.", effects: { rep: 5, hype: -2, morale: -3, stats: { discipline: 2, iq: 1 }, rivalry: -1 } },
 	      ],
 	    },
 	    {
@@ -1888,7 +1904,7 @@
 	      text: "La sortie d'un gala tourne mal: voiture touchee, camera de securite, staff qui te demande de rester sur place.",
 	      minTier: 2,
 	      options: [
-	        { label: "Rester et cooperer", tag: "Responsable", result: "Tu rates une semaine de camp, mais le dossier reste sous controle.", effects: { money: -15000, rep: -2, suspension: 1, scandal: 4, stats: { discipline: 1 } } },
+	        { label: "Rester et cooperer", tag: "Responsable", result: "Tu perds une semaine de reglages et de recuperation, mais le dossier reste sous controle.", effects: { money: -15000, rep: -2, condition: -4, campWeek: -1, scandal: 4, stats: { discipline: 1, cardio: -1 } } },
 	        { label: "Partir avant la police", tag: "Tres risque", result: "La fuite coute plus cher que l'accident. La commission bloque ton agenda.", effects: { money: -45000, rep: -18, hype: -8, suspension: 2, locked: 1, scandal: 24, stats: { charisma: -5, discipline: -3 } } },
 	      ],
 	    },
@@ -2203,7 +2219,7 @@
       ctx => ({ title: "Nuit d'hotel", text: `${ctx.name} paie une grosse note apres meubles casses, extincteurs vides et depart tres matinal.`, tone: "bad" }),
       ctx => ({ title: "Telephone au sol", text: `Un contender de ${ctx.org} s'excuse apres avoir arrache le telephone d'un fan devant l'hotel.`, tone: "bad" }),
       ctx => ({ title: "Terminal sous tension", text: `${ctx.name} est sorti d'un vol apres une altercation alcoolisee. L'organisation propose un programme d'aide.`, tone: "bad" }),
-      ctx => ({ title: "Parking bloque", text: `La securite separe deux camps apres un chariot lance pres du bus de la carte ${ctx.org}.`, tone: "hot" }),
+      ctx => ({ title: "Bus sous tension", text: `La securite separe deux camps apres un chariot lance pres du bus de la carte ${ctx.org}.`, tone: "hot" }),
       ctx => ({ title: "Conference annulee", text: `Bouteilles, bousculades, equipes separees: la conference de presse ${ctx.org} saute avant meme les face-offs.`, tone: "hot" }),
     ],
     business: [
@@ -2353,6 +2369,7 @@
 	      hype: "flame",
 	      morale: value >= 0 ? "smile" : "frown",
 	      condition: "heart-pulse",
+	      campWeek: "calendar-clock",
 	      rivalry: "swords",
 	      locked: "lock",
 	      doublePath: "move-up-right",
@@ -2520,7 +2537,7 @@
 	  function optionImpactIcon(option) {
 	    const effects = option?.effects || {};
 	    const statKey = Object.keys(effects.stats || {})[0];
-	    const directKey = ["money", "rep", "hype", "morale", "condition", "injuryRisk", "medicalCare", "restWeeks", "scandal", "rivalry", "locked", "doublePath", "credit"].find(key => effects[key]);
+	    const directKey = ["money", "rep", "hype", "morale", "condition", "campWeek", "injuryRisk", "medicalCare", "restWeeks", "scandal", "rivalry", "locked", "doublePath", "credit"].find(key => effects[key]);
 	    return effectIcon(statKey || directKey || "morale", effects[directKey] || 1);
 	  }
 
@@ -4153,7 +4170,7 @@
       return;
     }
     if (index === 0) {
-      const effects = applyEffects(career, { hype: 6, morale: 2, injuryRisk: 2, stats: { charisma: 1 } });
+      const effects = applyEffects(career, { hype: 6, morale: 2, stats: { charisma: 1 } });
       career.specialFight = {
         ...special,
         stage: "camp",
@@ -4752,6 +4769,10 @@
         shown.push({ key, value });
       });
     }
+    if (effects.campWeek) {
+      career.flags.campWeeksLost = Math.max(0, Math.round((career.flags.campWeeksLost || 0) - effects.campWeek));
+      shown.push({ key: "campWeek", value: effects.campWeek });
+    }
     career.medical = career.medical || { injuryRisk: 0, restWeeks: 0, injuries: [], rehabLog: [] };
     if (effects.injuryRisk) {
       career.medical.injuryRisk = clamp((career.medical.injuryRisk || 0) + effects.injuryRisk, 0, 90);
@@ -5319,9 +5340,6 @@
 	    const extraEffects = [];
 	    let injury = null;
 	    let dopingPositive = false;
-	    if (option.risk?.injuryChance) {
-	      extraText.push("Pas de blessure declaree: le staff note surtout une recuperation degradee et une dette corporelle plus haute.");
-	    }
 	    if (option.risk?.dopingChance) {
 	      const dopingSignal = (career.flags?.dopingRisk || 0) + (career.flags?.doping || 0) * 12;
 	      const scandalPressure = Math.min(12, (career.flags?.scandal || 0) * 0.25);
@@ -5445,9 +5463,9 @@
       "night-test": option.label === "Tout dire et entrer en protocole"
         ? { title: "Controle trouble et protocole", text: `${name} reconnait une derive hors competition et accepte un cadre medical. L'image souffre, mais la saison reste sauvable.` }
         : { title: "Defense agressive apres controle", text: `${name} conteste publiquement un controle suspect. Les avocats prennent la lumiere, les sponsors demandent des garanties.` },
-      "media-bus-melee": option.label === "Suivre le clan"
-        ? { title: "Parking sous haute tension", text: `Des images de l'entourage de ${name} pres du bus adverse circulent deja. La commission prepare une facture, la rivalite vend le combat.` }
-        : { title: "Le camp calme l'incident", text: `${name} retient son clan dans le parking. Les cameras perdent un clip viral, mais les officiels notent le sang-froid.` },
+      "media-bus-melee": option.label === "Envoyer le chariot"
+        ? { title: "Bus adverse pris pour cible", text: `Des images de l'entourage de ${name} envoyant un chariot vers le bus adverse circulent deja. La commission prepare une facture, la rivalite vend le combat.` }
+        : { title: "Le camp calme l'incident", text: `${name} retient son clan devant le bus adverse. Les cameras perdent un clip viral, mais les officiels notent le sang-froid.` },
       "cage-jump": option.label === "Sauter dans le bruit"
         ? { title: "Debordement apres combat", text: `${name} est au centre d'une sequence de cage devenue virale. La popularite grimpe, la commission aussi.` }
         : { title: "Calme dans la cage", text: `${name} refuse de suivre la provocation d'un rival. Le geste nourrit la rivalite sans offrir de sanction facile.` },
@@ -5645,8 +5663,16 @@
     render();
   }
 
-  function eventResultVisual(event) {
+  function eventResultVisual(event, option = null) {
     if (!event) return null;
+    if (event.id === "weight-cut") {
+      if (!option) return "weightCutBefore";
+      return option.label === "Forcer la coupe" ? "weightCutForced" : "weightCutRefused";
+    }
+    if (event.id === "media-bus-melee") {
+      if (!option) return "busCartBefore";
+      return option.label === "Envoyer le chariot" ? "busCartSent" : "busCartRefused";
+    }
     const visualsByEvent = {
       "diet-cheat": "campDiet",
       "friend-restaurant": "friendRestaurant",
@@ -5676,6 +5702,8 @@
   }
 
   function eventDecisionVisual(event) {
+    if (event?.id === "weight-cut") return "weightCutBefore";
+    if (event?.id === "media-bus-melee") return "busCartBefore";
     const visual = eventResultVisual(event);
     return visual && event?.options?.length === 2 ? visual : null;
   }
@@ -5737,10 +5765,18 @@
     return ["trainingTacticsLow1", "trainingTacticsLow2", "trainingTacticsLow3"];
   }
 
+  function conditioningTrainingVisualKeys(career = ui.career) {
+    const tier = trainingVisualTier(career);
+    if (tier >= 5) return ["trainingConditioningLuxe1", "trainingConditioningLuxe2", "trainingConditioningLuxe3"];
+    if (tier >= 3) return ["trainingConditioningMid1", "trainingConditioningMid2", "trainingConditioningMid3"];
+    return ["trainingConditioningLow1", "trainingConditioningLow2", "trainingConditioningLow3"];
+  }
+
   function trainingFocusResultVisualKey(career, focus, week) {
     const visualKeysByFocus = {
       striking: strikingTrainingVisualKeys,
       tactics: tacticsTrainingVisualKeys,
+      conditioning: conditioningTrainingVisualKeys,
     };
     const resolveKeys = visualKeysByFocus[focus?.id];
     if (!resolveKeys) return null;
@@ -5957,6 +5993,48 @@
         icon: "heart-crack",
         kicker: "Blessure au camp",
       },
+      weightCutBefore: {
+        className: "weight-cut-before-result-card",
+        image: assetUrl("weightCutBefore"),
+        alt: "Coupe de poids difficile avant la decision",
+        icon: "scale",
+        kicker: "Coupe de poids",
+      },
+      weightCutForced: {
+        className: "weight-cut-forced-result-card",
+        image: assetUrl("weightCutForced"),
+        alt: "Coupe de poids forcee avant la pesee",
+        icon: "droplets",
+        kicker: "Coupe forcee",
+      },
+      weightCutRefused: {
+        className: "weight-cut-refused-result-card",
+        image: assetUrl("weightCutRefused"),
+        alt: "Refus de coupe brutale et montee de categorie",
+        icon: "move-up-right",
+        kicker: "Categorie superieure",
+      },
+      busCartBefore: {
+        className: "bus-cart-before-result-card",
+        image: assetUrl("busCartBefore"),
+        alt: "Chariot de materiel devant le bus adverse",
+        icon: "bus",
+        kicker: "Tension backstage",
+      },
+      busCartSent: {
+        className: "bus-cart-sent-result-card",
+        image: assetUrl("busCartSent"),
+        alt: "Chariot envoye vers le bus adverse",
+        icon: "send",
+        kicker: "Clip viral",
+      },
+      busCartRefused: {
+        className: "bus-cart-refused-result-card",
+        image: assetUrl("busCartRefused"),
+        alt: "Clan retenu avant l'incident du bus",
+        icon: "shield-check",
+        kicker: "Incident evite",
+      },
       trainingStrikingLow1: {
         className: "training-striking-low-result-card",
         image: assetUrl("trainingStrikingLow1"),
@@ -6082,6 +6160,69 @@
         alt: "War room tactique FLC pendant un camp MMA",
         icon: "brain",
         kicker: "Game plan FLC",
+      },
+      trainingConditioningLow1: {
+        className: "training-conditioning-low-result-card",
+        image: assetUrl("trainingConditioningLow1"),
+        alt: "Cardio et puissance dans une salle locale",
+        icon: "dumbbell",
+        kicker: "Cardio et puissance",
+      },
+      trainingConditioningLow2: {
+        className: "training-conditioning-low-result-card",
+        image: assetUrl("trainingConditioningLow2"),
+        alt: "Preparation physique modeste pendant un camp MMA",
+        icon: "dumbbell",
+        kicker: "Cardio et puissance",
+      },
+      trainingConditioningLow3: {
+        className: "training-conditioning-low-result-card",
+        image: assetUrl("trainingConditioningLow3"),
+        alt: "Travail cardio puissance dans une salle brute",
+        icon: "dumbbell",
+        kicker: "Cardio et puissance",
+      },
+      trainingConditioningMid1: {
+        className: "training-conditioning-mid-result-card",
+        image: assetUrl("trainingConditioningMid1"),
+        alt: "Preparation physique professionnelle pendant un camp MMA",
+        icon: "dumbbell",
+        kicker: "Cardio puissance international",
+      },
+      trainingConditioningMid2: {
+        className: "training-conditioning-mid-result-card",
+        image: assetUrl("trainingConditioningMid2"),
+        alt: "Salle cardio puissance de niveau international",
+        icon: "dumbbell",
+        kicker: "Cardio puissance international",
+      },
+      trainingConditioningMid3: {
+        className: "training-conditioning-mid-result-card",
+        image: assetUrl("trainingConditioningMid3"),
+        alt: "Bloc cardio puissance dans une structure professionnelle",
+        icon: "dumbbell",
+        kicker: "Cardio puissance international",
+      },
+      trainingConditioningLuxe1: {
+        className: "training-conditioning-luxe-result-card",
+        image: assetUrl("trainingConditioningLuxe1"),
+        alt: "Preparation cardio puissance elite FLC",
+        icon: "dumbbell",
+        kicker: "Cardio puissance FLC",
+      },
+      trainingConditioningLuxe2: {
+        className: "training-conditioning-luxe-result-card",
+        image: assetUrl("trainingConditioningLuxe2"),
+        alt: "Salle de preparation physique haut niveau FLC",
+        icon: "dumbbell",
+        kicker: "Cardio puissance FLC",
+      },
+      trainingConditioningLuxe3: {
+        className: "training-conditioning-luxe-result-card",
+        image: assetUrl("trainingConditioningLuxe3"),
+        alt: "Centre cardio puissance de luxe pendant un camp FLC",
+        icon: "dumbbell",
+        kicker: "Cardio puissance FLC",
       },
     };
     return visualResults[key] || null;
@@ -6424,7 +6565,7 @@
 		              ? "Conference de presse"
 		              : "Choisir un combat";
     career.pendingEvent = null;
-    const resultVisual = eventResultVisual(event);
+    const resultVisual = eventResultVisual(event, option);
     showDecisionResult(career, {
       title: event.title,
       text: resultText,
@@ -8929,6 +9070,10 @@
 		    visualCards.forEach(card => {
 		      const screen = card.closest(".visual-choice-screen");
 		      const topbarBottom = app.querySelector(".topbar")?.getBoundingClientRect().bottom || 0;
+		      const priorityChoice = Boolean(screen?.classList?.contains("fight-offer-screen") || screen?.classList?.contains("press-conference-screen"));
+		      const maxParallax = priorityChoice ? 52 : 30;
+		      const maxFlowLift = priorityChoice ? (mobileViewport() ? 132 : 96) : 46;
+		      const flowFactor = priorityChoice ? (mobileViewport() ? 0.42 : 0.3) : 0.14;
 		      if (reducedMotion) {
 		        card.style.setProperty("--visual-parallax-y", "0px");
 		        screen?.style.setProperty("--visual-flow-lift", "0px");
@@ -8941,13 +9086,13 @@
 		        return;
 		      }
 		      if (rect.bottom < topbarBottom) {
-		        card.style.setProperty("--visual-parallax-y", "-30px");
-		        screen?.style.setProperty("--visual-flow-lift", "-46px");
+		        card.style.setProperty("--visual-parallax-y", `-${maxParallax}px`);
+		        screen?.style.setProperty("--visual-flow-lift", `-${maxFlowLift}px`);
 		        return;
 		      }
 		      const centerOffset = window.innerHeight / 2 - (rect.top + rect.height / 2);
-		      const parallax = clamp(centerOffset / window.innerHeight * 28, -30, 30);
-		      const flowLift = clamp((topbarBottom - rect.top) * 0.14, 0, 46);
+		      const parallax = clamp(centerOffset / window.innerHeight * (priorityChoice ? 44 : 28), -maxParallax, maxParallax);
+		      const flowLift = clamp((topbarBottom - rect.top) * flowFactor, 0, maxFlowLift);
 		      card.style.setProperty("--visual-parallax-y", `${parallax}px`);
 		      screen?.style.setProperty("--visual-flow-lift", `-${flowLift}px`);
 		    });
@@ -9161,7 +9306,7 @@
   }
 
 	  function effectLine(effects = {}) {
-		    const direct = ["money", "rep", "hype", "morale", "condition", "injuryRisk", "medicalCare", "restWeeks", "scandal", "dopingRisk", "doping", "suspension", "rivalry", "locked", "doublePath", "credit"]
+		    const direct = ["money", "rep", "hype", "morale", "condition", "campWeek", "injuryRisk", "medicalCare", "restWeeks", "scandal", "dopingRisk", "doping", "suspension", "rivalry", "locked", "doublePath", "credit"]
 		      .filter(key => effects[key])
 		      .map(key => effectText(key, effects[key]));
     const stats = Object.entries(effects.stats || {})
@@ -9170,7 +9315,7 @@
   }
 
 		  function effectChips(effects = {}) {
-		    const direct = ["money", "rep", "hype", "morale", "condition", "injuryRisk", "medicalCare", "restWeeks", "scandal", "dopingRisk", "doping", "suspension", "rivalry", "locked", "doublePath", "credit"]
+		    const direct = ["money", "rep", "hype", "morale", "condition", "campWeek", "injuryRisk", "medicalCare", "restWeeks", "scandal", "dopingRisk", "doping", "suspension", "rivalry", "locked", "doublePath", "credit"]
 		      .filter(key => effects[key])
 	      .map(key => ({ key, value: effects[key] }));
     const stats = Object.entries(effects.stats || {})
@@ -9215,6 +9360,8 @@
 	            <span class="swipe-gesture-hand">${iconOnly("hand", "M")}</span>
 	            <span class="swipe-gesture-arrow">${iconOnly("arrow-right", ">")}</span>
 	          </span>
+	          <span class="swipe-side-cue swipe-side-cue-left" aria-hidden="true">${iconOnly("chevrons-left", "<")}</span>
+	          <span class="swipe-side-cue swipe-side-cue-right" aria-hidden="true">${iconOnly("chevrons-right", ">")}</span>
           <div class="swipe-card-top">
             <span>${iconOnly("move-horizontal", "S")} ${esc(kicker)}</span>
             <strong>${esc(title)}</strong>
@@ -9721,7 +9868,7 @@
 		            <span>${esc(injurySentence(last))}</span>
 		            <span class="injury-impact">${esc(medicalImpactText(career, last))}</span>
 		          </div>
-		        ` : `<div class="injury-note clean"><strong>Aucune blessure declaree</strong><span>La dette medicale vient surtout des camps, des combats et de la vie hors cage.</span></div>`}
+		        ` : `<div class="injury-note clean"><strong>Aucune blessure declaree</strong><span>La dette medicale vient des camps et des combats; la vie hors cage coute surtout forme, image ou calendrier.</span></div>`}
 		      </div>
 		    `;
   }
@@ -12735,7 +12882,7 @@
         </div>
         <div class="story-panel">
           <h3>Blessures et recuperation</h3>
-          <p>Une nouvelle carriere commence avec 78/99 en sante durable. Le risque blessure monte avec les camps durs, les combats, la fatigue et les choix de vie chaotiques. La recuperation, les medecins et le sommeil le font baisser. Une blessure peut imposer du repos, annuler un combat ou declencher un choix de sauvetage de carriere si elle se repete trop souvent.</p>
+          <p>Une nouvelle carriere commence avec 78/99 en sante durable. Le risque blessure monte avec les camps durs, les combats et la fatigue accumulee. La recuperation, les medecins et le sommeil le font baisser. Les choix de vie chaotiques peuvent casser la forme, l'image ou le calendrier, mais les blessures viennent du camp ou de la cage. Une blessure peut imposer du repos, annuler un combat ou declencher un choix de sauvetage de carriere si elle se repete trop souvent.</p>
         </div>
       </section>
     `);
@@ -13338,6 +13485,12 @@
     "contractSigning",
     "contractSigningAlt",
     "trainingInjury",
+    "weightCutBefore",
+    "weightCutForced",
+    "weightCutRefused",
+    "busCartBefore",
+    "busCartSent",
+    "busCartRefused",
     "trainingStrikingLow1",
     "trainingStrikingLow2",
     "trainingStrikingLow3",
@@ -13355,7 +13508,16 @@
     "trainingTacticsMid3",
     "trainingTacticsLuxe1",
     "trainingTacticsLuxe2",
-    "trainingTacticsLuxe3"
+    "trainingTacticsLuxe3",
+    "trainingConditioningLow1",
+    "trainingConditioningLow2",
+    "trainingConditioningLow3",
+    "trainingConditioningMid1",
+    "trainingConditioningMid2",
+    "trainingConditioningMid3",
+    "trainingConditioningLuxe1",
+    "trainingConditioningLuxe2",
+    "trainingConditioningLuxe3"
   );
   if ("requestIdleCallback" in window) {
     window.requestIdleCallback(warmSecondaryAssets, { timeout: 1800 });
