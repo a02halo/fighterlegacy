@@ -2824,7 +2824,9 @@ input:focus-visible {
 }
 
 .visual-choice-priority .visual-result-content {
-  align-content: end;
+  align-content: stretch;
+  display: flex;
+  flex-direction: column;
   max-width: none;
   min-height: inherit;
   width: 100%;
@@ -2835,9 +2837,12 @@ input:focus-visible {
 }
 
 .visual-choice-priority .visual-result-actions {
-  max-height: none;
-  overflow: visible;
-  padding: 3px 0 8px;
+  margin-top: auto;
+  max-height: min(42vh, 440px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 3px 4px 8px 0;
+  scrollbar-width: thin;
   width: 100%;
 }
 
@@ -4871,20 +4876,33 @@ input:focus-visible {
     flex-direction: column;
   }
 
-  .fight-offer-screen .fighter-strip {
+  .fight-offer-screen .fighter-strip,
+  .press-conference-screen .fighter-strip {
     margin-bottom: 0;
     order: 0;
   }
 
-  .fight-offer-screen .fight-offer-contract-visual {
+  .fight-offer-screen .fight-offer-contract-visual,
+  .press-conference-screen .press-choice-visual {
     order: 1;
   }
 
-  .fight-offer-screen .season-panel {
+  .fight-offer-screen .season-panel,
+  .press-conference-screen .season-panel {
     margin: 22px 0 10px;
     order: 2;
     position: static;
     z-index: auto;
+  }
+
+  .press-conference-screen {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .press-conference-screen .medical-context-alert,
+  .press-conference-screen .press-summary {
+    order: 3;
   }
 
   .fight-offer-intro {
@@ -5722,13 +5740,14 @@ input:focus-visible {
 		  }
 
 		  .visual-choice-priority .visual-result-content {
+		    min-height: 100svh;
 		    padding: 14px;
 		  }
 
 		  .visual-choice-priority .visual-result-actions {
-		    max-height: none;
-		    overflow: visible;
-		    padding-right: 0;
+		    max-height: min(44svh, 390px);
+		    overflow-y: auto;
+		    padding: 0 0 8px;
 		  }
 
 		  .visual-embedded-choice-grid,
