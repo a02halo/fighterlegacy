@@ -6916,11 +6916,13 @@
     const internationalStep = career.tier === 2;
     const ufcStep = career.tier === 3 || career.tier === 4;
     const legendStep = career.tier === 5;
-    const activeContractBlock = (career.contract?.remainingFights || 0) > 0 && !clauseReady && !hasBelt;
+    const contractStillRunning = (career.contract?.remainingFights || 0) > 0 && !clauseReady && !hasBelt;
     const internationalDominance = ufcStep && !missed && career.lastResult?.won && (
       perfectSeason ||
-      (strongSeason && career.streak >= 4) ||
-      career.streak >= 5 ||
+      strongSeason ||
+      wins >= 3 ||
+      career.streak >= 3 ||
+      career.rank <= 5 ||
       hasBelt
     );
     const nationalBreakout = internationalStep && !missed && career.lastResult?.won && (
@@ -6935,6 +6937,16 @@
       clauseReady
     );
     const winningRecord = career.record.w >= career.record.l || career.streak >= 3;
+    const localBreakout = career.tier < 2 && !missed && career.lastResult?.won && (
+      perfectSeason ||
+      strongSeason ||
+      unbeatenRun ||
+      career.streak >= 2 ||
+      wins >= 2 ||
+      career.rank <= 10 ||
+      hasBelt ||
+      clauseReady
+    );
     const cageSuccess = winningRecord && (
       perfectSeason ||
       strongSeason ||
@@ -6968,8 +6980,6 @@
     const hardFinancialDrag = severeMoneyDebt || debtSeasons >= 2 || lockedContracts >= 2 || scandalLevel >= 30 || suspensionFights > 0;
     const financialDrag = hardFinancialDrag && !(perfectCleanSeason && (career.money || 0) >= -12000 && scandalLevel < 30 && suspensionFights <= 0);
     const financialWarning = !financialDrag && ((career.money || 0) < 0 || debtSeasons > 0 || lockedContracts > 0 || scandalLevel >= 12);
-    const reliabilityBlock = missed > 0 || (activeContractBlock && !nationalPerfectOverride && !internationalDominance);
-    const debtTrouble = financialDrag || reliabilityBlock;
     const threshold = targets.length ? Math.min(...targets.map(org => org.threshold || 0)) : 0;
     const visibilityAccess = (
       targets.length &&
@@ -6987,6 +6997,7 @@
     const localEligible = career.tier <= 2 && (
       clauseReady ||
       hasBelt ||
+      localBreakout ||
       nationalBreakout ||
       perfectSeason ||
       (internationalStep && strongSeason) ||
@@ -6995,13 +7006,15 @@
     const titleDefenses = currentTierTitle(career)?.defenses || 0;
     const ufcBreakout = ufcStep && !hasBelt && !missed && career.lastResult?.won && (
       perfectSeason ||
-      (strongSeason && career.streak >= 4) ||
-      career.streak >= 5 ||
-      career.rank <= 3 ||
-      career.hype >= 82 ||
-      career.rep >= 72
+      strongSeason ||
+      wins >= 3 ||
+      career.streak >= 3 ||
+      career.rank <= 5 ||
+      career.hype >= 70 ||
+      career.rep >= 58 ||
+      clauseReady
     );
-    const ufcEligible = ufcStep && !missed && career.lastResult?.won && (hasBelt || ufcBreakout);
+    const ufcEligible = ufcStep && !missed && career.lastResult?.won && (hasBelt || internationalDominance || ufcBreakout);
     const flcTitleCategories = activeTitleCategories(career, 5);
     const doubleChampionReady = Boolean(career.flags?.doubleChamp) || flcTitleCategories >= 2;
     const doubleCategoryMoves = weightMoveOptions(career);
@@ -7024,6 +7037,10 @@
     );
     const legendAccess = doubleChampionReady || (hasBelt && career.rank <= 1 && ufcWins >= 7);
     const legendEligible = legendStep && legendOvrReady && legendAccess && !missed && career.lastResult?.won && ufcDominance;
+    const promotionBreakout = localBreakout || nationalBreakout || internationalDominance || ufcBreakout || hasBelt || clauseReady;
+    const activeContractBlock = contractStillRunning && !promotionBreakout;
+    const reliabilityBlock = missed > 0 || activeContractBlock;
+    const debtTrouble = financialDrag || reliabilityBlock;
     const cleanEnoughForPromotion = !reliabilityBlock && (!financialDrag || nationalPerfectOverride || clauseReady || hasBelt);
     const promotionEligible = Boolean(targets.length) && (
       (!debtTrouble && (legendStep ? legendEligible : ufcStep ? ufcEligible : localEligible)) ||
@@ -7043,6 +7060,7 @@
       perfectSeason,
       strongSeason,
       unbeatenRun,
+      localBreakout,
       internationalDominance,
       nationalBreakout,
       nationalPerfectOverride,
@@ -7060,6 +7078,8 @@
       titleDefenses,
       ufcWins,
       ufcBreakout,
+      ufcEligible,
+      promotionBreakout,
       hypeTarget,
       charismaTarget,
       activeContractBlock,
@@ -7081,6 +7101,11 @@
   function contractNegotiationReady(career, status = promotionStatus(career)) {
     return Boolean(
       career?.lastResult?.won ||
+      status.promotionEligible ||
+      status.doubleCategoryEligible ||
+      status.localBreakout ||
+      status.internationalDominance ||
+      status.ufcBreakout ||
       status.perfectSeason ||
       status.strongSeason ||
       status.nationalBreakout ||
@@ -7123,18 +7148,18 @@
       };
     }
 
-    if (status.ufcStep && (status.hasBelt || status.strongSeason || career.streak >= 3 || career.rank <= 6)) {
+    if (status.ufcStep && (status.hasBelt || status.internationalDominance || status.ufcBreakout || status.strongSeason || career.streak >= 3 || career.rank <= 6)) {
       const title = status.hasBelt ? "Le FLC regarde ta ceinture" : "Le FLC observe ton profil";
       const text = status.hasBelt
         ? "Le FLC veut une preuve de champion: defends la ceinture ou termine fort, sans forfait ni scandale majeur."
-        : "Le FLC commence a regarder. Une saison invaincue, une grosse serie ou une ceinture KSW/PFL peut declencher une offre au bilan.";
+        : "Le FLC commence a regarder. Une saison forte, 3 victoires propres, un top 5 ou une grosse serie peut declencher une offre au bilan.";
       return {
         id: `flc-${season.year}`,
         title,
         text,
         checks: status.hasBelt
           ? ["Defense ou saison dominante", "Rester gagnant", cleanPoint]
-          : ["Saison invaincue ou grosse serie", "Aucun forfait sur la saison", cleanPoint],
+          : ["Saison forte ou 3 victoires propres", "Aucun forfait sur la saison", cleanPoint],
         tone: "hot",
       };
     }
@@ -7340,6 +7365,14 @@
 	    const styleId = snapshot.styleId || snapshot.style?.id || row.style;
     const weightLabel = row.weight_class || snapshot.weightClass || snapshot.weight?.label || "";
     const record = snapshot.record || { w: row.record_w || 0, l: row.record_l || 0, ko: row.finishes_ko || 0, sub: row.finishes_sub || 0 };
+    const orgLabel = row.org || snapshot.org || snapshot.orgLabel || "";
+    const rawOrgTier = row.org_tier ?? row.orgTier ?? snapshot.orgTier ?? snapshot.org_tier ?? snapshot.tier;
+    const labelOrgTier = orgTierFromLabel(orgLabel);
+    const orgTier = clamp(
+      Number.isFinite(Number(rawOrgTier)) ? Number(rawOrgTier) : (labelOrgTier ?? 0),
+      0,
+      ORGS.length - 1
+    );
     return {
       id: row.fighter_id || row.id || "",
       userId: row.user_id || row.userId || "",
@@ -7353,17 +7386,26 @@
       overall: row.overall || snapshot.overall || 50,
       score: row.score || 0,
       record,
-	      org: migrateOrgLabel(row.org || snapshot.org || "Organisation", row.org_tier ?? snapshot.orgTier ?? 0),
+      orgTier,
+	      org: migrateOrgLabel(orgLabel || "Organisation", orgTier),
 	      retired: Boolean(row.retired || snapshot.retired),
 	    };
 	  }
 
 	  function onlineFighterBelts(row = {}) {
+    const snapshot = row.snapshot && typeof row.snapshot === "object" ? row.snapshot : {};
+    const orgLabel = row.org || snapshot.org || snapshot.orgLabel || "";
+    const rawOrgTier = row.org_tier ?? row.orgTier ?? snapshot.orgTier ?? snapshot.org_tier ?? snapshot.tier;
+    const fallbackTier = clamp(
+      Number.isFinite(Number(rawOrgTier)) ? Number(rawOrgTier) : (orgTierFromLabel(orgLabel) ?? 0),
+      0,
+      ORGS.length - 1
+    );
 	    const belts = Array.isArray(row.belts) ? row.belts : [];
 	    const count = Math.max(0, Math.round(row.titles_count || belts.length || 0));
 	    if (belts.length) {
 	      return belts.slice(0, 8).map(belt => {
-	        const tier = clamp(Number(belt.tier ?? row.org_tier ?? 0), 0, ORGS.length - 1);
+	        const tier = clamp(Number(belt.tier ?? fallbackTier), 0, ORGS.length - 1);
 	        return {
 	          label: belt.label || orgForTier(tier).belt,
 	          tier,
@@ -7373,7 +7415,7 @@
 	      });
 	    }
 	    return Array.from({ length: count }, (_, index) => {
-	      const tier = clamp(Number(row.org_tier ?? 0), 0, ORGS.length - 1);
+	      const tier = fallbackTier;
 	      return {
 	        label: index ? `${orgForTier(tier).belt} ${index + 1}` : orgForTier(tier).belt,
 	        tier,
@@ -7401,7 +7443,10 @@
 	    const country = findCountryFromOnline(row.country || snapshot.country);
 	    const weight = findWeightFromOnline(row.weight_class || snapshot.weightClass);
 	    const style = findStyleFromOnline(row.style || snapshot.style?.label);
-	    const tier = clamp(Number(row.org_tier ?? snapshot.orgTier ?? 0), 0, ORGS.length - 1);
+    const orgLabel = row.org || snapshot.org || "";
+    const rawTier = row.org_tier ?? row.orgTier ?? snapshot.orgTier ?? snapshot.org_tier ?? snapshot.tier;
+    const labelTier = orgTierFromLabel(orgLabel);
+	    const tier = clamp(Number.isFinite(Number(rawTier)) ? Number(rawTier) : (labelTier ?? 0), 0, ORGS.length - 1);
 	    const org = orgForTier(tier);
 	    const wins = Math.max(0, Math.round(row.record_w ?? snapshot.record?.w ?? 0));
 	    const losses = Math.max(0, Math.round(row.record_l ?? snapshot.record?.l ?? 0));
@@ -8510,11 +8555,7 @@
 			  function buildContractOffers() {
 			    const career = ui.career;
 			    const status = promotionStatus(career);
-			    if (
-			      status.activeContractBlock &&
-			      !(status.internationalStep && (status.perfectSeason || status.nationalBreakout)) &&
-			      !(status.ufcStep && (status.internationalDominance || status.ufcBreakout || status.hasBelt))
-			    ) return [];
+			    if (status.activeContractBlock && !status.promotionEligible && !status.doubleCategoryEligible) return [];
 			    if (!contractNegotiationReady(career, status)) return [];
 	    const debtTrouble = status.debtTrouble;
 	    const promotionEligible = status.promotionEligible;
@@ -9921,18 +9962,26 @@
       : "pas de clause active";
     const rows = [
       {
-        ok: status.legendStep ? status.ufcDominance : status.internationalStep ? status.nationalBreakout || status.strongSeason : status.cageSuccess,
-	        label: status.legendStep ? "Domination FLC" : status.internationalStep ? "Resultats National" : "Resultats cage",
+        ok: status.legendStep
+          ? status.ufcDominance
+          : status.ufcStep
+            ? status.internationalDominance || status.ufcBreakout || status.hasBelt
+            : status.internationalStep
+              ? status.nationalBreakout || status.strongSeason
+              : status.localBreakout || status.cageSuccess,
+	        label: status.legendStep ? "Domination FLC" : status.ufcStep ? "Resultats KSW/PFL" : status.internationalStep ? "Resultats National" : "Resultats cage",
 	        value: status.legendStep
 	          ? `${status.ufcWins} victoires FLC, ${status.doubleCategoryEligible ? "2e categorie ouverte" : "domination a prouver"}`
+          : status.ufcStep && (status.internationalDominance || status.ufcBreakout) ? "FLC surveille le bilan"
           : status.internationalStep && status.nationalBreakout ? "KSW/PFL surveille le bilan"
-          : status.perfectSeason ? `saison parfaite ${status.wins}/${status.honored}` : status.hasBelt ? "ceinture active" : `serie ${career.streak}, rang #${career.rank}`,
+          : status.perfectSeason ? `saison parfaite ${status.wins}/${status.honored}` : status.hasBelt ? "ceinture active" : `${status.wins} victoire(s), serie ${career.streak}, rang #${career.rank}`,
       },
       {
-        ok: status.legendStep ? status.legendOvrReady || status.doubleCategoryEligible : status.internationalStep ? status.nationalBreakout || status.businessSuccess : status.businessSuccess,
-        label: status.legendStep ? "Double ceinture" : status.internationalStep ? "Seuil KSW/PFL" : "Hype et business",
+        ok: status.legendStep ? status.legendOvrReady || status.doubleCategoryEligible : status.ufcStep ? status.internationalDominance || status.ufcBreakout || status.businessSuccess : status.internationalStep ? status.nationalBreakout || status.businessSuccess : status.businessSuccess,
+        label: status.legendStep ? "Double ceinture" : status.ufcStep ? "Seuil FLC" : status.internationalStep ? "Seuil KSW/PFL" : "Hype et business",
         value: status.legendStep
           ? status.doubleChampionReady ? "2 ceintures FLC validees" : `OVR ${overall(career)} | ${status.flcTitleCategories}/2 ceintures`
+          : status.ufcStep ? "saison forte, top 5 ou 3 victoires"
           : status.internationalStep ? "3 victoires propres ou invaincu"
           : status.perfectSeason ? "bonus saison invaincue" : `hype ${career.hype}/${status.hypeTarget}, charisme ${career.stats.charisma}/${status.charismaTarget}`,
       },
@@ -9947,7 +9996,7 @@
         value: status.legendStep
           ? status.legendEligible ? "statut Legende pret" : status.doubleCategoryEligible ? "monter/descendre au bilan" : `ceintures FLC ${status.flcTitleCategories}/2`
           : status.ufcStep
-          ? status.promotionEligible ? "offre FLC au bilan" : status.hasBelt ? "champion KSW/PFL" : "invaincu ou ceinture"
+          ? status.promotionEligible ? "offre FLC au bilan" : status.hasBelt ? "champion KSW/PFL" : "saison forte ou top 5"
           : status.internationalStep
             ? status.promotionEligible ? "KSW/PFL sur la table" : "3 victoires propres"
             : status.clauseReady ? "clause activee" : clauseText,
@@ -9956,7 +10005,7 @@
     return `
       <div class="promotion-path ${status.promotionEligible || status.doubleCategoryEligible ? "ready" : ""}">
         <strong>${iconOnly(status.promotionEligible || status.doubleCategoryEligible ? "circle-check" : "move-up-right", "P")} ${status.legendStep ? "Route double champion" : status.internationalStep ? "Signature internationale" : `Montee vers ${esc(status.targetLabel)}`}</strong>
-	        <span>${status.promotionEligible ? `Offre ${esc(status.targetLabel)} possible au prochain bilan.` : status.doubleCategoryEligible ? "Domination FLC validee: tu peux monter ou descendre de categorie pour viser une deuxieme ceinture." : status.legendStep ? "Pour devenir Legende: dominer le FLC, changer de categorie, puis gagner une deuxieme ceinture." : status.ufcStep ? "Le FLC peut contacter un champion KSW/PFL, une saison invaincue ou une grosse serie sans forfait." : status.internationalStep ? "Au National, 3 victoires propres ou une saison invaincue peuvent declencher KSW/PFL." : "Une grosse saison peut suffire: victoires, image minimale et dossier propre."}</span>
+	        <span>${status.promotionEligible ? `Offre ${esc(status.targetLabel)} possible au prochain bilan.` : status.doubleCategoryEligible ? "Domination FLC validee: tu peux monter ou descendre de categorie pour viser une deuxieme ceinture." : status.legendStep ? "Pour devenir Legende: dominer le FLC, changer de categorie, puis gagner une deuxieme ceinture." : status.ufcStep ? "Le FLC peut contacter un champion KSW/PFL, une saison forte, un top 5 ou une serie de 3 victoires sans forfait." : status.internationalStep ? "Au National, 3 victoires propres ou une saison invaincue peuvent declencher KSW/PFL." : "Une grosse saison peut suffire: victoires, image minimale et dossier propre."}</span>
         <div class="promotion-checks">
           ${rows.map(row => `
             <div class="promotion-check ${row.ok ? "ok" : "todo"}">
@@ -12073,6 +12122,8 @@
 	          importedAt: new Date().toISOString(),
 	          phase: career.phase || "",
 	          year: career.year || CURRENT_YEAR,
+          org: ORGS[career.tier]?.label || career.org?.label || "Souterrain",
+          orgTier: career.tier || 0,
 	          season: career.season ? {
 	            year: career.season.year,
 	            fightsDone: career.season.fightsDone || 0,
