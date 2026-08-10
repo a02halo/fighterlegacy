@@ -1361,6 +1361,7 @@ input:focus-visible {
 
 .swipe-gesture-hint {
   align-items: center;
+  animation: swipeHintAutoHide 3500ms ease forwards;
   background: rgba(255, 250, 240, 0.12);
   border: 1px solid rgba(255, 250, 240, 0.24);
   border-radius: 999px;
@@ -1429,11 +1430,27 @@ input:focus-visible {
 
 .swipe-choice-card.is-dragging .swipe-gesture-hint,
 .swipe-choice-card.swipe-left .swipe-gesture-hint,
-.swipe-choice-card.swipe-right .swipe-gesture-hint,
+.swipe-choice-card.swipe-right .swipe-gesture-hint {
+  animation: none;
+  opacity: 0;
+}
+
 .swipe-choice-card.is-dragging .swipe-side-cue,
 .swipe-choice-card.swipe-left .swipe-side-cue,
 .swipe-choice-card.swipe-right .swipe-side-cue {
   opacity: 0;
+}
+
+@keyframes swipeHintAutoHide {
+  0%, 78% {
+    opacity: 0.78;
+    visibility: visible;
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
 }
 
 @keyframes swipeHintHand {
@@ -1696,6 +1713,7 @@ input:focus-visible {
 
 .training-row {
   align-items: center;
+  -webkit-tap-highlight-color: transparent;
   background: transparent;
   border: 0;
   border-bottom: 1px solid rgba(23, 19, 15, 0.09);
@@ -1707,6 +1725,7 @@ input:focus-visible {
   min-height: 82px;
   padding: 16px 14px;
   text-align: left;
+  touch-action: manipulation;
   transition: background 150ms ease, box-shadow 150ms ease, padding 150ms ease, transform 150ms ease;
 }
 
@@ -1739,13 +1758,15 @@ input:focus-visible {
   padding-right: 18px;
 }
 
-.training-row:active:not(:disabled):not(.is-disabled) {
+.training-row:active:not(:disabled):not(.is-disabled),
+.training-row.is-pressing:not(:disabled):not(.is-disabled) {
   background: #fff1d6;
   box-shadow: inset 7px 0 0 var(--red), 0 0 0 4px rgba(215, 52, 56, 0.14);
   transform: translateY(2px) scale(0.995);
 }
 
-.training-row:active:not(:disabled):not(.is-disabled) .training-thumb {
+.training-row:active:not(:disabled):not(.is-disabled) .training-thumb,
+.training-row.is-pressing:not(:disabled):not(.is-disabled) .training-thumb {
   background: var(--red);
   border-color: var(--red-dark);
   color: var(--paper);
@@ -2618,6 +2639,12 @@ input:focus-visible {
 
   .swipe-gesture-hand {
     animation: none;
+  }
+
+  .swipe-gesture-hint {
+    animation: none;
+    opacity: 0;
+    visibility: hidden;
   }
 
   .swipe-side-cue {

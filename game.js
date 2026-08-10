@@ -13369,6 +13369,35 @@
 	    card.classList.remove("is-dragging", "swipe-left", "swipe-right");
 	  }
 
+	  function handleActionError(error) {
+	    console.error("Fight Legacy action failed", error);
+	    showToast(error?.message || "Action impossible.");
+	  }
+
+	  function runMobileTrainingPress(target, callback) {
+	    const shouldDelay =
+	      mobileViewport() &&
+	      target?.classList?.contains("training-row") &&
+	      !target.disabled &&
+	      !target.classList.contains("is-disabled");
+	    if (!shouldDelay) {
+	      callback();
+	      return;
+	    }
+	    if (target.dataset.pressPending === "1") return;
+	    target.dataset.pressPending = "1";
+	    target.classList.add("is-pressing");
+	    window.setTimeout(() => {
+	      try {
+	        target.classList.remove("is-pressing");
+	        delete target.dataset.pressPending;
+	        callback();
+	      } catch (error) {
+	        handleActionError(error);
+	      }
+	    }, 150);
+	  }
+
 	  app.addEventListener("pointerdown", event => {
 	    const card = event.target.closest?.("[data-swipe-card]");
 	    if (!card || !mobileSwipeEnabled(card)) return;
@@ -13473,7 +13502,8 @@
     } else if (action === "choose-season-plan") {
       chooseSeasonPlan(target.dataset.id);
     } else if (action === "choose-training") {
-      chooseTraining(target.dataset.id);
+      const trainingId = target.dataset.id;
+      runMobileTrainingPress(target, () => chooseTraining(trainingId));
     } else if (action === "camp-opportunity-option") {
       chooseCampOpportunityOption(Number(target.dataset.index));
     } else if (action === "next-training-week") {
@@ -13486,10 +13516,11 @@
       prepareLifeEvent();
     } else if (action === "career-special-option") {
       chooseCareerSpecialOption(Number(target.dataset.index));
-    } else if (action === "to-special-camp") {
+	    } else if (action === "to-special-camp") {
       startSpecialCamp();
     } else if (action === "choose-special-training") {
-      chooseSpecialTraining(target.dataset.id);
+      const trainingId = target.dataset.id;
+      runMobileTrainingPress(target, () => chooseSpecialTraining(trainingId));
     } else if (action === "next-special-training-week") {
       startSpecialCamp();
     } else if (action === "to-special-press") {
@@ -13693,8 +13724,7 @@
       downloadCard();
     }
 	    } catch (error) {
-	      console.error("Fight Legacy action failed", error);
-	      showToast(error?.message || "Action impossible.");
+	      handleActionError(error);
 	    }
   });
 
