@@ -108,6 +108,7 @@ svg.icon {
   border: 0;
   color: inherit;
   display: flex;
+  flex: 0 0 auto;
   gap: 12px;
   min-width: 0;
   padding: 0;
@@ -127,8 +128,8 @@ svg.icon {
   box-shadow: inset 0 0 0 1px rgba(255, 250, 240, 0.06), 0 8px 18px rgba(0, 0, 0, 0.24);
   color: var(--paper);
   display: grid;
-  block-size: 44px;
-  inline-size: clamp(72px, 9vw, 104px);
+  block-size: clamp(48px, 5.2vw, 60px);
+  inline-size: clamp(112px, 12vw, 150px);
   line-height: 1;
   place-items: center;
   position: relative;
@@ -142,25 +143,8 @@ svg.icon {
 .brand-logo {
   display: block;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   width: 100%;
-}
-
-.brand-title {
-  color: #fffaf0;
-  font-size: clamp(23px, 4vw, 42px);
-  font-weight: 950;
-  line-height: 0.94;
-  margin: 0;
-  text-transform: uppercase;
-}
-
-.brand-subtitle {
-  color: #cfc2aa;
-  font-size: 13px;
-  font-weight: 750;
-  margin: 4px 0 0;
-  text-transform: uppercase;
 }
 
 .top-actions {
@@ -5230,19 +5214,11 @@ input:focus-visible {
   }
 
   .brand-mark {
-    block-size: 34px;
-    inline-size: 72px;
+    block-size: 42px;
+    inline-size: 96px;
   }
 
   .brand-mark::after {
-    display: none;
-  }
-
-  .brand-title {
-    font-size: 20px;
-  }
-
-  .brand-subtitle {
     display: none;
   }
 
@@ -5285,15 +5261,11 @@ input:focus-visible {
   }
 
   body.mobile-nav-compact .brand-mark {
-    block-size: 30px;
-    inline-size: 64px;
+    block-size: 36px;
+    inline-size: 84px;
   }
 
-  body.mobile-nav-compact .brand-title {
-    font-size: 17px;
-  }
-
-	  .menu-actions .btn {
+		  .menu-actions .btn {
 	    width: 100%;
 	  }
 

@@ -9298,14 +9298,10 @@
 	  function renderTopbar() {
 	    const statsNudge = statsNudgeActive();
 	    return `
-	      <header class="topbar ${ui.mobileMenuOpen ? "menu-open" : ""}">
+      <header class="topbar ${ui.mobileMenuOpen ? "menu-open" : ""}">
         <button class="brand" data-action="menu" aria-label="Retour a l'accueil">
           <div class="brand-mark" aria-hidden="true">
             <img class="brand-logo" src="${assetUrl("logo")}" alt="" decoding="async" loading="eager">
-          </div>
-          <div>
-            <h1 class="brand-title">Fight Legacy</h1>
-            <p class="brand-subtitle">Prototype carriere MMA</p>
           </div>
         </button>
         <button class="mobile-menu-toggle" data-action="toggle-mobile-menu" aria-expanded="${ui.mobileMenuOpen ? "true" : "false"}" aria-label="Menu">
