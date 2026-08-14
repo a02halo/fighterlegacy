@@ -10,9 +10,9 @@
   const SAVE_VERSION = 2;
   const LEGEND_TIER = 6;
   const LEGEND_STAT_CAP = 340;
-  const ASSET_VERSION = "20260814-logo-progression-v1";
+  const ASSET_VERSION = "20260814-logo-cutout-v2";
   const IMAGE_ASSETS = {
-    logo: "./assets/LOGO_FL.png",
+    logo: "./assets/LOGO_FL_CUTOUT.png",
     home: "./assets/home-fight-legacy.png",
     press: "./assets/press-conference-fight-legacy.png",
     pressPique: "./assets/confpresse-pique-9-16.png",
@@ -9298,7 +9298,7 @@
 	  function renderTopbar() {
 	    const statsNudge = statsNudgeActive();
 	    return `
-      <header class="topbar ${ui.mobileMenuOpen ? "menu-open" : ""}">
+	      <header class="topbar ${ui.mobileMenuOpen ? "menu-open" : ""}">
         <button class="brand" data-action="menu" aria-label="Retour a l'accueil">
           <div class="brand-mark" aria-hidden="true">
             <img class="brand-logo" src="${assetUrl("logo")}" alt="" decoding="async" loading="eager">
@@ -9401,7 +9401,6 @@
         <div class="hero-play">
           <div class="hero-content">
             <div class="headline">
-              <img class="home-logo" src="${assetUrl("logo")}" alt="Fight Legacy" decoding="async" fetchpriority="high" loading="eager">
               <p class="eyebrow">Une vie de combattant en quelques minutes</p>
               <h2>De l'arriere-salle a la ceinture mondiale.</h2>
               <p>Creer un combattant, choisir le bon club, accepter ou refuser les combats dangereux, puis voir si votre nom finit au Hall of Fame.</p>
