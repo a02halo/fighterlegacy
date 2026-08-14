@@ -104,6 +104,7 @@ svg.icon {
 
 .brand {
   align-items: center;
+  align-self: flex-start;
   background: none;
   border: 0;
   color: inherit;
@@ -134,6 +135,7 @@ svg.icon {
   place-items: center;
   position: relative;
   overflow: visible;
+  transform: translateY(-6px);
 }
 
 .brand-mark::after {
@@ -504,7 +506,64 @@ input:focus-visible {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.hero-play .menu-actions .btn {
+  border-radius: 6px;
+  box-shadow: 0 8px 0 rgba(8, 6, 5, 0.88), 0 20px 36px rgba(0, 0, 0, 0.26);
+  clip-path: polygon(0 0, calc(100% - 13px) 0, 100% 13px, 100% 100%, 13px 100%, 0 calc(100% - 13px));
+  font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
+  font-size: clamp(16px, 1.45vw, 20px);
+  font-weight: 950;
+  letter-spacing: 0;
+  min-height: 56px;
+  min-inline-size: min(100%, 252px);
+  overflow: hidden;
+  padding: 13px 22px;
+  position: relative;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.32);
+}
+
+.hero-play .menu-actions .btn::before {
+  background:
+    linear-gradient(120deg, transparent 0 28%, rgba(255, 245, 191, 0.42) 29% 30%, transparent 32% 100%),
+    linear-gradient(180deg, rgba(255, 250, 240, 0.22), transparent 44%);
+  content: "";
+  inset: 0;
+  opacity: 0.78;
+  pointer-events: none;
+  position: absolute;
+}
+
+.hero-play .menu-actions .btn .icon {
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.28));
+}
+
+.hero-play .menu-actions .btn-primary {
+  background: linear-gradient(180deg, #ff5960 0%, #d3323b 42%, #78151b 100%);
+  border-color: rgba(255, 224, 132, 0.72);
+  color: #fff8df;
+}
+
+.hero-play .menu-actions .btn-dark {
+  background:
+    linear-gradient(180deg, rgba(255, 237, 171, 0.14), transparent 36%),
+    linear-gradient(180deg, #2b2419 0%, #17110c 100%);
+  border-color: rgba(217, 179, 90, 0.82);
+  color: #ffe7a0;
+}
+
+.hero-play .menu-actions .btn:hover {
+  border-color: #f7d56e;
+  box-shadow: 0 9px 0 rgba(8, 6, 5, 0.92), 0 24px 42px rgba(0, 0, 0, 0.32);
+  transform: translateY(-2px);
+}
+
+.hero-play .menu-actions .btn:active {
+  box-shadow: 0 3px 0 rgba(8, 6, 5, 0.92), 0 12px 26px rgba(0, 0, 0, 0.24);
+  transform: translateY(5px);
 }
 
 .side-stack {

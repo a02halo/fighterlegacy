@@ -9298,7 +9298,7 @@
 	  function renderTopbar() {
 	    const statsNudge = statsNudgeActive();
 	    return `
-	      <header class="topbar ${ui.mobileMenuOpen ? "menu-open" : ""}">
+      <header class="topbar ${ui.mobileMenuOpen ? "menu-open" : ""}">
         <button class="brand" data-action="menu" aria-label="Retour a l'accueil">
           <div class="brand-mark" aria-hidden="true">
             <img class="brand-logo" src="${assetUrl("logo")}" alt="" decoding="async" loading="eager">
@@ -9406,9 +9406,9 @@
               <p>Creer un combattant, choisir le bon club, accepter ou refuser les combats dangereux, puis voir si votre nom finit au Hall of Fame.</p>
 	            </div>
 	            <div class="menu-actions">
-	              <button class="btn btn-primary" data-action="new-career">${iconText("plus-circle", "Nouvelle carriere", "+")}</button>
-	              ${hasCreatorDraft ? `<button class="btn btn-dark" data-action="continue-creator">${iconText("rotate-ccw", "Reprendre la creation", "R")}</button>` : ""}
-	              ${hasCareer ? `<button class="btn btn-dark" data-action="continue-career">${iconText("play", "Continuer la carriere", ">")}</button>` : ""}
+		              <button class="btn btn-primary" data-action="new-career">${iconText("plus-circle", "Commencer l'ascension", "+")}</button>
+		              ${hasCreatorDraft ? `<button class="btn btn-dark" data-action="continue-creator">${iconText("rotate-ccw", "Finaliser le combattant", "R")}</button>` : ""}
+		              ${hasCareer ? `<button class="btn btn-dark" data-action="continue-career">${iconText("play", "Retour au camp", ">")}</button>` : ""}
 	            </div>
             <figure class="fight-stage home-art">
               <img src="${assetUrl("home")}" alt="Deux combattants de MMA dans la cage" decoding="async" fetchpriority="high" loading="eager">
@@ -12562,13 +12562,13 @@
 	            <button class="btn btn-primary" data-action="sync-current-career" ${atLimit ? "disabled" : ""}>${iconText("refresh-cw", "Synchroniser maintenant", "S")}</button>
 	            ${atLimit
 	              ? `<button class="btn" disabled>${iconText("lock", "Ecurie pleine", "L")}</button>`
-	              : `<button class="btn" data-action="save-and-new-career">${iconText("plus-circle", "Commencer une nouvelle carriere", "+")}</button>`}
+	              : `<button class="btn" data-action="save-and-new-career">${iconText("plus-circle", "Signer une nouvelle ascension", "+")}</button>`}
 	          </div>
 	          ${atLimit ? "" : `<p class="online-help">La carriere actuelle reste dans Combattants avant d'ouvrir la creation suivante.</p>`}
 	        ` : `
 	          <div class="notice online-neutral">${iconOnly("plus-circle", "N")} Aucune carriere locale active. Vous pouvez lancer une nouvelle carriere sans toucher a votre ecurie en ligne.</div>
 	          <div class="menu-actions online-actions">
-	            <button class="btn btn-primary" data-action="new-career">${iconText("plus-circle", "Nouvelle carriere", "+")}</button>
+	            <button class="btn btn-primary" data-action="new-career">${iconText("plus-circle", "Commencer l'ascension", "+")}</button>
 	          </div>
 	        `}
 	      </div>
