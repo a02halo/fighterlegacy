@@ -10,7 +10,7 @@
   const SAVE_VERSION = 2;
   const LEGEND_TIER = 6;
   const LEGEND_STAT_CAP = 340;
-  const ASSET_VERSION = "20260814-logo-cutout-v2";
+  const ASSET_VERSION = "20260819-da-harmony-v1";
   const IMAGE_ASSETS = {
     logo: "./assets/LOGO_FL_CUTOUT.png",
     home: "./assets/home-fight-legacy.png",

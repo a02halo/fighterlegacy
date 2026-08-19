@@ -4,6 +4,9 @@
   --brand-gold: #d9b35a;
   --brand-gold-soft: #f2d486;
   --brand-red: #cc4246;
+  --brand-red-hot: #ef464b;
+  --brand-red-deep: #74181d;
+  --brand-aqua: #0b9d88;
   --ink: #17130f;
   --paper: #f5ecd9;
   --muted: #746b5e;
@@ -16,10 +19,21 @@
   --gold: var(--brand-gold);
   --green: #2d7653;
   --blue: #2f68a7;
+  --danger: var(--red-dark);
+  --success: var(--green);
+  --max: 1120px;
   --shadow: 0 18px 46px rgba(6, 5, 4, 0.2);
   --soft-shadow: 0 10px 24px rgba(6, 5, 4, 0.12);
+  --game-shadow: 0 20px 52px rgba(6, 5, 4, 0.34);
+  --hard-shadow: 0 7px 0 rgba(8, 6, 5, 0.86);
+  --paper-gradient: linear-gradient(180deg, rgba(255, 253, 247, 0.98), rgba(239, 229, 208, 0.94));
+  --dark-gradient: linear-gradient(145deg, rgba(34, 29, 22, 0.96), rgba(9, 8, 7, 0.98));
+  --game-border: rgba(217, 179, 90, 0.54);
+  --panel-border: rgba(23, 19, 15, 0.16);
   --radius: 8px;
-  --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: Impact, Haettenschweiler, "Arial Black", sans-serif;
+  --font: var(--font-ui);
 }
 
 * {
@@ -34,14 +48,20 @@ body {
 
 body {
   background:
-    linear-gradient(115deg, rgba(204, 66, 70, 0.12), transparent 34%),
-    linear-gradient(245deg, rgba(22, 142, 128, 0.12), transparent 31%),
-    repeating-linear-gradient(90deg, rgba(245, 236, 217, 0.028) 0 1px, transparent 1px 34px),
-    repeating-linear-gradient(0deg, rgba(245, 236, 217, 0.02) 0 1px, transparent 1px 34px),
-    #1c1814;
+    linear-gradient(115deg, rgba(204, 66, 70, 0.18), transparent 34%),
+    linear-gradient(245deg, rgba(11, 157, 136, 0.14), transparent 31%),
+    repeating-linear-gradient(90deg, rgba(245, 236, 217, 0.034) 0 1px, transparent 1px 34px),
+    repeating-linear-gradient(0deg, rgba(245, 236, 217, 0.024) 0 1px, transparent 1px 34px),
+    repeating-linear-gradient(135deg, rgba(217, 179, 90, 0.045) 0 1px, transparent 1px 23px),
+    #15110e;
   color: var(--paper);
   font-family: var(--font);
   letter-spacing: 0;
+}
+
+::selection {
+  background: rgba(217, 179, 90, 0.36);
+  color: #fff8e7;
 }
 
 button,
@@ -5127,6 +5147,344 @@ input:focus-visible {
 .toast.show {
   opacity: 1;
   transform: translate(-50%, 0);
+}
+
+/* Harmonisation DA jeu */
+.topbar {
+  background:
+    linear-gradient(135deg, rgba(217, 179, 90, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(28, 23, 17, 0.96), rgba(10, 8, 6, 0.96));
+  border-color: var(--game-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 0 rgba(8, 6, 5, 0.5), 0 18px 42px rgba(0, 0, 0, 0.24);
+  padding: 10px 12px 8px;
+}
+
+.brand {
+  align-self: flex-start;
+  margin-top: -4px;
+}
+
+.brand-mark {
+  block-size: clamp(48px, 4.4vw, 68px);
+  filter: saturate(1.08) contrast(1.04);
+  transform: translateY(-8px);
+}
+
+.top-actions .btn,
+.mobile-menu-toggle {
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.12), rgba(255, 250, 240, 0.03)),
+    var(--dark-gradient);
+  border-color: rgba(255, 230, 154, 0.32);
+  border-radius: 6px;
+  box-shadow: 0 4px 0 rgba(8, 6, 5, 0.72);
+  color: #fff8e2;
+}
+
+.btn,
+.tab,
+.panel-action,
+.training-action,
+.choice-btn strong,
+.screen-title,
+.headline h2,
+.fighter-strip h2,
+.camp-prep-main strong,
+.special-hero h3,
+.story-panel h3,
+.visual-result-copy h3,
+.result-banner h3,
+.final-card h2,
+.fight-opponent {
+  font-family: var(--font-display);
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.btn,
+.tab,
+.panel-action {
+  border-radius: 6px;
+  position: relative;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+}
+
+.btn {
+  box-shadow: 0 4px 0 rgba(8, 6, 5, 0.74);
+  overflow: hidden;
+}
+
+.btn::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.26), transparent);
+  content: "";
+  inset: 0 auto 0 -65%;
+  pointer-events: none;
+  position: absolute;
+  transform: skewX(-18deg);
+  transition: left 180ms ease;
+  width: 46%;
+}
+
+.btn:hover::before {
+  left: 118%;
+}
+
+.btn-primary {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 36%),
+    linear-gradient(180deg, var(--brand-red-hot), var(--brand-red-deep));
+  border-color: rgba(255, 230, 154, 0.64);
+  color: #fff8e2;
+}
+
+.btn-dark,
+.btn-ghost {
+  background:
+    linear-gradient(180deg, rgba(217, 179, 90, 0.14), rgba(255, 250, 240, 0.02)),
+    var(--dark-gradient);
+  border-color: rgba(217, 179, 90, 0.45);
+  color: #fff6d8;
+}
+
+.btn-light {
+  background:
+    linear-gradient(180deg, #fffdf7, #ead8ae);
+  border-color: rgba(23, 19, 15, 0.82);
+  color: #17110b;
+  text-shadow: none;
+}
+
+.btn:active,
+.tab:active,
+.panel-action:active {
+  box-shadow: 0 2px 0 rgba(8, 6, 5, 0.84);
+  transform: translateY(3px);
+}
+
+.game-screen {
+  background:
+    linear-gradient(135deg, rgba(204, 66, 70, 0.075), transparent 31%),
+    linear-gradient(315deg, rgba(11, 157, 136, 0.075), transparent 34%),
+    repeating-linear-gradient(135deg, rgba(23, 19, 15, 0.034) 0 1px, transparent 1px 22px),
+    var(--paper-gradient);
+  border-color: var(--game-border);
+  border-radius: 6px;
+  box-shadow: var(--game-shadow), inset 0 0 0 1px rgba(255, 250, 240, 0.48);
+}
+
+.hero-play,
+.fighter-strip,
+.camp-prep,
+.special-hero,
+.medical-stop-card,
+.final-card,
+.pantheon-card,
+.focus-panel,
+.stats-nudge {
+  border-color: var(--game-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 0 rgba(8, 6, 5, 0.54), 0 20px 48px rgba(0, 0, 0, 0.24);
+}
+
+.hero-play .eyebrow,
+.eyebrow,
+.panel-title span,
+.strip-stat span,
+.season-panel span,
+.stat-pill span,
+.summary-item span,
+.effect-chip,
+.effect,
+.threat,
+.injury-tag,
+.fight-meta span,
+.contract-offer-meta span,
+.calendar-chip b,
+.training-main strong,
+.training-action {
+  font-family: var(--font-display);
+  letter-spacing: 0;
+}
+
+.hero-play .headline h2 {
+  color: var(--brand-gold-soft);
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.5), 0 14px 30px rgba(0, 0, 0, 0.28);
+}
+
+.objective-panel,
+.news-panel,
+.ranking-panel,
+.contract-panel,
+.medical-panel,
+.season-calendar-panel,
+.camp-weeks,
+.analysis-panel,
+.legacy-panel,
+.online-panel,
+.online-stable-panel,
+.online-switch-panel,
+.online-ranking-panel,
+.online-current-career,
+.contract-offer-card,
+.camp-opportunity-card {
+  background: var(--paper-gradient);
+  border-color: var(--panel-border);
+  border-radius: 6px;
+  box-shadow: 0 5px 0 rgba(23, 19, 15, 0.11), 0 14px 28px rgba(23, 19, 15, 0.09);
+}
+
+.panel-title {
+  border-bottom-color: rgba(132, 36, 42, 0.18);
+}
+
+.panel-title span {
+  color: var(--red-dark);
+}
+
+.panel-title strong {
+  color: #130f0b;
+}
+
+.choice-btn,
+.moment-choice,
+.leaderboard-row,
+.notification-row,
+.challenge-row,
+.online-fighter-card,
+.online-challenge-box,
+.timeline-row,
+.matchup-row,
+.ranking-row,
+.news-row {
+  background:
+    linear-gradient(135deg, rgba(217, 179, 90, 0.12), transparent 38%),
+    linear-gradient(180deg, #fffdf7, #f0e2c7);
+  border-color: rgba(23, 19, 15, 0.22);
+  border-radius: 6px;
+  box-shadow: 0 4px 0 rgba(23, 19, 15, 0.12);
+}
+
+.choice-btn.selected,
+.choice-btn:hover,
+.leaderboard-row.selected,
+.leaderboard-row:hover,
+.moment-choice:hover {
+  border-color: rgba(217, 179, 90, 0.94);
+  box-shadow: 0 6px 0 rgba(23, 19, 15, 0.16), 0 0 0 3px rgba(217, 179, 90, 0.16);
+}
+
+.choice-icon,
+.leaderboard-rank,
+.step-dot.active {
+  background:
+    linear-gradient(180deg, #2f2718, #0e0b08);
+  border-color: rgba(217, 179, 90, 0.66);
+  border-radius: 6px;
+  color: #fff4ce;
+}
+
+.choice-btn.selected .choice-icon,
+.choice-btn:hover .choice-icon {
+  background:
+    linear-gradient(180deg, var(--brand-gold-soft), var(--brand-gold));
+  color: #17110b;
+}
+
+.choice-btn:active .choice-icon,
+.choice-btn.is-pressing .choice-icon {
+  background:
+    linear-gradient(180deg, var(--brand-red-hot), var(--brand-red-deep));
+  border-color: rgba(255, 230, 154, 0.58);
+  color: #fff8e2;
+}
+
+.season-panel {
+  background:
+    linear-gradient(135deg, rgba(217, 179, 90, 0.16), transparent 44%),
+    linear-gradient(180deg, #fffaf0, #eadbbd);
+  border: 1px solid rgba(23, 19, 15, 0.2);
+  border-radius: 6px;
+  box-shadow: 0 6px 0 rgba(23, 19, 15, 0.14), 0 15px 28px rgba(23, 19, 15, 0.1);
+}
+
+.training-board {
+  background:
+    linear-gradient(180deg, rgba(255, 253, 247, 0.98), rgba(239, 226, 201, 0.96));
+  border-color: rgba(23, 19, 15, 0.2);
+  border-radius: 6px;
+  box-shadow: 0 6px 0 rgba(23, 19, 15, 0.12), 0 18px 34px rgba(23, 19, 15, 0.1);
+}
+
+.training-row {
+  border-bottom-color: rgba(23, 19, 15, 0.12);
+}
+
+.training-thumb {
+  background:
+    linear-gradient(180deg, #251f18, #11100e);
+  border-color: rgba(217, 179, 90, 0.64);
+  border-radius: 6px;
+  color: var(--brand-gold-soft);
+}
+
+.training-row:hover {
+  background:
+    linear-gradient(90deg, rgba(217, 179, 90, 0.18), rgba(255, 250, 240, 0.78));
+}
+
+.training-row:hover .training-thumb {
+  background:
+    linear-gradient(180deg, var(--brand-gold-soft), var(--brand-gold));
+  color: #17110b;
+}
+
+.training-row:active:not(:disabled):not(.is-disabled) .training-thumb,
+.training-row.is-pressing:not(:disabled):not(.is-disabled) .training-thumb {
+  background:
+    linear-gradient(180deg, var(--brand-red-hot), var(--brand-red-deep));
+  border-color: rgba(255, 230, 154, 0.58);
+  color: #fff8e2;
+}
+
+.notice,
+.season-verdict,
+.medical-alert,
+.camp-risk-alert,
+.perk-active-notice,
+.perk-shop-notice,
+.promotion-radar-notice {
+  border-radius: 6px;
+  box-shadow: 0 5px 0 rgba(23, 19, 15, 0.13), 0 14px 28px rgba(23, 19, 15, 0.08);
+}
+
+.visual-result-card,
+.visual-swipe-screen .swipe-choice-card.has-swipe-visual,
+.swipe-choice-card.has-swipe-visual {
+  border-top: 1px solid var(--game-border);
+  box-shadow: 0 12px 0 rgba(8, 6, 5, 0.58), 0 30px 68px rgba(0, 0, 0, 0.3);
+}
+
+.visual-choice-flow-actions {
+  border-color: var(--game-border);
+  border-radius: 6px;
+  box-shadow: 0 10px 0 rgba(8, 6, 5, 0.7), 0 30px 62px rgba(0, 0, 0, 0.28);
+}
+
+.visual-embedded-choice-grid .choice-btn {
+  border-color: rgba(217, 179, 90, 0.48);
+}
+
+.stat-bar {
+  background: rgba(23, 19, 15, 0.11);
+  border-radius: 999px;
+}
+
+.stat-bar i,
+.camp-status-track i,
+.objective-bar i {
+  background:
+    linear-gradient(90deg, var(--brand-red-hot), var(--brand-gold-soft), var(--brand-aqua));
 }
 
 .hidden {
